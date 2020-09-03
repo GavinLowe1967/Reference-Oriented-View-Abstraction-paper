@@ -1,0 +1,22 @@
+
+\section{Setting}
+
+Each component has a number of parameters.  Its first component is always its
+own identity. 
+
+Probably want to include multiple servers, so write a system state as
+$s = (\srv, \cpt)$ where $\srv = (srv_1, \ldots, srv_k)$ is a
+vector of states of servers, and $\cpt$ is a set of states of
+components.  Write $\S$ for the set of all states.  Write $s.\srv$ and $s.\cpt$
+for the servers or components, respectively. 
+
+If $s$ is a state and $cpts$ is a set of component states with identities
+disjoint from $s.\cpt$, then write $s \uplus cpts$ for $(s.\srv, s.\cpt \union
+cpts)$.  If $cpt$ is a component state, we abuse notation and write $cpt \in
+s$ for $cpt \in s.\cpt$.
+
+Assume different components have different identities for now. 
+
+Assume that components are partitioned into \emph{active} and \emph{passive}
+components.  E.g.~threads and nodes.  Each transition involves precisely one
+active component.  \framebox{Extend} or an active server. 

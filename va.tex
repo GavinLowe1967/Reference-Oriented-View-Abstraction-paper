@@ -1,0 +1,68 @@
+
+\section{View abstraction}
+
+Define views as substates.
+\begin{eqnarray*}
+(\srv, \cpt ) \sqle (\srv', \cpt') & iff & 
+  \srv = \srv' \land \cpt \subseteq \cpt' .
+\end{eqnarray*}
+
+Assume $\S$ is downwards-closed under taking substates. 
+
+Fix a set $\V \subseteq \S$ of views.
+
+Given state $s$, let
+%
+\begin{eqnarray*}
+\alpha(s) & = &
+  \set{ v | v \in V \land v \sqle s}.
+% \set{view(s, cpt) | cpt \in s.\cpt} \union \set{srvView(s)}.
+\end{eqnarray*}
+%
+Lift to sets of states by pointwise application. 
+
+Given a set $V$ of views
+\begin{eqnarray*}
+\gamma(V) & = &   \set{ s | s \in \S \land \alpha(s) \subseteq V }.
+\end{eqnarray*}
+
+
+
+\begin{lemma}
+If $S, S' \subseteq \S$ and $V, V' \subseteq \V$, then
+\begin{enumerate}
+\item $S \subseteq S' \implies \alpha(S) \subseteq \alpha(S')$;
+
+\item $V \subseteq V' \implies \gamma(V) \subseteq \gamma(V')$;
+
+\item $\alpha(\gamma(V)) \subseteq V$;
+
+\item $S \subseteq \gamma(\alpha(S))$.
+\end{enumerate}
+\end{lemma}
+%
+%% \begin{proof}
+%% First two immediate.
+
+%% Suppose $v \in \alpha(\gamma(V))$.  Then $v \in \alpha(s)$ for some $s \in
+%% \gamma(V)$.  But then $\alpha(s) \subseteq V$, so $v \in V$.
+
+%% Suppose $s \in S$.  Then $\alpha(s) \subseteq \alpha(S)$ so $s \in
+%% \gamma(\alpha(S))$. 
+%% \end{proof}
+
+\begin{lemma}
+$(\alpha, \gamma)$ forms a Galois connection: if $S \subseteq \S$ and $V
+  \subseteq \V$ then $\alpha(S) \subseteq V \iff S \subseteq \gamma(V)$.
+\end{lemma}
+%
+%% \begin{proof}
+%% Suppose  $\alpha(S) \subseteq V$.  Then $S \subseteq \gamma(\alpha(S))
+%% \subseteq \gamma(V)$.
+
+%% Suppose $S \subseteq \gamma(V)$.  Then $\alpha(S) \subseteq \alpha(\gamma(V))
+%% \subseteq V$.
+%% \end{proof}
+
+
+Other things go through as before.  
