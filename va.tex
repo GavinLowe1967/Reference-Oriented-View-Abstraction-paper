@@ -3,19 +3,19 @@
 
 Define views as substates.
 \begin{eqnarray*}
-(\srv, \cpt ) \sqle (\srv', \cpt') & iff & 
-  \srv = \srv' \land \cpt \subseteq \cpt' .
+(\fixed, \cpt ) \sqle (\fixed', \cpt') & iff & 
+  \fixed = \fixed' \land \cpt \subseteq \cpt' .
 \end{eqnarray*}
 
 Assume $\S$ is downwards-closed under taking substates. 
 
 Fix a set $\V \subseteq \S$ of views.
 
-Given state $s$, let
+Given a system state $s$, let
 %
 \begin{eqnarray*}
 \alpha(s) & = &
-  \set{ v | v \in V \land v \sqle s}.
+  \set{ v | v \in \V \land v \sqle s}.
 % \set{view(s, cpt) | cpt \in s.\cpt} \union \set{srvView(s)}.
 \end{eqnarray*}
 %

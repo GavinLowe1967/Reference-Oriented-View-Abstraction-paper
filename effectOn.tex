@@ -1,0 +1,281 @@
+\section{Notes on EffectOn}
+
+Consider a transition
+\[
+pre \trans{e} post.
+\]
+This might induce a corresponding transition on some other view~$v$, if $v$
+and $pre$ are \emph{compatible} in the following sense:
+%
+\begin{itemize}
+\item $v$ and $pre$ have the same states for fixed processes;
+
+\item if $v$ and $pre$ both have a component with the same identity, then that
+component is in the same state in each.
+\end{itemize}
+%
+In this case, the transition $pre \trans{e} post$ induces a transition
+$v \trans{} v'$ where
+%
+\begin{itemize}
+\item $v'.\fixed = post.\fixed$;
+
+\item If $pre$ and~$v$ have a common component, then that transition is
+updated as in~$post$;
+
+\item All other components are unchanged. 
+\end{itemize}
+%
+Note that $v'$ might not be a proper view.  The principal of~$v'$ might gain a
+reference to a component that is not included in~$v$ and~$v'$.  But in that
+case, the corresponding component will be in~$post$, so we can add it from
+there.  And if $v'$ loses some references (compared with~$v$) we can remove
+the corresponding components.
+
+
+Example.
+
+Note that we do not unify the principal of~$v$ with the principal of~$pre$, as
+that would just recreate the same transition. 
+
+All of this belongs earlier.
+
+
+Since both $pre$ and $v$ represent all views in their equivalence classes, we
+need to find all ways of renaming parameters to produce views that are
+compatible.  It is enough to keep the parameters of $pre$ fixed, and to rename
+the parameters of~$v$.  Further, it is enough to find all such renamings up to
+equivalence of the resulting post-views~$v'$: if two different renamings would
+produce equivalent post-views, it is enough to produce one of them.  We build
+up all renamings as follows.  Each renaming can be defined by an injective
+function~$\pi$ over the parameters of~$v$.
+
+Ignore single-reference mode for the moment. 
+
+Recall that $v$ and $pre$ are stored in normal form.  This means that a
+renaming can be applied to~$v$ to be compatible with~$pre$ only if their fixed
+processes are already in identical states.  In this case, the renaming must be
+the identity function on all parameters of those fixed processes.
+
+%%%%%
+
+\begin{example}
+We use a running example to illustrate the technique.  Consider
+\begin{eqnarray*}
+pre & = &
+   Fixed(N_0) \parallel Thread(T_0, N_1, N_2) \parallel 
+   Node_A(N_1, N_3) \parallel Node_B(N_2, N_0, N_4), 
+\\
+post & = & 
+  Fixed'(N_5) \parallel Thread'(T_0, N_1, N_2) \parallel
+  Node'(N_1, N_2, N_3) \parallel Node_B(N_2, N_0, N_4) ,
+\\
+v & = & 
+  Fixed(N_0) \parallel Node_A(N_1, N_2) \parallel Node_B(N_2, N_0, N_3).
+%% pre & = & Fixed(N_0) \parallel Thread(T_0, N_0, N_1) \parallel
+%%   Node(N_0, N_1) \parallel Node(N_1, N_2),
+%% \\
+%% post & = & Fixed'(N_1, N_3) \parallel
+%%   Thread'(T_0, N_0, N_1) \parallel Node(N_0, N_1) \parallel Node'(N_1, N_4)
+%% \\
+%% v & = & Fixed(N_0) \parallel 
+%%   Thread(T_0, N_1, N_2) \parallel Node(N_1, N_3) \parallel Node(N_2, N_4).
+\end{eqnarray*}
+%
+$pre$ and~$v$ have fixed processes in the same states, so there is the
+potential to produce a renaming of~$v$ compatible with~$pre$.  We start with
+the partial renaming function $\pi = \set{N_0 \mapsto N_0}$.
+
+It is worth noting that the identifiers $N_1$ and~$N_2$ that appear in
+both~$pre$ and~$v$ might represent different parameters in each: each is just
+of representative of its equivalence class; the fact that the same identifiers
+appear in each is just an artefact of the way we produce normal forms. 
+\end{example}
+
+%%%%%
+
+We next construct all ways of unifying components of~$v$ and~$pre$.  We
+construct all minimal extensions of the renaming function~$\pi$ to rename the
+parameters of a component of~$v$ to map it onto a component of~$pre$
+(consistent with the renaming~$\pi$ being injective and the identity on
+parameters of fixed processes).  In general, any subset of the components
+of~$v$ might be unified. 
+
+\begin{example}
+We continue with the running example.  Unifying the two $Node_A$ processes
+gives the renaming
+\begin{eqnarray*}
+\pi_1 & = & \set{N_0 \mapsto N_0, N_1 \mapsto N_1, N_2 \mapsto N_3}.
+\end{eqnarray*}
+Alternatively, unifying the two $Node_B$ processes gives the renaming
+\begin{eqnarray*}
+\pi_2 & = & \set{N_0 \mapsto N_0, N_2 \mapsto N_2, N_3 \mapsto N_4}.
+\end{eqnarray*}
+It is not possible to unify both pairs simultaneously, since $N_2$ cannot be
+mapped consistently.
+%%  It is not possible to unify the two
+%% $Thread$ processes, since the injectivity of~$\pi$ means that we cannot
+%% map~$N_1$ to~$N_0$.  For a similar reason, neither $Node$ in~$v$ can be
+%% unified with~$Node(N_0, N_1)$.  However, either node in~$v$ could be unified
+%% with $Node(N_1,N_2)$, giving the renamings
+%% \begin{eqnarray*}
+%% \pi_1 & = & \set{N_0 \mapsto N_0, N_1 \mapsto N_1, N_3 \mapsto N_2}, \\
+%% \pi_2 & = & \set{N_0 \mapsto N_0, N_2 \mapsto N_1, N_4 \mapsto N_2},
+%% \end{eqnarray*}
+%% respectively.  
+In addition, the renaming~$\pi$ corresponds to unifying no components.
+%% It is not possible to simultaneously unify more than one component of~$v$
+%% with components of~$pre$ in this case.
+\end{example}
+
+For each possible way of unifying some components (maybe none), we extend the
+renaming to other parameters of~$v$ as follows:
+%
+\begin{itemize}
+\item  Each parameter can be mapped to:
+(1)~a parameter of $post.\fixed$; (2)~a parameter of the post-state of a
+unified component; or (3)~if the principal of~$v$ is unified with a
+component~$c$, and $c$~gains a reference to a component~$c'$, then a parameter
+of the post-state of~$c'$.  These are all subject to two provisos: (a)~that
+the renaming remains injective; and (b)~a parameter that is the identity
+of a component~$c$ in~$v$ that is not unified with any component of~$pre$ cannot
+be mapped to an identity of a component in~$pre$ (since that would require
+unifying~$c$).
+
+\item Each parameters can be mapped to a fresh parameter (i.e.~a parameter
+different from those in~$pre$ and~$post$).  All choices of these parameters
+will give equivalent post-states, so we only need to make the choice in one
+way.
+\end{itemize}
+
+%%%%%
+
+\begin{example}
+We continue the running example, considering just the unification
+corresponding to~$\pi_1$.  Consider what values~$N_3$ can be mapped to.  By
+clause~(1) of the first item above, it can be mapped to~$N_5$.  By
+clause~(2), it can be mapped to~$N_2$.  By clause~(3), it can be mapped
+to~$N_4$ (from the post-state of the $Node_B$ process).  Finally, by the
+second item, it can be mapped to a fresh value; we choose the fresh
+value~$N_6$. 
+%
+This then produces four remappings:
+\[
+\pi_X = \set{N_0 \mapsto N_0, N_1 \mapsto N_1, N_2 \mapsto N_3, N_3 \mapsto X},
+\quad \mbox{for $X = N_2, N_4, N_5, N_6$}.
+\]
+For each such renaming~$\pi_X$,\, $v$ gets remapped to a view of the form
+\[
+Fixed(N_0) \parallel Node_A(N_1, N_3) \parallel Node_B(N_3, N_0, X).
+\]
+The $Fixed$ and $Node_A$ processes evolve under the transition \( pre
+\trans{} post \), and the latter gains a reference to the $Node_B$ process in
+$post$.  This produces the four views
+\[
+Fixed'(N_5) \parallel Node'(N_1, N_2, N_3) \parallel 
+  Node_B(N_2, N_0, N_4) \parallel Node_B(N_3, N_0, X).
+\]
+Finally, these views need to be reduced to normal form.  Note that each normal
+form is distinct.
+\end{example}
+
+%% According to the first point above, node parameters
+%% can be mapped to~$N_3$ or~$N_4$ (but not~$N_1$, since that is in the range
+%% of~$\pi_1$).  We use fresh parameters~$N_5$ and~$N_6$ for the second point
+%% above.  However, the thread identity~$T_0$ cannot be mapped to~$T_0$, since we
+%% are not unifying these components: we map it instead to the fresh
+%% parameter~$T_1$.  
+
+%% This gives seven renamings, extending~$\pi_1$ with $T_0 \mapsto T_1$ and each
+%% of the following:
+%% \[
+%% \begin{array}{c}
+%% \set{N_2 \mapsto N_3, N_4 \mapsto N_4},
+%% \quad
+%% \set{N_2 \mapsto N_3, N_4 \mapsto N_5 },
+%% \\
+%% \set{N_2 \mapsto N_4, N_4 \mapsto N_3},
+%% \quad
+%% \set{N_2 \mapsto N_4,  N_4 \mapsto N_5},
+%% \\
+%% \set{N_2 \mapsto N_5, N_4 \mapsto N_3},
+%% \quad
+%% \set{N_2 \mapsto N_5, N_4 \mapsto N_4},
+%% \quad
+%% \set{N_2 \mapsto N_5, N_4 \mapsto N_6}.
+%% \end{array}
+%% \]
+
+
+%%  (when all such~$\pi$ agree upon a parameter, we give the resulting value).
+%% \[
+%% Fixed(N_0) \parallel Thread(T_1, N_1, \pi(N_2)) \parallel
+%%   Node(N_1, N_2) \parallel Node(\pi(N_2), \pi(N_4)).
+%% \]
+%% The transition $pre \trans{} post$ then induces transitions to each of the
+%% following, noting that only the fixed process and node~$N_1$ change state.
+%% \[
+%% Fixed'(N_1, N_3) \parallel Thread(T_1, N_1, \pi(N_2)) \parallel
+%%    Node'(N_1, N_4) \parallel Node(\pi(N_2), \pi(N_4)).
+%% \]
+%% Note that the different choices of~$\pi$ give non-equivalent post-views.
+%% \end{example}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% New example
+%% %
+%% \begin{eqnarray*}
+%% pre & = &
+%%    Fixed(N_0) \parallel Thread(T_0, N_1, N_2) \parallel 
+%%    Node_A(N_1, N_3) \parallel Node_B(N_2, N_0, N_4) 
+%% \\
+%% post & = & 
+%%   Fixed'(N_5) \parallel Thread'(T_0, N_1, N_2) \parallel
+%%   Node'(N_1, N_2, N_3) \parallel Node_B(N_2, N_0, N_4) 
+%% \\
+%% v & = & 
+%%   Fixed(N_0) \parallel Node_A(N_1, N_2) \parallel Node_B(N_2, N_0, N_3)
+%% \end{eqnarray*}
+
+%% Fixed components match.  Start with $\pi = \set{N_0 \mapsto N_0}$.  Unifying
+%% the two $Node_A$s gives $\pi_1 = \set{N_0 \mapsto N_0, N_1 \mapsto N_1,
+%% N_2 \mapsto N_3}$.  Unifying the two $Node_B$s gives $\pi_2 = \set{N_0 \mapsto
+%% N_0, N_2 \mapsto N_2, N_3 \mapsto N_4}$. It is not possible to unify both
+%% simultaneously ($N_2$ cannot be mapped consistently).
+%% Also $\pi$ gives no unifications. 
+
+%% Continuing with $\pi_1$, need to allow $N_3$ to map to $N_5$ (from
+%% $post.\fixed$), $N_2$ (from post-state of the unified component), $N_4$ (from
+%% post-state of the $Node_B$), or $N_6$ (fresh).
+
+%% For each such $\pi'$, induces transition to
+%% \[
+%% Fixed'(N_5) \parallel Node'(N_1, N_2, N_3) \parallel 
+%%   Node_B(N_2, N_0, N_4) \parallel  Node_B(N_3, N_0, \pi'(N_3))
+%% \]
+%% The first $Node_B$ is from $post$; the second is a renaming of the $Node_B$
+%% from~$v$. 
+
+\subsection{Optimisations}
+
+We mention some optimisations.  Note that if no unifications are done, and the
+fixed processes do not change state within the transition $pre \trans{} post$,
+then the final view produced is identical to~$v$.  There is no need to
+consider such cases.  The same is true if the fixed processes do not change
+state, and the only unifications are with components that also do not change
+state. 
+
+Similarly, if no unifications are made, then any two transitions $pre \trans{}
+post$ and $pre' \trans{} post'$ such that $pre.\fixed = pre'.\fixed$ and
+$post.\fixed = post'.fixed$, when applied to a view~$v$ will produce identical
+final views.  It is enough to consider one such case for each view~$v$ and
+each transition of the fixed processes.
+
+Implementation note: done in isSufficientUnif. 
+
+Improve: if we unify with a component that changes state but doesn't gain any
+reference, it is enough to consider one such case for each view~$v$ and for
+each transition of the fixed processes and the component with which
+unification is performed. 
+

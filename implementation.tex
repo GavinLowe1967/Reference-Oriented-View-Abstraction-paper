@@ -1,0 +1,220 @@
+\section{Implementation}
+
+The implementation uses the following types.
+\begin{itemize}
+\item $Transition = (Concretization, EventInt, Concretization)$.  The tuple
+  $(pre, e, post)$ represents the extended transition $pre \trans{e} post$.
+  The pre-state extends a view to include all other components synchronising
+  on the transition, and all components to which a process gains a reference.
+  The post-state gives the same components in their post-transition states. 
+
+\item $TransitionTemplate = (Concretization, Concretization,\linebreak[1]
+  Process\-Identity,\linebreak[1] EventInt, Boolean)$.  A transition template
+  can be thought of as a transition with a ``hole'' for a component with a
+  given identity to be slotted into.  The tuple $(pre, post, id, e, include)$
+  represents an extended transition $pre \union \set{st} \trans{e} post \union
+  \set{st'}$ for every state $st$ and $st'$ such that (1) $st$ and $st'$ have
+  identity $id$; (2)~$st$ is compatible with $pre$; (3) if $include$ then $st
+  \trans{e} st'$, otherwise $st = st'$.
+\end{itemize}
+
+
+The implementation includes the following state.
+\begin{itemize}
+\item $sysAbsViews: ViewSet$: all views found.
+
+\item $transitions: TransitionSet$: the extended transitions found so far.
+
+\item $transitionTemplates: TransitionTemplateSet$: the transition templates
+  found so far. 
+
+\item $nextNewViews: ArrayBuffer[ComponentView]$: new views found on the
+  current ply, to be considered on the next ply.
+
+\item $newTransitions: ArrayBuffer[Transition]$: new transitions found on the
+  current ply.
+
+\item $newTransitionTemplates: ArrayBuffer[TransitionTemplate]$: new
+  transition templates found on the current ply.
+\end{itemize}
+
+In the first half of each ply, new views are added to $nextNewViews$; in the
+secondhalf, they are added to $sysAbsViews$.  Likewise transitions and
+transition templates are initially added to $newTransitions$ and
+$new\-Transition\-Templates$, respectively.  This ensures that the sets are not
+updated while we iterate over them.  On the next iteration, the program
+iterates over the new views.
+
+Figure~\ref{fig:impl} shows the relationship between some of the functions in
+the implementation. 
+
+\begin{figure}
+\begin{center}
+\small
+\begin{tikzpicture}[>=angle 90,yscale = 1.5]
+\draw (0,0) node (process) {$process$};
+\draw (process) ++ (-4,-1) node (processTransition) {$processTransition$};
+%
+\path[draw,->] (process) -- (processTransition);
+\draw (process) ++ (0,-1) node (effectPrevTT)
+   {$\begin{array}{c} effectOfPrevious\mbox{-} \\ 
+       TransitionTemplates\end{array}$}; 
+\path[draw,->] (process) -- (effectPrevTT);
+\draw (process) ++ (4,-1) node (effectPrevTrans) 
+  {$\begin{array}{c} effectOfPrevious\mbox{-} \\ Transitions\end{array}$}; 
+\path[draw,->] (process) -- (effectPrevTrans);
+%
+\draw (processTransition) ++ (1,-1) node (instantiateTT) 
+  {$\begin{array}{c} instantiate\mbox{-}\\ TransitionTemplate \end{array}$};
+\path[draw,->] (processTransition) -- (instantiateTT);
+%
+\draw (instantiateTT) ++ (0,-1) node (instantiateTTBy)
+  {$\begin{array}{c} instantiate\mbox{-}\\ TransitionTemplateBy \end{array}$};
+\path[draw,->] (instantiateTT) -- (instantiateTTBy);
+\path[draw,<-] (instantiateTTBy.north)++(1.5,-0.3) -- (effectPrevTT);
+%
+\draw (instantiateTTBy) ++ (-1,-1) node (addTransition) {$addTransition$};
+\path[draw,->] (instantiateTTBy) -- (addTransition);
+\draw (addTransition)++(-1,0) node (addTransitionL) {};
+\path[draw,->] (processTransition.south)++(-1,0) -- (addTransitionL);
+%
+\draw (addTransition) ++ (4,0) node (effectOnOthers) {$effectOnOthers$};
+\path[draw,->] (addTransition) -- (effectOnOthers);
+%
+\draw (effectOnOthers) ++ (4,0) node (effectOn) {$effectOn$}; 
+\path[draw,->] (effectOnOthers) -- (effectOn);
+\path[draw,->] (effectPrevTrans) -- (effectOn);
+\end{tikzpicture}
+\end{center}
+\caption{Relationship of functions}
+\label{fig:impl}
+\end{figure}
+
+The function $process(v)$ acts on a single view~$v$ found on the previous ply.
+It calculates all the transitions from~$v$, together with the identities of
+other components relevant to the view (if any).  It then calls
+$processTransition$ on each such transition.  It also calls
+$effectOfPreviousTransitions$ and $effect\-Of\-Previous\-TransitionTemplates$
+on the view.
+
+The function $processTransition(pre, e, post, ids)$ corresponds to processing
+either (1)~the transition $pre \trans{e} post$, if $ids$ is empty, or
+(2)~transition template $(pre, post, id, e, true)$ if $ids = \set{id}$,
+i.e.~transitions with an extra component with identity~$id$ that synchronises
+on~$e$.  It calculates whether the principal component gains a reference to a
+component other than those in~$pre$ and~$id$.  If not and $ids$ is empty, the
+transition is complete: $addTransition$ is called on it.  Otherwise, it is
+added to $newTransitionTemplates$, and
+$instantiate\-TransitionTemplate$ is called.
+
+$addTransition(pre,e,post)$ adds a transition $pre \trans{e} post$ to
+$new\-Transitions$, and calls $effectOnOthers$.
+
+$effectOnOthers(pre,e,post)$ considers the effect of a new transition $pre
+\trans{e} post$ on views found on previous plys.  For each such view that
+matches $pre$'s fixed processes, it calls $effectOn$.
+
+$effectOn(pre, e, post, v)$ considers the effect of a transition $pre
+\trans{e} post$ on another view~$v$.  It forms all ways of combining $pre$ and
+$v$, calculates the corresponding post-view for $v.\princ$, and adds it to
+$nextNewViews$.
+
+$instantiateTransitionTemplate(pre, post, id, e, inc)$ considers how to
+instantiate the transition template $(pre, post,\linebreak[1] id,\linebreak[1]
+e, inc)$.  For each view in $sysAbsViews$ that matches $pre$'s fixed
+processes, it calls $instantiate\-Transition\-TemplateBy$.
+
+$instantiateTransitionTemplateBy(pre, post, id, e, inc, v)$ considers how
+to instantiate the transition template $(pre, post,\linebreak[1]
+id,\linebreak[1] e, inc)$, so that a component of $v$ forms the extra
+component with identity~$id$.  For each resulting transition, it calls
+$add\-Transition$.
+
+$effectOfPreviousTransitions(v)$ considers the effect of all previous
+transitions on a view~$v$ found on the previous ply.  For each
+transition in $transitions$ whose initial servers matches $v$'s servers, it
+calls $effectOn$.
+
+$effectOfPreviousTransitionTemplates(v)$ considers using a view~$v$ found on
+the previous ply to instantiate the missing component in a transition
+template.  For each transition template in $transitionTemplates$ whose initial
+servers matches $v$'s servers, it calls $instantiateTransitionTemplateBy$.
+
+We briefly discuss the combination of views and either transitions or
+transition templates: it is important that we consider each such combination,
+just once, regardless of the plys each are found or created on.  Consider a
+view~$v$ found on ply~$n$, and expanded on ply~$n+1$.
+%
+\begin{itemize}
+\item On ply~$n+1$, $v$ will be considered (in $effectOfPreviousTransitions$)
+  in combination with each transition created up to ply~$n$.
+
+\item For each transition created on ply~$n+1$ or later, its effect on~$v$
+  will be considered (in $effectOnOthers$) on the ply in which the transition
+  is created. 
+ %% A transition from~$v$ will be considered in ply~$n+1$, and its effect
+ %%  considered (in $effectOnOthers$) on all views~$v'$ found up to ply~$n$.
+\end{itemize}
+%
+Thus the combination of a view and a transition will be treated: (1)~by the
+first bullet if the transition is created on a ply no later than the view is
+found; and (2)~by the second bullet if the transition is created on a ply
+later than the view is found.  
+
+Likewise
+%
+\begin{itemize}
+\item On ply $n+1$, $v$ will be considered (in
+  $effect\-Of\-Previous\-Transition\-Templates$) to create the missing
+  component in each transition template created up to ply~$n$.
+
+\item For each transition template created on ply~$n+1$ or later, its
+  combination with~$v$ will be considered (in
+  $instantiate\-Transition\-Template$) on the ply in which the transition
+  template is created.
+%% \item A transition template from~$v$ will be created in ply~$n+1$, and all
+%%   ways of creating the missing component from views found up to ply~$n$ will
+%%   be considered (in $instantiateTransitionTemplate$).
+\end{itemize}
+%
+Thus the combination of a view and a transition template will be treated:
+(1)~by the first bullet if the transition template is created on a ply no
+later than the view is found; and (2)~by the second bullet if the transition
+template is created on a ply later than the view is found.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{instantiateTransitiontemplateBy}
+
+$instantiateTransitionTemplateBy(pre, post, id, e, inc, v)$ considers how
+to instantiate the transition template $(pre, post,\linebreak[1]
+id,\linebreak[1] e, inc)$, so that a component of $v$ forms the extra
+component with identity~$id$.  For each resulting transition, it calls
+$add\-Transition$.
+
+
+The function $consistentStates(pre, id, e, inc, v)$ considers how to rename
+$v$ to potentially produce the extra component of the transition template
+$(pre, post,\linebreak[1] id,\linebreak[1] e, inc)$.  More precisely, it finds
+all ways of renaming~$v$ to obtain a view~$v'$ so that (1) a component of~$v'$
+has identity~$id$, (2)~$v'$ and~$pre$ agree on common components, and (3)~if
+$inc$ then $v'$ can perform~$e$.  For each, it returns the renamed component
+with identity id, and the next states. 
+
+For each such extra component~$st$,\, $isExtendable(pre, st)$ tests whether
+$st$ is consistent with $pre$, in the sense that for each component $c$ of
+$pre \union st$, the current set of views contains a view with $c$ as
+principal component and agreeing on common processes (modulo renaming).
+
+$compatibleWith(servers, components, st)$ tests whether there is an existing
+view with $st$ as principal component that agrees with $servers$ and
+$components$ on common processes. 
+
+$containsReferencingView(pre, st, j)$ assumes that $pre.components(j)$ has a
+reference to $st$.  If tests whether there is a view with $pre.components(j)$
+as principal component, containing $st$, and otherwise compatible with~$pre$
+(modulo renaming).
+
+*** If the views that ensure consistency are found later, do we get all
+instantiations?  I think so.  The last relevant view will include the state we
+want. 

@@ -1,18 +1,30 @@
 \documentclass[12pt,a4paper]{article}
 \usepackage{mathsx,tech,mytheorems}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usepackage{scalalistings}\unScalaMid
 
 \newtheorem{lemma}{Lemma}
 \newtheorem{conjecture}{Conjecture}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
 
 \def\vec#1{\mathsf{#1}}
 \def\trans#1{\stackrel{#1}\rightarrow}
 \def\sqge{\sqsupseteq}
 \def\sqle{\sqsubseteq}
 
-\def\srv{\vec{srvs}}
+\def\id{\mathrm{id}}
+\def\params{\mathrm{params}}
+%\def\srv{\vec{srvs}}
+\def\fixed{fixed}
 \def\cpt{\vec{cpts}}
+\def\cpts{\cpt}
+\def\princ{\mathrm{princ}}
 \def\S{\mathcal{S}}
 \def\V{\mathcal{V}}
+
+\def\improve#1{IMPROVE: \emph{#1}}
 
 \everymath{\it}
 \sloppy
@@ -27,6 +39,10 @@
 \input{setting}
 \input{va}
 \input{views}
+\newpage
+\input{implementation}
+\newpage
+\input{effectOn}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
