@@ -18,10 +18,14 @@ the fixed process, and $\cpt$ is a set of states of components.  Write $\S$
 for the set of all system states.  Write $s.\fixed$ and $s.\cpt$ for the fixed
 processes or components, respectively.
 
-If $s$ is a system state and $cpts$ is a set of component states with identities
-disjoint from $s.\cpt$, then write $s \uplus cpts$ for $(s.\fixed, s.\cpt \union
-cpts)$.  If $cpt$ is a component state, we abuse notation and write $cpt \in
-s$ for $cpt \in s.\cpt$.
+If $s$ is a system state and $cpts$ is a set of component states with
+identities disjoint from the identities of $s.\cpt$, we write $s \uplus cpts$
+for $(s.\fixed, s.\cpt \union cpts)$.  Similarly, if $c$ is a component with
+identities disjoint from those of $s.\cpts$, we write $s \uplus c$ for
+$(s.\fixed, s.\cpt \union \set{c})$
+
+%% If $cpt$ is a component state, we abuse notation and write $cpt \in
+%% s$ for $cpt \in s.\cpt$.
 
 Assume different components have different identities for now. 
 
@@ -30,7 +34,192 @@ Assume different components have different identities for now.
 %% if a component of~$s$ references~$id$. 
 
 Assume that components are partitioned into \emph{active} and \emph{passive}
-components.  E.g.~threads and nodes.  Each transition involves precisely one
-active component or an active fixed process. 
+components.  E.g.~threads and nodes.  Likewise, fixed processes are
+partitioned into active and passive processes.  Each transition involves:
+\begin{itemize}
+\item precisely one active component or active fixed process;
+\item at most one passive component;
+\item possibly other passive fixed processes.
+\end{itemize}
 
 \improve{check this in implementation.}
+
+For a transition with an active component~$princ$, assume that at most one
+component~$c$ to which $princ$ does not initially have a reference, and such
+that either $c$ synchronises on the transition or $princ$ acquires a
+reference.
+%
+Also assume no other process acquires a reference to a component to which
+$princ$ does not initially hold a reference.  
+
+For a transition with an active server, ?? in view transitions, take the
+principal to be the synchronising passive component if any, or arbitrary
+otherwise.  Assume that process acquires at more one reference from the
+transition ??? 
+
+\framebox{Change to lock-based queue}
+
+Example
+
+\begin{figure}
+\begin{scala}
+class Node(x: D, next: Node)
+var Top: Node = null; val Lock = new Lock
+def Push(x: D) = {
+  Lock.lock; val top = Top; val n = new Node(x, top)
+  Top = n; Lock.unlock
+}
+def Pop: D = {
+  Lock.lock; val top = Top
+  if(top == null){ Lock.unlock; return Empty }
+  else{ val n = top.next; Top = n; val x = top.x
+        Lock.unlock; return x }
+}
+\end{scala}
+\caption{Pseudo-code for the lock-based stack example.}
+\label{fig:lock-based-stack-pseudocode}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{figure*}\small
+\begin{tikzpicture}[>= angle 90]
+%%%%% Nodes
+\draw (3,1.9) node (initNode) {$InitNode(me)$};
+\path[draw, <-] (initNode.west) -- ++(-0.6,0);
+%% Node
+\draw (initNode)++(5.4,0) node (node) {$Node_x(me,next)$};
+\path[draw, ->] (initNode) -- 
+  node[above]{\scriptsize $initNode_{?x}?t.me?next$} (node);
+\path[draw,->] (node) .. controls +(-1.4,1) and +(1.4,1) .. 
+  node[above] {\scriptsize
+   $\begin{align} getNext?t.me.next\\ getValue_x?t.me \end{align}$} (node);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Threads
+\draw (0,0) node (thread) {$Thread(me)$};
+\path[draw, <-] (thread.north) -- ++(0,0.6);
+%% Push_1
+\draw (thread)++(3.5,0) node (push1) {$Push_1^x(me)$};
+\path[draw, ->] (thread) -- 
+  node[above]{\scriptsize $\tau$} (push1);
+%% Push_2^x
+\draw (push1)++(3.5,0) node (push2) {$Push_2^x(me)$};
+\path[draw, ->] (push1) -- node[above]{\scriptsize $lock.me$} (push2);
+%% Push_3^x
+\draw (push2)++(3.5,0) node (push3) {$Push_3^x(me)$};
+\path[draw, ->] (push2) -- node[above]{\scriptsize $push_{?x}.me$} (push3);
+%% Push_4
+\draw (push3)++(0,-1.7) node (push4) {$Push_4(me,top)$};
+\path[draw, ->] (push3) -- 
+  node[right]{\scriptsize $getTop.me?top$}
+ (push4);
+%% Push_5
+\draw (push4)++(-3.5,0) node (push5) {$Push_5(me,n)$};
+\path[draw, ->] (push4) -- node[above]{\scriptsize $\begin{align}initNode_x.\\me?n.top\end{align}$} (push5);
+%% Push_6
+\draw (push5)++(-3.5,0) node (push6) {$Push_6(me)$};
+\path[draw, ->] (push5) -- node[above]{\scriptsize $setTop.me.n$} (push6);
+\path[draw, ->] (push6) -- node[above,sloped]{\scriptsize $unlock.me$}
+(thread);
+%%%%%%%%%% Pop
+\draw (thread)++(0.2,-4.8) node (pop1) {$Pop_1(me)$};
+\path[draw, ->] (thread) -- 
+  node[above,sloped]{\scriptsize $\tau$} (pop1);
+%% Pop_2
+\draw (pop1)++(3.3,0) node (pop2) {$Pop_2(me)$};
+\path[draw, ->] (pop1) -- node[above]{\scriptsize $lock.me$} (pop2);
+%% Pop_3
+\draw (pop2)++(3.5,0) node (pop3) {$Pop_3(me,top)$};
+\path[draw, ->] (pop2) -- 
+  node[above]{\scriptsize 
+    $\begin{align}getTop.me?top\\(top \ne null)\end{align}$}
+ (pop3);
+%% Pop_4
+\draw (pop3)++(4.0,0) node (pop4) {$Pop_4(me,n)$};
+\path[draw, ->] (pop3) -- node[above]{\scriptsize $getNext.me.top?n$} (pop4);
+%% Pop_5
+\draw (pop4)++(0,1.7) node (pop5) {$Pop_5(me,n)$};
+\path[draw, ->] (pop4) -- node[right]{\scriptsize $setTop.me.n$} (pop5);
+%% Pop_6
+\draw (pop5)++(-4.0,0) node (pop6) {$Pop_6^x(me,n)$};
+\path[draw, ->] (pop5) -- node[above]{\scriptsize $getValue_{?x}.me.top$} (pop6);
+%% Pop_7^x
+\draw (pop6)++(-3.5,0) node (pop7) {$Pop_7^x(me)$};
+\path[draw, ->] (pop6) -- node[above]{\scriptsize $pop_x.me$} (pop7);
+\path[draw, ->] (pop7) -- 
+  node[below,sloped]{\scriptsize $unlock.me$} (thread);
+%%%%% Pop, empty
+%% Pop_3'
+\draw (pop2)++(0.0,-1.7) node (pop3') {$Pop_3'(me)$};
+\path[draw, ->] (pop2) -- node[right]{\scriptsize $getTop.me.null$} (pop3');
+%% Pop_4'
+\draw (pop3')++(-3.5,0) node (pop4') {$Pop_4'(me)$};
+\path[draw, ->] (pop3') -- node[above]{\scriptsize $popEmpty.me$} (pop4');
+\path[draw,->] ([xshift = 10] pop4'.north west) .. controls +(-0.4,1.5)  .. 
+  node[above,sloped,very near end] {\scriptsize $unlock.me$} (thread);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Lock
+\draw (pop4')++(0.9,-1.9) node (lock) {$Lock$};
+\path[draw, <-] (lock.west) -- ++(-0.6,0);
+%% Lock'
+\draw (lock)++(3.0,0) node (lock') {$Lock'(t)$};
+\path[draw, ->] (lock) .. controls +(1.5,0.5) ..
+  node[above]{\scriptsize $lock?t$} (lock');
+\path[draw, ->] (lock') .. controls +(-1.5,-0.5) ..
+  node[below]{\scriptsize $unlock.t$} (lock);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Top
+\draw (lock')++(4.5,0) node (top) {$Top(top)$};
+\path[draw, <-] (top.west) -- node[above] {\scriptsize $[top := null]$}
+   ++(-1.6,0);
+\path[draw,->] (top) .. controls +(-1.4,1) and +(1.4,1) .. 
+  node[above] {\scriptsize $getTop?t.top$} (top);
+\path[draw,->] (top.north east) .. controls +(1,1.4) and +(1,-1.4) .. 
+  node[right] {\scriptsize 
+    $\begin{align}setTop?t?top' \\{} [top := top'] \end{align}$} 
+  (top.south east);
+\end{tikzpicture}
+\caption{State machines for the lock-based stack example.}
+\label{fig:lock-based-stack}
+\end{figure*}
+
+
+Figure~\ref{fig:lock-based-stack} gives a more interesting example,
+representing a lock-based stack that uses a linked list internally;
+pseudo-code is in Figure~\ref{fig:lock-based-stack-pseudocode}.  Here the
+components come from two families: nodes that make up the linked list; and
+threads that operate on the stack.  
+
+Each node hold a piece of data~$x$, of some type~$D$, and a reference~$next$
+to the next node in the linked list, which might be a special value~$null$.
+In the state machine, each node has an identity~$me$ from the type of node
+identities; $x$ is treated as part of the control state and of the
+initialising channel, since it does not correspond to the identity of a
+component.  We assume that the type~$D$ of data is finite (in
+Section~\ref{sec:examples} we use techniques from data independence to justify
+the use of finite types of data within our models).
+
+The node can be initialised by a thread.  Subsequently, a thread
+can get the value of $next$ or~$x$.  In other similar examples, there might be
+additional transitions corresponding to a thread updating the $next$
+reference.
+
+The datatype uses a lock, and a variable $Top$ that points to the top node on
+the stack.  Each thread performs push and pop operations upon the stack: the
+exact details aren't important here.  In the state machine, each thread
+component has an identity~$me$ from a type of thread identities.  It
+synchronises with node components to initialise them, or to get their $next$
+or~$x$ fields.  It synchronises with the lock to lock and unlock the datatype,
+and with $Top$ to get or set a reference to the current top node in the stack.
+It performs additional \emph{signal} events, $push_x.me$, $pop_x.me$ and
+$popEmpty.me$ to indicate the operation it is performing and the result; we
+later use these to capture the property that the system implements a stack.
+In each state, each thread holds its own identity; in some states, it also
+holds a reference to a node.
+
+The fixed processes are the lock and $Top$.  For the purposes of the formal
+development, it is simplest to assume a single fixed process, which we can
+take as the product of the two parts.  The state machine for the lock allows
+the datatype to be locked and unlocked.  The state machine for $Top$ stores a
+reference to the current top node, which threads may get or set.  In
+Section~\ref{sec:examples} we describe how to extend the fixed processes to
+include a watchdog part that checks that the system does indeed implement a
+stack.
+

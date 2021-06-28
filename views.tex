@@ -1,19 +1,39 @@
 
 \section{Choosing the views}
 
-Say that a process state $c$ \emph{references} a component~$cpt$ if
-$cpt.id \in c.\params$. 
+We say that a process state $cpt$ \emph{references} a component~$c$ if
+$c.id \in cpt.\params$. 
 
-Consider a system state $s = (\fixed, \cpt)$, and a particular component $cpt
-\in \cpts$.  Let $\cpts' \subseteq \cpt$ be all components in $\cpt$ that are
-referenced by $cpt$ (including $cpt$ itself).  We define the corresponding
-view to be $(\fixed, \cpt')$.  Write this as $view(s, cpt)$.  Say that $cpt$
-is the principal component of this view.  Given a view~$v$, we write
-$v.\princ$ for its principal component.
+Consider a system state $(\fixed, \cpt)$, and a particular component $cpt
+\in \cpts$.  We write $view((\fixed, \cpt), cpt)$ for the view of the system
+state from~$cpt$, i.e.~the fixed processes and all the processes to which
+$cpt$ has a reference (including itself):
+%
+%% Let $\cpts' = \set{c \in \cpts | c.id \in cpt.params}$ be all
+%% components in $\cpts$ that are referenced by $cpt$ (including $cpt$ itself).
+%% We define the corresponding view to be $(\fixed, \cpt')$.  Write this as
+%% $view(s, cpt)$.  
+%
+\begin{eqnarray*}
+view((\fixed, \cpt), cpt) & = &
+  (\fixed, \set{c \in \cpts | c.id \in cpt.\params}).
+\end{eqnarray*}
+%
+We say that $cpt$ is the \emph{principal component} of this view, and the
+other components are \emph{secondary components}.  Given a view~$v$, we write
+$v.\princ$ for its principal component.  In examples, we will write the
+principal as the first component. 
 
-Example.
-
-In the running example, the initial views are of the form
+In the example of Figure~\ref{fig:lock-based-stack}, the views will include,
+for instance,
+\[
+(Lock'(t), Top(n); Push_4(t, n), Node_x(n, n'))
+\]
+for $t \in ThreadID$, $n \in NodeID$, $n' \in NodeID \union \set{null}$,
+and~$x \in D$.  Here $t$ has a reference to~$n$, so $n$ is included as a
+secondary component.
+%
+The initial views are of the form
 \[
 \begin{array}{ll}
 (Lock, Top(null); Thread(t)) &  \mbox{for $t \in ThreadID$}, \\
@@ -21,18 +41,16 @@ In the running example, the initial views are of the form
 \end{array}
 \]
 
-%% Given a state $s = (\fixed, \cpt)$, let $\cpt' \subseteq
-%% \cpt$ be all components with identity referenced by some server in
-%% $\fixed$.  We define a corresponding view to be $(\fixed, \cpt')$.
-%% Write this as $srvView(s)$.
-
-Let 
+We let $\V$ be the set of all views of system states:
+%
 \begin{eqnarray*}
 \V & = & 
   \set{view(s, cpt) | s \in \S, cpt \in s.\cpt}. %%  \union 
   %% \set{srvView(s) | s \in \S}.
 \end{eqnarray*}
-
+%
+In the following, we use the word ``view'' for a member of~$\V$, and the word
+``substate'' (or just ``state'') for a general substate of an element of~$\S$.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -42,20 +60,28 @@ The critical thing, then, is, given $V \subseteq \V$, to calculate
 \begin{eqnarray*}
 aPost(V) & = & \alpha(post(\gamma(V)))
 \end{eqnarray*}
-efficiently.  It's enough to consider new such views, i.e.~those not in~$V$.
-In fact, we slightly over-estimate $aPost(V)$.
+efficiently.  In fact, we slightly over-estimate $aPost(V)$.
 
-%% For the moment, let's consider only active components.  \framebox{Extend} to
-%% active servers.
+%% We are seeking to identify views~$v$ such that
+%% \[
+%% \gamma(V) \ni s \trans{a} s' \sqge_\V v
+%% \]
+%% for some $s$, $s'$, $a$.
 
-We are seeking to identify views~$v$ such that
-\[
-\gamma(V) \ni s \trans{a} s' \sqge_\V v
-\]
-for some $s$, $s'$, $a$.
-%% We begin by describing how to capture the concrete transitions corresponding
-%% to the abstract transitions; we then describe how to extract the new
-%% views. 
+In order to motivate our approach, we present example abstract transitions
+from the lock-based stack example, and how they can be extracted from
+corresponding concrete transitions of components.  We use these examples to
+define how we calculate (an over-approximation of) the abstract post-image of
+the current set of views.  We then prove that our approach is correct.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Active-process transitions}
+
+We start by considering abstract transitions triggered by an active process
+(either an active principal or an active fixed process) within the view.  We
+call these \emph{active-process transitions}.
 
 Informally, our approach will be as follows.  We will start with a view $v \in
 V$ whose principal component is an active component, and consider the
@@ -63,20 +89,13 @@ transitions of that active component.  In some cases we will need to expand
 the view to include additional relevant components: either those components
 that synchronise on the transition, or to which the principal component
 obtains a reference.  We assume that there is at most one such new component.
-%% We will call such an expanded view a \emph{concretization}.  
-When we expand a
-view in this way, we do so only in a way that is compatible with the set $V$
-of views.
+When we expand a view in this way, we do so only in a way that is compatible
+with the set $V$ of views.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\framebox{Active server transitions}
 
-
-\textbf{Tactic:} Work with example of lock-based stack from the previous
-paper.  Consider a few concrete transitions of this model, and how they are
-reflected by abstract transitions.  Present the concretizations that the
-algorithm considers.  Then show this is adequate.
-
-Each abstract transition will be built from a \emph{view transition}, i.e.~a
+%
+Each such transition will be built from a \emph{view transition}, i.e.~a
 transition formed by considering a single view in isolation, as captured by
 the following definition.
 %
@@ -89,15 +108,21 @@ v'$ such that
   in its alphabet;
 
 \item $v'$ is the same as~$v$ except replacing every (fixed or component)
-  process~$p$ that has $e$ in its alphabet with a process $p'$ such that $p
-  \trans{e} p'$.  (Note that $v'$ might not be a view if the principal
-  component gains or loses a reference as a result of the transition; we
-  discuss this further below.)
+  process~$p$ that has $e$ in its alphabet with a process $p'$ such that \( p
+  \trans{e} p' \).  This synchronises all relevant processes on the
+  transition. (Note that $v'$ might not be a view if the principal component
+  gains or loses a reference as a result of the transition; we discuss this
+  further below.)
 \end{itemize}
 \end{definition}
 
-Consider a transition where a thread pushing~$x$ performs a $lock$ event.
-This can be captured by the view transition
+\impNote{\texttt{system.transitions} generates a representation of the view
+  transitions, together with the identity of another process that synchronises
+  on the transition (where applicable).}
+
+For example, consider a transition of the lock-based stack where a thread
+pushing~$x$ performs a $lock$ event.  This can be captured by the view
+transition
 %
 \begin{eqnarray}
 (Lock, Top(null); Push^x_1(t)) & \trans{lock.t} & 
@@ -106,20 +131,19 @@ This can be captured by the view transition
 \end{eqnarray}
 %
 for $t \in ThreadID$.  
-
+%
 In this particular case, the view transition is also an abstract transition.
 Each of the pre- and post-states in this transition is a view, with $t$ as the
 principal component.  Further, the pre-view contains all components with
 $lock.t$ in their alphabet, so in a concrete state, no other process would
 synchronise on the transition.  Hence this abstract transition can be found by
-looking just at the view transitions of the pre-view.
-%%  processes in the former view.  We call
-%% this an \emph{active-component transition}: the active component in the
-%% transition is the principal component of the pre- and post-states.
+looking just at the view transitions of the pre-view.  However, this isn't
+always the case.
 
-The abstract transition in the previous paragraphs was fairly straightforward,
-as all the relevant component states were in the initial view.  This might not
-always be the case.  Consider a transition where a pushing thread reads a
+%% The abstract transition in the previous paragraphs was fairly straightforward,
+%% as all the relevant component states were in the initial view.  This might not
+%% always be the case.  
+Consider a transition where a pushing thread reads a
 value $n \ne null$ from $Top$.  This can be partially described by the
 view transition
 \begin{eqnarray*}
@@ -139,10 +163,9 @@ node, giving transitions such as
 \end{equation}
 %
 We call the above an \emph{extended transition}: we have extended the pre-view
-(with~$t$ as the principal component) by adding the component for~$n$.  In the
-interests of simplicity, we make the assumption that it is necessary to add at
-most one such node, i.e.~the principal component obtains at most one new
-reference in each transition.
+by adding the component for~$n$.  In the interests of simplicity, we make the
+assumption that it is necessary to add at most one such node, i.e.~the
+principal component obtains at most one new reference in each transition.
 
 We can generate such transitions by considering the view transitions; then
 extending the pre-state to add a compatible state of a component to which the
@@ -151,18 +174,24 @@ of each such component to the post state (here the added component does not
 synchronise on the transition so remains in the same state).  The following
 definitions describe what we mean by \emph{compatible}.
 
-\begin{definition}
-Let $V$ be a set of views.
-\begin{itemize}
-\item An extended view~$v$ is \emph{strongly consistent} if there exists a
-  state $s \in \gamma(V)$ such that $v \sqle s$. \framebox{Needed?}
+\impNote{The implementation represents a transition that requires an
+  additional component by a \texttt{TransitionTemplate}.}
 
-\item A component state~$c$ is \emph{strongly compatible} with a view~$v \in
-  V$ (with $c.\id$ disjoint from the identities in~$v$) if $v \uplus c$ is
-  strongly consistent.
-\end{itemize}
+\begin{definition}
+Let $V$ be a set of views.  A component state~$c$ is \emph{strongly
+  compatible} with a view~$v \in V$ (with $c.\id$ disjoint from the identities
+in~$v$) if there exists a state $s \in \gamma(V)$ such that $v \uplus c \sqle
+s$.
 \end{definition}
 
+%% \begin{itemize}
+%% \item An extended view~$v$ is \emph{strongly consistent} if there exists a
+%%   state $s \in \gamma(V)$ such that $v \sqle s$. \framebox{Needed?}
+
+%% \item A component state~$c$ is \emph{strongly compatible} with a view~$v \in
+%%   V$ (with $c.\id$ disjoint from the identities in~$v$) if $v \uplus c$ is
+%%   strongly consistent.
+%% \end{itemize}
 
 The above condition is rather expensive to check, so we weaken it slightly. 
 %
@@ -177,7 +206,7 @@ view $v \in V$ if:
   reference to a component of~$v$, then $v$ and~$v_c$ agree on that component.
 
 \item\label{item:compatible-2} If any component $c'$ of~$v$ has a reference
-  to~$c$ then $V$ contains a view $v'$ such that (a)~$v'.\fixed = v.fixed$,
+  to~$c$ then $V$ contains a view $v'$ such that (a)~$v'.\fixed = v.\fixed$,
   (b)~$v'.\princ = c'$, and (c)~$v'$ contains $c$.
 \end{enumerate}
 \end{definition}
@@ -192,90 +221,11 @@ and~$n''$, to satisfy clause~\ref{item:compatible-1}
   \texttt{Extendability.\linebreak[1]compatible\-With}, with
   \texttt{Extendability.isExtendable} checking the latter clause.}
 
-\begin{lemma}
-If a component state~$c$ is strongly compatible with a view~$v$, then
-$c$ is compatible with~$v$. 
-\end{lemma}
-%
-\begin{proof}
-Suppose $c$ is strongly compatible with~$v$.  Then there exists $s \in
-\gamma(V)$ such that $v \uplus c \sqle s$.  Taking $v_c = view(s, c)$
-satisfies clause~\ref{item:compatible-1} of Definition~\ref{def:compatible}.
-For each component $c'$ of~$v$ that has a reference to~$c$, taking $v' =
-view(s,c')$ satisfies clause~\ref{item:compatible-2}.
-\end{proof}
-
-The converse of the above lemma doesn't hold, informally because the views
-required for the different constraints of Definition~\ref{def:compatible}
-might come from different system states.  More concretely, consider a system
-containing just the following system states.
-%
-\begin{eqnarray*}
-s_0 & = &
-   (\fixed; Thread(T,N_1,N_2), Node_A(N_1,N_3), Node_B(N_2), Node_X(N_3)), \\
-s_1 & = &
-  (\fixed; Thread(T,N_1,N_2), Node_Y(N_1,N_3), Node_B(N_2), Node_C(N_3,N_2)), \\
-s_2 & = & 
-  (\fixed; Thread(T,N_1,N_2), Node_A(N_1,N_3), Node_X(N_2), Node_C(N_3,N_2)).
-\end{eqnarray*}
-%
-Let 
-\[
-v = (\fixed, Thread(T, N_1, N_2), Node_A(N_1, N_3), Node_B(N_2)).
-\]
-This is a view of the system, resulting from~$s_0$.  Let 
-\[
-c = Node_C(N_3,N_2).
-\]  
-Then $c$ is not strongly compatible with~$v$: there is no system state
-containing $v \uplus c$.  However, $c$ is compatible with~$v$.
-%
-Clause~\ref{item:compatible-1} of Definition~\ref{def:compatible} is satisfied
-by $(\fixed; Node_C(N_3,N_2), Node_B(N_2))$, which is a view resulting
-from~$s_1$.
-%
-And clause~\ref{item:compatible-2} is satisfied by $(\fixed; Node_A(N_1, N_3),
-Node_C(N_3,N_2))$, which is a view resulting from~$s_2$.
-
-Our implementation uses the weaker definition of compatibility, rather than
-strong compatibility.  This means that we over-estimate the abstract
-transition relation, so preserve correctness.  Our experience is that this
-approximation does not lead to false positives. 
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-%% %
-%% \begin{definition}
-%% Given a set of views $V$, we say that two substates~$c$ and~$c'$ are
-%% \emph{compatible} if (1)~$c.\fixed = c'.\fixed$; and (2)~for every
-%% identity~$id$ such that $c.\cpt$ and $c'.\cpt$ both have a component with
-%% identity~$id$, the corresponding component states are equal.
-%% %% ; and (3) the combined substate $(c.\fixed,
-%% %% c.\cpt \union c'.\cpt)$ is consistent with~$V$.
-%% \end{definition}
-%% %
-%% Note that the conditions mean that the combined state  $(c.\fixed,
-%% c.\cpt \union c'.\cpt)$ makes sense.
-%% %
-
-%% Note that there's a bit of an abstraction here.  We don't check that the whole
-%% of the combined state $(c.\fixed, c.\cpt \union c'.\cpt)$ is compatible
-%% with~$V$: there might be other views of it that aren't in~$V$.
-
-%% ***** Is this right?  Consider a getNext transition. 
-
-
-%% \begin{definition}
-%% Given a set of views $V$, we say that a component state~$cpt$ is
-%% \emph{compatible} with a view~$v$ if there is a view $v' \in V$ that is
-%% compatible with~$v$ and for which $cpt$ is the principal component state.
-%% %
-%% In this case, we define the extension of $v$ with $cpt$ to be $(v.\fixed,
-%% v.\cpt \union \set{cpt})$, i.e.~we add~$cpt$ to~$v$.
-%% \end{definition}
-%
+We show in Section~\ref{sec:views-correctness} that strong compatibility
+implies compatibility.  Our implementation uses the weaker definition of
+compatibility; this means that we over-estimate the abstract transition
+relation, so preserve correctness.  Our experience is that this approximation
+does not lead to false positives.
 
 In the transitions we have considered so far, the pre-view contains every
 component that synchronises on the transition.  This won't always be true.  In
@@ -292,45 +242,60 @@ necessarily be in the $InitNode$ state).
 \end{alignc}
 \label{trans:initNode}
 \end{equation}
-The above transition also illustrates that the post-concretization might be
-strictly larger than the corresponding view of the principal component: the
-thread loses the reference to~$n$ in the transition.  It is straightforward to
-remove components that are no longer referenced in order to obtain the
-relevant view.  
+The above transition also illustrates that the post-state might be strictly
+larger than the corresponding view of the principal component: the thread
+loses the reference to~$n$ in the transition.  It is straightforward to remove
+components that are no longer referenced in order to obtain the relevant view.
 
-The transition~(\ref{trans:initNode}) produces a new view for
-another component involved in the transition, here the view $(Lock'(t),
-Top(n); Node_x(n'', n), Node_y(n, n'))$ of~$n''$.  In this case, the node $n$
-to which $n''$ acquires a reference was included in the transition, because
-the thread~$t$ had a reference to it in the pre-state.  In all realistic
-examples we are aware of, a similar fact is true: a secondary component
-obtains a reference only to other components to which the primary component
-previously had a reference.  Thus our implementation assumes this condition.
+%% The transition~(\ref{trans:initNode}) produces a new view for
+%% another component involved in the transition, here the view $(Lock'(t),
+%% Top(n); Node_x(n'', n), Node_y(n, n'))$ of~$n''$.  In this case, the node $n$
+%% to which $n''$ acquires a reference was included in the transition, because
+%% the thread~$t$ had a reference to it in the pre-state.  In all realistic
+%% examples we are aware of, a similar fact is true: a secondary component
+%% obtains a reference only to other components to which the primary component
+%% previously had a reference.  Thus our implementation assumes this
+%% condition.
 
 
-%% However, if this is not the case, it is necessary
-%% to extend the pre-state by adding each compatible state of the relevant
-%% component.  (\textbf{note} not in prototype?).
+The following definition summarises this subsection.
+%
+\begin{definition}
+\label{def:active-process-transition}
+Given a set $V$ of views, we build the active-process transitions as follows.
+For each $v \in V$, we consider each view transition $v \trans{e} v'$ of~$v$.
+We consider each identity $id$, not matching the identity of a component
+of~$v$ and such that
+%
+\begin{itemize}
+\item $e$ is in the alphabet of~$id$; or
 
-%% Another example.  A thread sets the \SCALA{next} reference of a node~$n$ to
-%% point to another node~$n'$.  This can be captured by the following
-%% transition (where we elide the fixed components). 
-%% \[
-%% \begin{align}
-%% (\ldots; Thread(t, n, n'), Node_x(n, null), Node_y(n', n'')) 
-%%   \trans{setNext.t.n.n'} \\
-%% \qquad (\ldots; Thread'(t, n, n'), Node_x(n, n'), Node_y(n', n'')).
-%% \end{align}
-%% \]
-%% Note that this transition produces a new view where the node~$n$ is the
-%% principal component and has a reference to~$n'$.
+\item $v.princ$ acquires a reference to~$id$ in the transition
+\end{itemize}
+%
+For each such~$id$ (by assumption, there is at most one), we find all
+component states~$c$ with identity~$id$ that are compatible with~$v$
+(Definition~\ref{def:compatible}).  We form all pre-states $pre$ by extending
+$v$ with each such component state~$c$.  We form corresponding post-states
+$post$ by extending $v'$ with the corresponding post-states, i.e.\ each
+state~$c'$ such that $c \trans{e} c'$ if $e$ is in the alphabet of~$id$; or
+otherwise the same states~$c$.  Thus we form extended transitions $pre
+\trans{e} post$ including all the relevant component states.  Finally, we
+extract from $post$ the view~$v'$ of the principal component, to create an
+abstract transition $v \trans{e} v'$.
+\end{definition}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Induced transitions}
 
 So far, we have considered only transitions that produce a view such that the
-primary component synchronised on the transition.  However, such a transition
-can induce other abstract transitions.  For example the
-transition~(\ref{trans:lock}) changes the state of a fixed process, and so
-induces corresponding changes in other views; for example, it induces abstract
-transitions concerning another thread or a node in its initial state:
+primary component synchronised on the transition.  \framebox{?} active server
+transitions?  However, such a transition can induce other abstract
+transitions.  For example the transition~(\ref{trans:lock}) changes the state
+of a fixed process, and so induces corresponding changes in other views; for
+example, it induces abstract transitions concerning another thread or a node
+in its initial state:
 %
 \begin{eqnarray*}
 (Lock, Top(null); Thread(t')) & \trans{lock.t} & 
@@ -341,17 +306,36 @@ transitions concerning another thread or a node in its initial state:
 %
 for $t' \in ThreadID$ with $t' \ne t$, and for $n \in NodeID$.
 
-
-
-
 \begin{definition}
-Consider an abstract transition~$pre \trans{e} post$, and a view $v$ such that
-$v$ and $pre$ are accordant, but $pre$ does not contain the principal
-component of~$v$ \framebox{?}.  Then the abstract transition \emph{induces} a
-new transition $v \trans{e} v'$ where $v'.\fixed = post.\fixed$, and
-$v'.\cpts$ is the same as $v.\cpts$ except each component that changes state
-in the transition is replaced by the corresponding component of~$post$.
+\label{def:induced-transition}
+Consider an extended transition~$pre \trans{e} post$, and a view $v$ such that
+$v$ and $pre$ are accordant.  Then the abstract transition \emph{induces} a
+new transition $v \trans{} v'$ where
+\begin{itemize}
+\item $v'.\fixed = post.\fixed$;
+
+\item If $v.\princ$ is in $pre$ then $v'.\princ$ is the corresponding
+  component in~$post$; otherwise $v'.princ = v.princ$;
+
+\item The secondary components of~$v'$ are the components referenced by
+  $v'.princ$, either from $post$ if the component is part of the transition,
+  or otherwise from~$v$.
+\end{itemize}
 \end{definition}
+
+Note that if $pre.princ = v.princ$ then the induced transition is identical to
+the original transition.  An obvious optimisation avoids recreating this
+transition. 
+
+For example, the  transition~(\ref{trans:initNode}) induces a transition
+\[
+\begin{align}
+(Lock'(t), Top(n); InitNode(n'')) \trans{} \\
+\qquad  (Lock'(t), Top(n); Node_x(n'', n), Node_y(n, n')),
+\end{align}
+\]
+where $n''$ evolves as in (\ref{trans:initNode}), and acquires a reference
+to~$n$. 
 
 As another example, consider a different datatype (e.g.~a queue) where a
 thread~$t$ sets the \SCALA{next} reference of a node~$n$ to point to another
@@ -363,7 +347,7 @@ node~$n'$.  This can be captured by a transition such as the following.
 \qquad (\fixed'; Thread'(t, n, n'), Node_x(n, n'), Node_y(n', n'')).
 \end{align}
 \]
-If some other node (or thread) can have a reference to the node~$n$, this can
+If some other node (or thread) has a reference to the node~$n$, this can
 induce new transitions, such as the following (assuming the pre-state is
 in~$V$). 
 \[
@@ -374,78 +358,198 @@ in~$V$).
 \]
 
 
+%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\subsection{Correctness}
+\label{sec:views-correctness}
+
+
+The following definition summarises how we calculate the abstract transitions.
+
 \begin{definition}
-Given a set $V$ of views, we build the abstract transitions as follows.  For
-each $v \in V$, we consider each transition $v \trans{e} v'$ that is possible
-for $v.princ$ and any other process in~$v$ that has~$e$ in its alphabet.  We
-consider each identity $id$, not matching the identity of a component of~$v$
-and such that
+Given a set $V$ of views, we build each active-process extended transition
+$pre \trans{e} post$, and the corresponding abstract transitions $v \trans{e}
+v'$, as in Definition~\ref{def:active-process-transition}.
 %
-\begin{itemize}
-\item $e$ is in the alphabet of~$id$; or
-
-\item $v.princ$ acquires a reference to~$id$ in the transition
-\end{itemize}
-%
-For each such~$id$, we find all component states~$c$ with identity~$id$ that
-are compatible with~$v$.  We form all pre-states $pre$ by extending $v$ with
-each such component state~$c$.  We form corresponding post-states $post$ by
-extending $v'$ with the corresponding post-states, i.e.\ each state~$c'$ such
-that $c \trans{e} c'$ if $e$ is in the alphabet of~$id$; or otherwise the same
-states~$c$.  Thus we form extended transitions $pre \trans{e} post$ including
-all the relevant component states.
-
+We then also create every transition that $pre \trans{e} post$ induces on a
+view in~$V$. 
 \end{definition}
 
-
-
-
-
-
-
-active/passive principals, and also servers.  This is probably just an
-optimisation. 
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Implementation notes}
-
-To support the above, we need to record the following about transitions.
+We start by comparing the properties of compatibility and strong compatibility.
 %
-\begin{itemize}
+\begin{lemma}
+\label{lem:strong-compatible-implies-compatible}
+If a component state~$c$ is strongly compatible with a view~$v$, then
+$c$ is compatible with~$v$. 
+\end{lemma}
+%
+\begin{proof}
+Suppose $c$ is strongly compatible with~$v$.  Then there exists $s \in
+\gamma(V)$ such that $v \uplus c \sqle s$.  Taking $v_c = view(s, c)$
+satisfies clause~\ref{item:compatible-1} of Definition~\ref{def:compatible}:
+note that $v_c \sqle_\V s$ so $v_c \in V$.  For each component $c'$ of~$v$
+that has a reference to~$c$, taking $v' = view(s,c')$ satisfies
+clause~\ref{item:compatible-2}: again $v' \in V$.
+\end{proof}
+
+The converse of the above lemma doesn't hold, informally because the views
+required for the different constraints of Definition~\ref{def:compatible}
+might come from different system states.  More concretely, consider a system
+containing just the following system states.
+%
+\begin{eqnarray*}
+s_0 & = &
+   (\fixed; Th(t,n_1,n_2), N_A(n_1,n_3), N_B(n_2), N_X(n_3), N_D(n_4,n_3)), \\
+s_1 & = &
+  (\fixed; Th(t,n_1,n_2), N_X(n_1), N_B(n_2), N_C(n_3,n_2), N_D(n_4,n_1)),\\
+s_2 & = & 
+  (\fixed; Th(t,n_1,n_2), N_A(n_1,n_3), N_X(n_2), N_C(n_3,n_2), N_D(n_4,n_2)).
+\end{eqnarray*}
+%
+Let $V = \alpha(\set{s_0,s_1,s_2})$ be all views of these states.  Let
+\[
+v = (\fixed; Th(t,n_1,n_2), N_A(n_1, n_3), N_B(n_2)).
+\]
+This is a view of the system, resulting from~$s_0$.  Let 
+\[
+c = N_C(n_3,n_2).
+\]  
+Then  $c$ is compatible with~$v$.
+%
+Clause~\ref{item:compatible-1} of Definition~\ref{def:compatible} is satisfied
+by $(\fixed; N_C(n_3,n_2), N_B(n_2))$, which is a view resulting
+from~$s_1$.
+%
+And clause~\ref{item:compatible-2} is satisfied for $c' = N_A(n_1,n_3)$ by
+$(\fixed; N_A(n_1, n_3), N_C(n_3,n_2))$, which is a view resulting
+from~$s_2$. 
+%%  And it is satisfied for $c' = N_D(n_4,n_1,n_3)$ by $(\fixed;
+%% N_D(n_4,n_1,n_3), N_Y(n_1,n_3),N_C(n_3,n_2)
+
+
+However $c$ is not strongly compatible with~$v$.  Suppose we have \( v \uplus
+c \sqle s \) for some $s \in \gamma(V)$.  Then $s$ is necessarily of the form
+\[
+\begin{align}
+(\fixed, Th(t,n_1,n_2), N_A(n_1, n_3), N_B(n_2), N_C(n_3,n_2), c_4) \\
+\qquad \mbox{where $c_4 = N_D(n_4,x)$ for some $x$.}
+\end{align}
+\]
+But no value of~$x$ works: in each case, we have that $view(s, c_4) \nin
+\gamma(V)$, since in no system state does $n_4$ have a reference to a
+component in state~$N_A$, $N_B$ or~$N_C$.
+
+%% : there is no system state
+%% containing $v \uplus c$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{lemma}
+Every abstract transition from~$V$ is generated by the above procedure.
+\end{lemma}
+
+\begin{proof} 
+Consider an abstract transition
+\[
+\gamma(V) \ni s \trans{e} s' \sqge_{\V} v'.
+\]
+We need to show that we generate $v'$ as part of the process described above.
+Let  $princ = v'.\princ$.
+We perform a case analysis.
+%
+\begin{enumerate}
 \item
-Given a component state $cpt$ and an event~$a$, a function to return the set
-of $cpt'$ such that $cpt \trans{a} cpt'$.
+Suppose $princ$ is the active component in the concrete transition
+\( {s \trans{e} s'} \).
+Let $v = view(princ, s)$.  
+%
+Suppose another component is necessary for the transition, as in
+Definition~\ref{def:active-process-transition}, i.e.~either another component
+synchronises on the transition, or the principal gains a reference, and
+suppose that component has state~$c$ in~$s$.  Then $c$ is strongly compatible
+with~$v$, since $v \uplus c \sqle s \in \gamma(V)$.  Hence $c$ is compatible
+with~$v$, by Lemma~\ref{lem:strong-compatible-implies-compatible}.
+%
+Let $pre = v \uplus c$, or let $pre = v$ if no additional component is
+necessary; and let $post$ be the corresponding states in~$s'$.  Then the
+technique of Definition~\ref{def:active-process-transition} builds the
+transition \( pre \trans{e} post \).  Finally, the principal's view of $post$
+is extracted; this equals~$v'$ by construction, as required. 
+
+%% \item 
+%% Now suppose the transition involves an active fixed process, and suppose
+%% $princ$ synchronises on the transition.  Let $v = view(princ, s)$.  This case
+%% is then  identical to the previous case.
 
 \item
-Given a state $srvs$ of the servers and an event~$a$, a function to return the
-set of~$srv'$ such that $srv \trans{a} srv'$.
-\end{itemize}
+Now suppose the transition has an active component other than princ.  Let $pre
+\trans{e} post$ be the corresponding extended transition, built as in
+Definition~\ref{def:active-process-transition}.  Let $v = view(princ, s)$.
+Then necessarily $v$ and $pre$ are accordant, since they are both substates
+of~$s$.  Then the transition $v \trans{} v'$ is induced, as in
+Definition~\ref{def:induced-transition}.
 
-We also need to store the following about $V$.
-\begin{itemize}
 \item
-Given a concretization $conc \in \gamma(V)$ and a component state~$c$ for a
-component identity not in $conc$, test whether $conc \uplus \set{c} \in
-\gamma(V)$.  (For constructing the transitions of concretizations.)
-
-\item (For item~\ref{case:view-principal-changes}.) Given a concretization
-  $conc \in \gamma(V)$ and a component identity~$id$ not in $conc$, find all
-  states~$c$ for~$id$ such that $conc \uplus \set{c} \in \gamma(V)$.  In
-  nearly all cases, at least one process in $conc$ will hold the
-  reference~$id$.  If a server holds such a reference, iterate over all
-  relevant server views to find compatible states.  If a component holds such
-  a reference, iterate over all views of that component to find all compatible
-  states. 
+Finally suppose the transition has an active fixed process.  Consider an
+arbitrary corresponding view transition, and the corresponding extended
+transition $pre \trans{e} post$.  This case is then identical to the previous
+case.
+\end{enumerate}
+\end{proof}
 
 
+\impNote{The fact that point~3 covers all transitions with active fixed
+  processes suggests that we could be more restrictive about generating such
+  transitions in Definition~\ref{def:active-process-transition}.}
 
-Given a state $srvs$ of the servers, and states of some of the components
-referenced by $srvs$, all compatible states of other such components.
 
-\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\textbf{Note:} Now consider the changes that have to be made with singleRef,
+both for correctness and to avoid false positives. 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% \subsection{Implementation notes}
+
+%% To support the above, we need to record the following about transitions.
+%% %
+%% \begin{itemize}
+%% \item
+%% Given a component state $cpt$ and an event~$a$, a function to return the set
+%% of $cpt'$ such that $cpt \trans{a} cpt'$.
+
+%% \item
+%% Given a state $srvs$ of the servers and an event~$a$, a function to return the
+%% set of~$srv'$ such that $srv \trans{a} srv'$.
+%% \end{itemize}
+
+%% We also need to store the following about $V$.
+%% \begin{itemize}
+%% \item
+%% Given a concretization $conc \in \gamma(V)$ and a component state~$c$ for a
+%% component identity not in $conc$, test whether $conc \uplus \set{c} \in
+%% \gamma(V)$.  (For constructing the transitions of concretizations.)
+
+%% \item (For item~\ref{case:view-principal-changes}.) Given a concretization
+%%   $conc \in \gamma(V)$ and a component identity~$id$ not in $conc$, find all
+%%   states~$c$ for~$id$ such that $conc \uplus \set{c} \in \gamma(V)$.  In
+%%   nearly all cases, at least one process in $conc$ will hold the
+%%   reference~$id$.  If a server holds such a reference, iterate over all
+%%   relevant server views to find compatible states.  If a component holds such
+%%   a reference, iterate over all views of that component to find all compatible
+%%   states. 
+
+
+
+%% Given a state $srvs$ of the servers, and states of some of the components
+%% referenced by $srvs$, all compatible states of other such components.
+
+%% \end{itemize}
