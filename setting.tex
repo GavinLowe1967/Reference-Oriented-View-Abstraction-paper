@@ -1,3 +1,9 @@
+\def\Node{Nd}
+\def\Lock{Lk}
+\def\Head{Hd}
+\def\Last{Lt}
+\def\Con{C}
+\def\InitNode{InitNd}
 
 \section{Setting}
 
@@ -8,7 +14,9 @@ is a vector of parameters.  The first parameter of a component is always its
 own identity.  Other parameters are references to other components.  For the
 fixed process, all parameters are references to components.  Write $p.cs$ and
 $p.\params$ for the control state and parameters of process state~$p$.  If $p$
-is a component state, write $p.\id$ for its identity.
+is a component state, write $p.\id$ for its identity.  For a vector of
+parameters~$ps$, we write $ps(i)$ for the $i$th entry (counting from~1), so
+for a component~$p$,\, $p.\params(1) = p.\id$.
   
 %%  We say that $s$ \emph{references} $id'$ if $id'$ is a parameter of~$s$
 %% other than its own identity.
@@ -57,135 +65,36 @@ principal to be the synchronising passive component if any, or arbitrary
 otherwise.  Assume that process acquires at more one reference from the
 transition ??? 
 
-\framebox{Change to lock-based queue}
 
-Example
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{figure}
 \begin{scala}
 class Node(x: D, next: Node)
-var Top: Node = null; val Lock = new Lock
-def Push(x: D) = {
-  Lock.lock; val top = Top; val n = new Node(x, top)
-  Top = n; Lock.unlock
+var head = new Node(v£$_0$£, null); var last = head
+val Lock = new Lock
+def enqueue(x: D) = {
+  Lock.lock; val l = last; val n = new Node(x, null) 
+  l.next = n; last = n; Lock.unlock
 }
-def Pop: D = {
-  Lock.lock; val top = Top
-  if(top == null){ Lock.unlock; return Empty }
-  else{ val n = top.next; Top = n; val x = top.x
+def dequeue: D = {
+  Lock.lock; val h = head; val l = last
+  if(h == l){ Lock.unlock; return Empty }
+  else{ val n = h.next; head = n; val x = n.x
         Lock.unlock; return x }
 }
 \end{scala}
-\caption{Pseudo-code for the lock-based stack example.}
-\label{fig:lock-based-stack-pseudocode}
+\caption{Pseudo-code for the lock-based queue example.}
+\label{fig:lock-based-queue-pseudocode}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\begin{figure*}\small
-\begin{tikzpicture}[>= angle 90]
-%%%%% Nodes
-\draw (3,1.9) node (initNode) {$InitNode(me)$};
-\path[draw, <-] (initNode.west) -- ++(-0.6,0);
-%% Node
-\draw (initNode)++(5.4,0) node (node) {$Node_x(me,next)$};
-\path[draw, ->] (initNode) -- 
-  node[above]{\scriptsize $initNode_{?x}?t.me?next$} (node);
-\path[draw,->] (node) .. controls +(-1.4,1) and +(1.4,1) .. 
-  node[above] {\scriptsize
-   $\begin{align} getNext?t.me.next\\ getValue_x?t.me \end{align}$} (node);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Threads
-\draw (0,0) node (thread) {$Thread(me)$};
-\path[draw, <-] (thread.north) -- ++(0,0.6);
-%% Push_1
-\draw (thread)++(3.5,0) node (push1) {$Push_1^x(me)$};
-\path[draw, ->] (thread) -- 
-  node[above]{\scriptsize $\tau$} (push1);
-%% Push_2^x
-\draw (push1)++(3.5,0) node (push2) {$Push_2^x(me)$};
-\path[draw, ->] (push1) -- node[above]{\scriptsize $lock.me$} (push2);
-%% Push_3^x
-\draw (push2)++(3.5,0) node (push3) {$Push_3^x(me)$};
-\path[draw, ->] (push2) -- node[above]{\scriptsize $push_{?x}.me$} (push3);
-%% Push_4
-\draw (push3)++(0,-1.7) node (push4) {$Push_4(me,top)$};
-\path[draw, ->] (push3) -- 
-  node[right]{\scriptsize $getTop.me?top$}
- (push4);
-%% Push_5
-\draw (push4)++(-3.5,0) node (push5) {$Push_5(me,n)$};
-\path[draw, ->] (push4) -- node[above]{\scriptsize $\begin{align}initNode_x.\\me?n.top\end{align}$} (push5);
-%% Push_6
-\draw (push5)++(-3.5,0) node (push6) {$Push_6(me)$};
-\path[draw, ->] (push5) -- node[above]{\scriptsize $setTop.me.n$} (push6);
-\path[draw, ->] (push6) -- node[above,sloped]{\scriptsize $unlock.me$}
-(thread);
-%%%%%%%%%% Pop
-\draw (thread)++(0.2,-4.8) node (pop1) {$Pop_1(me)$};
-\path[draw, ->] (thread) -- 
-  node[above,sloped]{\scriptsize $\tau$} (pop1);
-%% Pop_2
-\draw (pop1)++(3.3,0) node (pop2) {$Pop_2(me)$};
-\path[draw, ->] (pop1) -- node[above]{\scriptsize $lock.me$} (pop2);
-%% Pop_3
-\draw (pop2)++(3.5,0) node (pop3) {$Pop_3(me,top)$};
-\path[draw, ->] (pop2) -- 
-  node[above]{\scriptsize 
-    $\begin{align}getTop.me?top\\(top \ne null)\end{align}$}
- (pop3);
-%% Pop_4
-\draw (pop3)++(4.0,0) node (pop4) {$Pop_4(me,n)$};
-\path[draw, ->] (pop3) -- node[above]{\scriptsize $getNext.me.top?n$} (pop4);
-%% Pop_5
-\draw (pop4)++(0,1.7) node (pop5) {$Pop_5(me,n)$};
-\path[draw, ->] (pop4) -- node[right]{\scriptsize $setTop.me.n$} (pop5);
-%% Pop_6
-\draw (pop5)++(-4.0,0) node (pop6) {$Pop_6^x(me,n)$};
-\path[draw, ->] (pop5) -- node[above]{\scriptsize $getValue_{?x}.me.top$} (pop6);
-%% Pop_7^x
-\draw (pop6)++(-3.5,0) node (pop7) {$Pop_7^x(me)$};
-\path[draw, ->] (pop6) -- node[above]{\scriptsize $pop_x.me$} (pop7);
-\path[draw, ->] (pop7) -- 
-  node[below,sloped]{\scriptsize $unlock.me$} (thread);
-%%%%% Pop, empty
-%% Pop_3'
-\draw (pop2)++(0.0,-1.7) node (pop3') {$Pop_3'(me)$};
-\path[draw, ->] (pop2) -- node[right]{\scriptsize $getTop.me.null$} (pop3');
-%% Pop_4'
-\draw (pop3')++(-3.5,0) node (pop4') {$Pop_4'(me)$};
-\path[draw, ->] (pop3') -- node[above]{\scriptsize $popEmpty.me$} (pop4');
-\path[draw,->] ([xshift = 10] pop4'.north west) .. controls +(-0.4,1.5)  .. 
-  node[above,sloped,very near end] {\scriptsize $unlock.me$} (thread);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Lock
-\draw (pop4')++(0.9,-1.9) node (lock) {$Lock$};
-\path[draw, <-] (lock.west) -- ++(-0.6,0);
-%% Lock'
-\draw (lock)++(3.0,0) node (lock') {$Lock'(t)$};
-\path[draw, ->] (lock) .. controls +(1.5,0.5) ..
-  node[above]{\scriptsize $lock?t$} (lock');
-\path[draw, ->] (lock') .. controls +(-1.5,-0.5) ..
-  node[below]{\scriptsize $unlock.t$} (lock);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Top
-\draw (lock')++(4.5,0) node (top) {$Top(top)$};
-\path[draw, <-] (top.west) -- node[above] {\scriptsize $[top := null]$}
-   ++(-1.6,0);
-\path[draw,->] (top) .. controls +(-1.4,1) and +(1.4,1) .. 
-  node[above] {\scriptsize $getTop?t.top$} (top);
-\path[draw,->] (top.north east) .. controls +(1,1.4) and +(1,-1.4) .. 
-  node[right] {\scriptsize 
-    $\begin{align}setTop?t?top' \\{} [top := top'] \end{align}$} 
-  (top.south east);
-\end{tikzpicture}
-\caption{State machines for the lock-based stack example.}
-\label{fig:lock-based-stack}
-\end{figure*}
-
-
-Figure~\ref{fig:lock-based-stack} gives a more interesting example,
-representing a lock-based stack that uses a linked list internally;
-pseudo-code is in Figure~\ref{fig:lock-based-stack-pseudocode}.  Here the
+Figure~\ref{fig:lock-based-queue} gives a more interesting example,
+representing a lock-based queue that uses a linked list internally;
+pseudo-code is in Figure~\ref{fig:lock-based-queue-pseudocode}.  Here the
 components come from two families: nodes that make up the linked list; and
-threads that operate on the stack.  
+threads that operate on the queue.  
 
 Each node hold a piece of data~$x$, of some type~$D$, and a reference~$next$
 to the next node in the linked list, which might be a special value~$null$.
@@ -196,30 +105,318 @@ component.  We assume that the type~$D$ of data is finite (in
 Section~\ref{sec:examples} we use techniques from data independence to justify
 the use of finite types of data within our models).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{figure}[htbp]\small
+\begin{tikzpicture}[>= angle 90]
+%%%%% Nodes
+\draw (3,2.6) node (initNode) {$\InitNode(me)$};
+\path[draw, <-] (initNode.west) -- ++(-0.6,0);
+%% Node
+\draw (initNode)++(5.4,0) node (node) {$\Node_x(me,next)$};
+\path[draw, ->] (initNode) -- 
+  node[above]{\scriptsize $initNode_{?x}?t.me?next$} (node);
+\path[draw,->] (node) .. controls +(-1.4,1) and +(1.4,1) .. 
+  node[above] {\scriptsize
+   $\begin{align} getNext?t.me.next\\ getValue_x?t.me \end{align}$} (node);
+\path[draw,->] (node) .. controls +(-1.4,-1) and +(1.4,-1) .. 
+  node[below] {\scriptsize
+   $\begin{array}{c} setNext?t.me.next'\\ {[next := next']} \end{array}$} (node);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Threads
+\draw (0,0) node (thread) {$Thread(me)$};
+\path[draw, <-] (thread.north) -- ++(0,0.6);
+%% Enqueue_1
+\draw (thread)++(3.5,0) node (enq1) {$Enq_1^x(me)$};
+\path[draw, ->] (thread) -- 
+  node[above]{\scriptsize $\tau$} (enq1);
+%% Enqueue_2^x
+\draw (enq1)++(3.5,0) node (enq2) {$Enq_2^x(me)$};
+\path[draw, ->] (enq1) -- node[above]{\scriptsize $lock.me$} (enq2);
+%% Enqueue_3^x
+\draw (enq2)++(4.0,0) node (enq3) {$Enq_3^x(me,l)$};
+\path[draw, ->] (enq2) -- node[above]{\scriptsize $getLast.me?l$} (enq3);
+%% Enqueue_4
+\draw (enq3)++(0,-1.7) node (enq4) {$Enq_4(me,l,n)$};
+\path[draw, ->] (enq3) -- 
+  node[right]{\scriptsize $\begin{align}initNode_x.\\me?n.null\end{align}$}
+ (enq4);
+%% Enqueue_5
+\draw (enq4)++(-4.0,0) node (enq5) {$Enq_5(me,n)$};
+\path[draw, ->] (enq4) -- node[above]{\scriptsize $setNext.me.l.n$} (enq5);
+%% Enqueue_6
+\draw (enq5)++(-3.5,0) node (enq6) {$Enq_6(me)$};
+\path[draw, ->] (enq5) -- node[above]{\scriptsize $setLast.me.n$} (enq6);
+\path[draw, ->] (enq6) -- node[above,sloped]{\scriptsize $unlock.me$}
+(thread);
+%%%%%%%%%% Deq
+\draw (thread)++(0.2,-4.8) node (deq1) {$Deq_1(me)$};
+\path[draw, ->] (thread) -- 
+  node[above,sloped]{\scriptsize $\tau$} (deq1);
+%% Deq_2
+\draw (deq1)++(2.8,0) node (deq2) {$Deq_2(me)$};
+\path[draw, ->] (deq1) -- node[above]{\scriptsize $lock.me$} (deq2);
+%% Deq_3
+\draw (deq2)++(4.0,0) node (deq3) {$Deq_3(me,h)$};
+\path[draw, ->] (deq2) -- node[above]{\scriptsize $getHead.me?h$} (deq3);
+%% Deq_4
+\draw (deq3)++(4.0,0) node (deq4) {$Deq_4(me,h)$};
+\path[draw, ->] (deq3) -- node[above]{
+  \scriptsize $\begin{array}{c} getLast.me?l \\ (h \ne l) \end{array}$} (deq4);
+%% Deq_5
+\draw (deq4)++(0,1.7) node (deq5) {$Deq_5(me,n)$};
+\path[draw, ->] (deq4) -- node[right]{
+  \scriptsize $\begin{align} getNext. \\ me.h?n \end{align}$} (deq5);
+%% Deq_6
+\draw (deq5)++(-4.0,0) node (deq6) {$Deq_6(me,n)$};
+\path[draw, ->] (deq5) -- node[above]{\scriptsize $setHead.me.n$} (deq6);
+%% Deq_7^x
+\draw (deq6)++(-4.0,0) node (deq7) {$Deq_7^x(me)$};
+\path[draw, ->] (deq6) -- node[above]{\scriptsize  $getValue_{?x}.me.n$} (deq7);
+\path[draw, ->] (deq7) -- 
+  node[below,sloped]{\scriptsize $unlock.me$} (thread);
+%%%%% Deq, empty
+%% Deq_3'
+\draw (deq3)++(-7.0,-1.7) node (deq3') {$Deq_3'(me)$};
+\path[draw, ->] (deq3) -- node[sloped,below]{
+  \scriptsize $getLast.me.null$} (deq3');
+%% %% Deq_4'
+%% \draw (deq3')++(-3.5,0) node (deq4') {$Deq_4'(me)$};
+%% \path[draw, ->] (deq3') -- node[above]{\scriptsize $popEmpty.me$} (deq4');
+\path[draw,->] ([xshift = 10] deq3'.north west) .. controls +(-0.4,1.5)  .. 
+  node[above,sloped,very near end] {\scriptsize $unlock.me$} (thread);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Lock
+\draw (deq3')++(0.0,-1.8) node (lock) {$\Lock$};
+\path[draw, <-] (lock.west) -- ++(-0.5,0);
+%% Lock'
+\draw (lock)++(2.6,0) node (lock') {$\Lock'(t)$};
+\path[draw, ->] (lock) .. controls +(1.3,0.5) ..
+  node[above]{\scriptsize $lock?t$} (lock');
+\path[draw, ->] (lock') .. controls +(-1.3,-0.5) ..
+  node[below]{\scriptsize $unlock.t$} (lock);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Head
+\draw (lock')++(4.3,0) node (head) {$\Head(h)$};
+\path[draw, <-] (head.west) -- node[above] {\scriptsize $[h := null]$}
+   ++(-1.5,0);
+\path[draw,->] (head) .. controls +(-1.4,1) and +(1.4,1) .. 
+  node[above] {\scriptsize $getHead?t.h$} (head);
+\path[draw,->] (head) .. controls +(-1.4,-1) and +(1.4,-1) .. 
+  node[below] {\scriptsize 
+    $\begin{array}{c} setHead?t?h' \; [h := h'] \end{array}$} 
+  (head);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Tail
+\draw (head)++(4.5,0) node (last) {$\Last(l)$};
+\path[draw, <-] (last.west) -- node[above] {\scriptsize $[l := null]$}
+   ++(-1.5,0);
+\path[draw,->] (last) .. controls +(-1.4,1) and +(1.4,1) .. 
+  node[above] {\scriptsize $getLast?t.l$} (last);
+\path[draw,->] (last) .. controls +(-1.4,-1) and +(1.4,-1) .. 
+  node[below] {\scriptsize 
+    $\begin{array}{c} setLast?t?l' \; [l := l'] \end{array}$} 
+  (last);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Constructor
+\draw (lock)++(0.0,-2.3) node (const) {$\Con_0$};
+% Const'
+\draw (const)++(4.0,0) node (const') {$\Con_1(n)$};
+\path[draw,->] (const) -- node[above] {\scriptsize $initNode_{v_0}.C?n.null$}
+  (const');
+% Const''
+\draw (const')++(3.8,0) node (const'') {$\Con_2(n)$};
+\path[draw,->] (const') -- node[above] {\scriptsize $setHead.C.n$}
+  (const'');
+% Const'''
+\draw (const'')++(3.5,0) node (const''') {$\Con_3$};
+\path[draw,->] (const'') -- node[above] {\scriptsize $setLast.C.n$}
+  (const''');
+\end{tikzpicture}
+\caption{State machines for the lock-based queue example.}
+\label{fig:lock-based-queue}
+\end{figure}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% \subsection*{Lock-based stack}
+
+%% Example
+
+%% \begin{figure}
+%% \begin{scala}
+%% class Node(x: D, next: Node)
+%% var Top: Node = null; val Lock = new Lock
+%% def Push(x: D) = {
+%%   Lock.lock; val top = Top; val n = new Node(x, top)
+%%   Top = n; Lock.unlock
+%% }
+%% def Pop: D = {
+%%   Lock.lock; val top = Top
+%%   if(top == null){ Lock.unlock; return Empty }
+%%   else{ val n = top.next; Top = n; val x = top.x
+%%         Lock.unlock; return x }
+%% }
+%% \end{scala}
+%% \caption{Pseudo-code for the lock-based stack example.}
+%% \label{fig:lock-based-stack-pseudocode}
+%% \end{figure}
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% \begin{figure*}\small
+%% \begin{tikzpicture}[>= angle 90]
+%% %%%%% Nodes
+%% \draw (3,1.9) node (initNode) {$InitNode(me)$};
+%% \path[draw, <-] (initNode.west) -- ++(-0.6,0);
+%% %% Node
+%% \draw (initNode)++(5.4,0) node (node) {$Node_x(me,next)$};
+%% \path[draw, ->] (initNode) -- 
+%%   node[above]{\scriptsize $initNode_{?x}?t.me?next$} (node);
+%% \path[draw,->] (node) .. controls +(-1.4,1) and +(1.4,1) .. 
+%%   node[above] {\scriptsize
+%%    $\begin{align} getNext?t.me.next\\ getValue_x?t.me \end{align}$} (node);
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Threads
+%% \draw (0,0) node (thread) {$Thread(me)$};
+%% \path[draw, <-] (thread.north) -- ++(0,0.6);
+%% %% Push_1
+%% \draw (thread)++(3.5,0) node (push1) {$Push_1^x(me)$};
+%% \path[draw, ->] (thread) -- 
+%%   node[above]{\scriptsize $\tau$} (push1);
+%% %% Push_2^x
+%% \draw (push1)++(3.5,0) node (push2) {$Push_2^x(me)$};
+%% \path[draw, ->] (push1) -- node[above]{\scriptsize $lock.me$} (push2);
+%% %% Push_3^x
+%% \draw (push2)++(3.5,0) node (push3) {$Push_3^x(me)$};
+%% \path[draw, ->] (push2) -- node[above]{\scriptsize $push_{?x}.me$} (push3);
+%% %% Push_4
+%% \draw (push3)++(0,-1.7) node (push4) {$Push_4(me,top)$};
+%% \path[draw, ->] (push3) -- 
+%%   node[right]{\scriptsize $getTop.me?top$}
+%%  (push4);
+%% %% Push_5
+%% \draw (push4)++(-3.5,0) node (push5) {$Push_5(me,n)$};
+%% \path[draw, ->] (push4) -- node[above]{\scriptsize $\begin{align}initNode_x.\\me?n.top\end{align}$} (push5);
+%% %% Push_6
+%% \draw (push5)++(-3.5,0) node (push6) {$Push_6(me)$};
+%% \path[draw, ->] (push5) -- node[above]{\scriptsize $setTop.me.n$} (push6);
+%% \path[draw, ->] (push6) -- node[above,sloped]{\scriptsize $unlock.me$}
+%% (thread);
+%% %%%%%%%%%% Pop
+%% \draw (thread)++(0.2,-4.8) node (pop1) {$Pop_1(me)$};
+%% \path[draw, ->] (thread) -- 
+%%   node[above,sloped]{\scriptsize $\tau$} (pop1);
+%% %% Pop_2
+%% \draw (pop1)++(3.3,0) node (pop2) {$Pop_2(me)$};
+%% \path[draw, ->] (pop1) -- node[above]{\scriptsize $lock.me$} (pop2);
+%% %% Pop_3
+%% \draw (pop2)++(3.5,0) node (pop3) {$Pop_3(me,top)$};
+%% \path[draw, ->] (pop2) -- 
+%%   node[above]{\scriptsize 
+%%     $\begin{align}getTop.me?top\\(top \ne null)\end{align}$}
+%%  (pop3);
+%% %% Pop_4
+%% \draw (pop3)++(4.0,0) node (pop4) {$Pop_4(me,n)$};
+%% \path[draw, ->] (pop3) -- node[above]{\scriptsize $getNext.me.top?n$} (pop4);
+%% %% Pop_5
+%% \draw (pop4)++(0,1.7) node (pop5) {$Pop_5(me,n)$};
+%% \path[draw, ->] (pop4) -- node[right]{\scriptsize $setTop.me.n$} (pop5);
+%% %% Pop_6
+%% \draw (pop5)++(-4.0,0) node (pop6) {$Pop_6^x(me,n)$};
+%% \path[draw, ->] (pop5) -- node[above]{\scriptsize $getValue_{?x}.me.top$} (pop6);
+%% %% Pop_7^x
+%% \draw (pop6)++(-3.5,0) node (pop7) {$Pop_7^x(me)$};
+%% \path[draw, ->] (pop6) -- node[above]{\scriptsize $pop_x.me$} (pop7);
+%% \path[draw, ->] (pop7) -- 
+%%   node[below,sloped]{\scriptsize $unlock.me$} (thread);
+%% %%%%% Pop, empty
+%% %% Pop_3'
+%% \draw (pop2)++(0.0,-1.7) node (pop3') {$Pop_3'(me)$};
+%% \path[draw, ->] (pop2) -- node[right]{\scriptsize $getTop.me.null$} (pop3');
+%% %% Pop_4'
+%% \draw (pop3')++(-3.5,0) node (pop4') {$Pop_4'(me)$};
+%% \path[draw, ->] (pop3') -- node[above]{\scriptsize $popEmpty.me$} (pop4');
+%% \path[draw,->] ([xshift = 10] pop4'.north west) .. controls +(-0.4,1.5)  .. 
+%%   node[above,sloped,very near end] {\scriptsize $unlock.me$} (thread);
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Lock
+%% \draw (pop4')++(0.9,-1.9) node (lock) {$Lock$};
+%% \path[draw, <-] (lock.west) -- ++(-0.6,0);
+%% %% Lock'
+%% \draw (lock)++(3.0,0) node (lock') {$Lock'(t)$};
+%% \path[draw, ->] (lock) .. controls +(1.5,0.5) ..
+%%   node[above]{\scriptsize $lock?t$} (lock');
+%% \path[draw, ->] (lock') .. controls +(-1.5,-0.5) ..
+%%   node[below]{\scriptsize $unlock.t$} (lock);
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Top
+%% \draw (lock')++(4.5,0) node (top) {$Top(top)$};
+%% \path[draw, <-] (top.west) -- node[above] {\scriptsize $[top := null]$}
+%%    ++(-1.6,0);
+%% \path[draw,->] (top) .. controls +(-1.4,1) and +(1.4,1) .. 
+%%   node[above] {\scriptsize $getTop?t.top$} (top);
+%% \path[draw,->] (top.north east) .. controls +(1,1.4) and +(1,-1.4) .. 
+%%   node[right] {\scriptsize 
+%%     $\begin{align}setTop?t?top' \\{} [top := top'] \end{align}$} 
+%%   (top.south east);
+%% \end{tikzpicture}
+%% \caption{State machines for the lock-based stack example.}
+%% \label{fig:lock-based-stack}
+%% \end{figure*}
+
+
+
 The node can be initialised by a thread.  Subsequently, a thread
 can get the value of $next$ or~$x$.  In other similar examples, there might be
 additional transitions corresponding to a thread updating the $next$
 reference.
 
-The datatype uses a lock, and a variable $Top$ that points to the top node on
-the stack.  Each thread performs push and pop operations upon the stack: the
+The datatype uses a lock.  It uses a dummy header node (with initial
+value~$\sm{v}_0$) for the linked list, referenced by a variable~\SCALA{head};
+and it uses a variable \SCALA{last} to point to the last node in the list.
+Further, it uses a \emph{constructor} which initialises the dummy header node,
+and sets \SCALA{head} and \SCALA{tail} to point to it.
+
+
+%The datatype uses a lock, and a variable $Top$ that points to the top node on
+%the stack.  
+Each thread performs enqueue and dequeue operations upon the stack: the
 exact details aren't important here.  In the state machine, each thread
 component has an identity~$me$ from a type of thread identities.  It
 synchronises with node components to initialise them, or to get their $next$
 or~$x$ fields.  It synchronises with the lock to lock and unlock the datatype,
 and with $Top$ to get or set a reference to the current top node in the stack.
-It performs additional \emph{signal} events, $push_x.me$, $pop_x.me$ and
-$popEmpty.me$ to indicate the operation it is performing and the result; we
-later use these to capture the property that the system implements a stack.
+%% It performs additional \emph{signal} events, $push_x.me$, $pop_x.me$ and
+%% $popEmpty.me$ to indicate the operation it is performing and the result; we
+%% later use these to capture the property that the system implements a stack.
 In each state, each thread holds its own identity; in some states, it also
-holds a reference to a node.
+holds a reference to one or two nodes.
 
-The fixed processes are the lock and $Top$.  For the purposes of the formal
-development, it is simplest to assume a single fixed process, which we can
-take as the product of the two parts.  The state machine for the lock allows
-the datatype to be locked and unlocked.  The state machine for $Top$ stores a
-reference to the current top node, which threads may get or set.  In
-Section~\ref{sec:examples} we describe how to extend the fixed processes to
-include a watchdog part that checks that the system does indeed implement a
-stack.
+The fixed processes are: the lock process $\Lock$; $\Head$, $\Last$ modelling
+the \SCALA{head} and \SCALA{tail} variables; and the constructor
+process~$\Con$.
+%% For the purposes of the formal development, it is simplest to assume a
+%% single fixed process, which we can take as the product of the two parts.
+The state machine for the lock allows the datatype to be locked and unlocked.
+The state machines for $Head$ and $Last$ store a reference to the relevant
+node, which threads may get or set.  The constructor initialises the dummy
+header node, and sets $Head$ and $Tail$ to point to it; it is an active
+process.  In Section~\ref{sec:examples} we describe how to extend the fixed
+processes to include a watchdog part that checks that the system does indeed
+implement a stack.
 
+List of assumptions:
+%
+\begin{enumerate}
+\item Each concrete transition involves exactly one active process (either a
+component or fixed process).
+
+\item Each transition involves at most one passive process.
+
+\item Each transition can involve any number of passive fixed processes.
+
+\item For each transition there is at most one component to which the
+active component doesn't initially hold a reference, and that either
+synchronises on the transition, or to which the active component gains a
+reference.
+
+\item\label{assump:secondary-cpts-new-refs}
+In each transition, a passive component can gain a reference only to a
+component to which the active process initially holds a reference.
+\end{enumerate}
