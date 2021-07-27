@@ -1,0 +1,125 @@
+\section{Views capturing a single reference}
+\label{sec:singleRef}
+
+In this section we consider the variation on our basic scheme, where each view
+contains the state of only one secondary component referenced by the principal
+(or none, if the principal references no component other than itself).  We
+call these \emph{restricted views}, and use the term \emph{full views} for the
+earlier version where we recorded all components referenced by the principal. 
+
+We start by formalising restricted views.  Consider a system state~$s$, and a
+particular component $cpt \in s.\cpts$.
+\begin{itemize}
+\item 
+Suppose $cpt$ has no reference to another component.  Then we write $view(s,
+cpt)$ for the view of the system state from~$cpt$, i.e.~the fixed processes
+and $cpt$ itself.
+\begin{eqnarray*}
+view(s, cpt) & = &  (s.\fixed, \set{cpt}).
+\end{eqnarray*}
+This is the same as in the case of full views.
+
+\item
+Now suppose $cpt$ has $k > 1$ parameters (recall that its first parameter is
+its own identity).  Suppose $1 < i \le k$ and $cpt.\params(i)$ is not a
+distinguished value.  Then we write $view(s, cpt, i)$ for the view containing
+$cpt$ and the state of the component referenced by its $i$th parameter.
+\[
+\begin{align}
+view(s, cpt, i)  =  (s.\fixed, \set{cpt, c})\\ 
+\mbox{where $c \in s.\cpt$ is such that $c.\id = cpt.\params(i)$}.
+\end{align}
+\]
+\end{itemize}
+%
+We then define the set of views~$\V$ to be all such values:
+%
+\begin{eqnarray*}
+\V & = & 
+  \begin{align}
+  \set{ view(s, cpt) \| s \in \S, cpt \in s.\cpts, \\
+    \qquad   \mbox{$cpt$ has no reference to another component}} \union\null
+  \\
+  \set{ view(s, cpt, i) \| s \in \S, cpt \in s.\cpts, 
+    1 < i \le length(cpt.\params), \\
+    \qquad \mbox{$cpt.\params$ is not distinguished} }.
+  \end{align}
+\end{eqnarray*}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Building abstract transitions}
+
+We now consider how to adapt the constructions from the previous section so as
+to build abstract transitions from such views.  Some of the changes we outline
+are necessary for correctness; others are necessary to avoid false positives.
+
+%% Note that if a transition represents a synchronisation between the principal
+%% and a secondary component, we generate that only from the view that includes
+%% that secondary component. (?)
+
+
+We adapt the definition of a view transition to specify that if the principal
+synchronises with one of the components that it references, then that
+secondary component must be included in the view transition.  The definition
+of an extended transition is then as earlier. 
+%
+\begin{definition}
+We define a \emph{view transition} of view~$v$ to be a transition $v \trans{e}
+v'$ such that
+%
+\begin{itemize}
+\item $v$ has either an active principal or an active fixed process with $e$
+  in its alphabet;
+
+\item If $v.\princ$ has a reference to a component with $e$ in its alphabet,
+  then $v$ contains such a component;
+
+\item $v'$ is the same as~$v$ except replacing every (fixed or component)
+  process~$p$ that has $e$ in its alphabet with a process $p'$ such that \( p
+  \trans{e} p' \).
+\end{itemize}
+
+Given a view transition $v \trans{e} v'$, we define the corresponding
+\emph{extended transitions} $pre \trans{e} post$ as in
+Definition~\ref{def:active-process-transition}.
+\end{definition}
+
+For example, consider the following view transition using full
+views, as in the previous section.
+%
+\begin{equation}
+\begin{align}
+\label{trans:setNext}
+(fixed; Th(t, n, n'), Nd_x(n, null), Nd_y(n', n'')) 
+  \trans{setNext.t.n.n'} \\
+\qquad (fixed'; Th'(t, n, n'), Nd_x(n, n'), Nd_y(n', n'')).
+\end{align}
+\end{equation}
+%
+When we use restricted views, we would include the following view transition,
+which contains the node~$n$ that synchronises on the transition. 
+%
+\begin{equation}
+\label{trans:setNext-singleRef}
+\begin{align}
+(fixed; Th(t, n, n'), Nd_x(n, null)) 
+  \trans{setNext.t.n.n'} \\
+\qquad (fixed'; Th'(t, n, n'), Nd_x(n, n')).
+\end{align}
+\end{equation}
+%
+However we do not consider a view transition from
+\[\mit
+(fixed; Th(t, n, n'), Nd_y(n', n'')), 
+\]
+because that view does not contain a component for~$n$, which synchronises on
+the transition.  Instead, such transitions are induced: see
+Section~\ref{sec:singleRef-induced}. 
+
+\begin{impNote}
+\texttt{system.transitions} suppresses transitions that involve a
+synchronisation with a missing component.
+\end{impNote}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

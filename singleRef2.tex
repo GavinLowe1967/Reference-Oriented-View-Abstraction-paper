@@ -1,0 +1,377 @@
+\subsection{Induced transitions}
+\label{sec:singleRef-induced}
+
+We now consider how to adapt the definition of induced transitions.  This
+subsumes a fairly obvious adaptation of
+Definition~\ref{def:induced-transition}.  For example, the
+transition~(\ref{trans:setNext-singleRef}) induces a transition on
+\[\mit
+v = (fixed; Thread(t, n, n'), Node_y(n', n''))
+\]
+to produce
+\[\mit
+v' = (fixed'; Thread'(t, n, n'), Node_y(n', n'')). 
+\]
+Thus omitting view transitions from~$v$ (as discussed above) does not prevent
+us producing~$v'$. 
+
+However, it turns out that we need to:
+\begin{enumerate}
+\item consider another form of induced transitions, concerning secondary
+  components from the extended transition; and
+
+\item enforce extra conditions for induced transitions, in order to avoid our
+  algorithm discovering certain false errors.
+\end{enumerate}
+%
+We discuss point~1 next; we then give our revised definition of induced
+transitions; and then justify the extra conditions mentioned in point~2.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{Secondary induced transitions}
+\label{ssec:c2Refs}
+
+%% However, we need an additional mechanism to capture some extra views that
+%% would otherwise be missed, in particular  where a secondary
+%% component gains a reference to another component.  
+
+Consider again the transition (\ref{trans:setNext}).  When using full views,
+this would induce a transition from 
+\[\mit
+v = (fixed,  Node_x(n, null))\]
+to produce
+\[\mit
+v' = (fixed';  Node_x(n, n'), Node_y(n', n'')).
+\]
+However, with restricted views and a direct adaptation of
+Definition~\ref{def:induced-transition}, no corresponding transition
+producing~$v'$ via transition~(\ref{trans:setNext-singleRef}) is induced,
+because the component state $Node_y(n', n'')$ is in neither~$v$ nor the
+post-state of the view transition.
+
+Instead, we consider the effect of the 
+transition~(\ref{trans:setNext-singleRef}) on views such as
+\[\mit
+v = (fixed; Node_y(n', n''), Node_z(n'', n''')).
+\]
+We identify that the secondary component in the  transition gains a
+reference to the principal node of~$v$, and use that to deduce the induced
+transition. 
+
+More generally, consider an extended transition $pre \trans{e} post$ and a
+view $v$ such that $v$ and $pre$ are accordant, and such that a secondary
+component~$c$ of~$post$ has a reference to $v.\princ$.  Then (subject to some
+extra conditions that we describe below) the transition induces a new
+transition producing
+\[\mit
+v' = (post.\fixed, \set{c, v.\princ}).
+\]
+
+\begin{impNote}
+At present this is done in EffectOn, via c2Refs. 
+\end{impNote}
+
+\begin{improve}
+I don't think this is the
+best way.  I think that we want to separately record that for every view
+\[\mit 
+(\fixed; Thread(t, n, n'), Node_y(n', n''))
+\]
+we generate the view~$v'$ (for all $y$ and~$n''$).  More generally, if a
+secondary component changes state, and gains a reference to a missing
+secondary component, then we create an appropriate record.
+\end{improve}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{Definition of induced transitions}
+
+We now adapt Definition~\ref{def:induced-transition} to describe how
+transitions are induced for restricted views.  We justify conditions~(b)
+and~(c) of the following definition in Sections~\ref{ssec:cross-refs}
+and~\ref{ssec:missing-common}, respectively.  The first form of induced
+transition is analogous to Definition~\ref{def:induced-transition} (the only
+change is in clause~\ref{induce-clause-3}).  The second form is as discussed
+in Section~\ref{ssec:c2Refs}.
+%
+\begin{definition}
+\label{def:induced-transition-singleRef}
+Consider an extended transition~$pre \trans{e} post$, and a view $v \in V$
+such that:
+%
+\begin{enumerate}
+\item[(a)] $v$ and $pre$ are accordant;
+
+\item[(b)] If a component $c$ of $pre$ has a reference
+  to a component~$c'$ of~$v$, or vice versa, then $V$ also contains the view
+\begin{eqnarray*}
+v_\cross & = & (pre.\fixed, \set{c, c'});
+\end{eqnarray*}
+
+\item[(c)] If the principals of~$pre$ and~$v$ both have a reference to the
+  same missing component, say with identity $id$, then there is some
+  component~$c$ with identity~$id$ such that $V$ contains each of
+\[
+(pre.\fixed, \set{pre.\princ, c}) \quad\mbox{and}\quad 
+(v.\fixed, \set{v.\princ, c})
+\]
+(recall $pre.\fixed = v.\fixed$ here).
+\end{enumerate}
+%
+Then the transition \emph{induces} a new
+transition $v \trans{} v'$ where
+\begin{enumerate}
+\item $v'.\fixed = post.\fixed$.
+
+\item If $v.\princ$ is in $pre$ then $v'.\princ$ is the corresponding
+  component in~$post$; otherwise $v'.\princ = v.\princ$.
+
+\item\label{induce-clause-3} If $v'.\princ$ has no reference to another
+  component, then $v'$ has no secondary component.  Otherwise the secondary
+  component of~$v'$ is a component referenced by $v'.princ$, either from
+  $post$ if the component is part of the transition, or otherwise from~$v$, if
+  such a component exists.  If $v'.\princ$ references only components not in
+  either $post$ or $v$, then no new transition is induced.
+\end{enumerate}
+%
+Further, if a secondary component~$c$ of~$post$ has a reference to $v.\princ$,
+then the transition induces a new transition producing
+\[\mit
+v' = (post.\fixed, \set{c, v.\princ}).
+\]
+\end{definition}
+
+\begin{improve}
+Can we reduce the number of combinations we have to consider?
+At present we don't support Optimisation~\ref{opt:avoid-induced} with reduced
+views: it's not sound for some reason.  Work out why.  It might be due to the
+use of c2Refs.
+\end{improve}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{Compatible cross references}
+\label{ssec:cross-refs}
+
+We now justify condition~(b) from
+Definition~\ref{def:induced-transition-singleRef}, that if a component~$c$
+of~$pre$ has a reference to a component~$c'$ of~$v$, or vice versa, then $V$
+must also contain the view
+\begin{eqnarray*}
+v_\cross & = & (pre.\fixed, \set{c, c'}).
+\end{eqnarray*} 
+In effect, this requires cross references between $c$ and~$pre$ to be
+represented by other views.  If $c$ and $pre$ are views of the same system
+state, then the view $v_X$ will also be a view of that state; hence requiring
+it is sound.
+%
+We give two examples to show why not requiring the compatibility of cross
+references can lead to the discovery of false errors. 
+
+Consider the following transition for the lock-based queue.
+\[
+\begin{align}
+(fixed(t, n_1, n_1); Enq_5(t, n_1, n_2), Nd_B(n_2, null)) 
+  \trans{setLast.t.n_2} \\
+\qquad (fixed(t, n_1, n_2); Enq_6(t), Nd_B(n_2, null)).
+\end{align}
+\]
+The thread is enqueueing~$B$ in node~$n_2$.  It has previously set $n_1$ to
+point to $n_2$, and now advances \SCALA{last} to~$n_2$.  This implies that
+$n_1$ is of the form $Nd_x(n_1, n_2)$ for some~$x$ in any corresponding system
+state.  However, consider also the view
+%
+\begin{eqnarray*}
+v & = & (fixed(t, n_1, n_1) ; Nd_A(n_1, null)).
+\end{eqnarray*}
+This is accordant with the pre-state of the transition; so, without
+condition~(b), a transition to
+\begin{eqnarray*}
+v' & = & (fixed(t, n_1, n_2) ; Nd_A(n_1, null))
+\end{eqnarray*}
+would be induced.  But now a subsequent pop would find the stack empty (since
+$n_1$ is the dummy header node and has a null next reference), despite the
+previous push.  (In section~\ref{sec:???}, we will consider this example
+together with a watchdog that expects a single~$B$ to be pushed, and signals
+an error if a thread finds the stack empty when it should contain~$B$; thus
+the watchdog would falsely signal an error here.)
+
+Condition~(b) of Definition~\ref{def:induced-transition-singleRef} would
+require the existence of a view
+\begin{eqnarray*}
+v_\cross & = & (fixed(t, n_1, n_1); Enq_5(t, n_1, n_2), Nd_A(n_1, null)),
+\end{eqnarray*}
+in order to induce the transition that produces~$v'$, because the enqueueing
+thread has a (missing) reference to~$n_1$.  However, no such view exists in
+the model (since the thread is in a state where it has just updated~$n_1$ to
+point to~$n_2$).  Hence condition~(b) prevents the false error.
+
+%%%%%
+
+The previous example showed that it is necessary to consider cross references
+from a principal.  The following example shows that it is also necessary to
+consider cross references from a secondary component.  
+
+In Section~\ref{sec:lock-based-stack} we will consider a lock-based stack.
+There, for the purposes of specification, we will ensure that if the value~$B$
+is in the stack, all values below it in the stack equal~$A$, and all values
+above it equal~$C$.  We will include a watchdog that, when $B$ is in the
+stack, does not allow a pop of~$A$.  (We justify this watchdog in
+Section~\ref{sec:lock-based-stack}.) 
+
+Consider the transition
+\[
+\begin{align}
+(Top(n_1), WD_B ; Pop(t, n_1, n_2), Nd_C(n_1, n_2)) \trans{setTop.t.n_2} \\
+\qquad  (Top(n_2), WD_B ; Pop'(t), Nd_C(n_1, n_2)) .
+\end{align}
+\]
+The thread is popping $C$ from the node~$n_1$.  It advances the
+\SCALA{top} variable to the next node~$n_2$.  Here $WD_B$ is the watchdog, in
+a state where $B$ is in the stack.  
+
+Consider also the view
+\begin{eqnarray*}
+v & = & (Top(n_1), WD_B ;  Nd_A(n_2, null)).
+\end{eqnarray*}
+This is accordant with the pre-state of the transition (and consistent with a
+system state where $n_2$ is at the bottom of the stack, below the $B$-node).
+Hence, without condition~(b), a transition to
+\begin{eqnarray*}
+v' & = & (Top(n_2), WD_B ;  Nd_A(n_2, null)).
+\end{eqnarray*}
+would be induced.  But now a subsequent pop would obtain~$A$.  At this point
+the watchdog would give an error: it does not allow $A$ to be popped when $B$
+is in the stack.
+
+With the addition of condition~(b), we would require the existence of the view
+\begin{eqnarray*}
+v_\cross & = &  (Top(n_1), WD_B ; Nd_C(n_1, n_2), Nd_A(n_2, null)).
+\end{eqnarray*}
+%
+However, no such view exists in the model: it is an invariant of the model
+that a $C$ node never points to an~$A$ node.  This prevents the false error.
+
+%% consistent with $pre$, so induces transition to
+%% \[
+%% (Top(n_2), WD_B ;  Nd_A(n_2, null)
+%% \]
+%% so subsequent pop gets A.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{Checking consistent common missing components}
+\label{ssec:missing-common}
+
+We now justify condition~(c) from
+Definition~\ref{def:induced-transition-singleRef}, that if the principals
+of~$pre$ and~$v$ both have a reference to the same missing component, say with
+identity $id$, then there must be some component~$c$ with identity~$id$ such
+that $V$ contains each of
+\[
+(pre.\fixed, \set{pre.\princ, c}) \quad\mbox{and}\quad 
+(v.\fixed, \set{v.\princ, c}).
+\]
+In other words, there is some way of consistently instantiating the missing
+component~$c$ that is common to both views. When using full views,
+$c$ would have been included in both substates, and so the check would have
+been included within Definition~\ref{def:induced-transition}.
+
+%% Consider transitions induced on view~$v$ by an extended transition $pre
+%% \trans{e} post$.  In particular, consider the case where the principals in
+%% $pre$ and $v$ both have a missing reference to the same component~$c$.  It
+%% turns out that it is necessary to check that there is a state for the missing
+%% component~$c$, consistent with both~$pre$ and~$v$.  (When using full views,
+%% $c$ would have been included in both substates, and so the check would have
+%% been included within Definition~\ref{def:induced-transition}.)
+
+
+We explain the necessity using an example from the Treiber
+Stack~\cite{treiber}, which we will discuss in Section~\ref{sec:treiber}.  In
+that section, in order to capture the correctness condition of being a stack,
+we arrange for the stack to hold at most a single node containing~$B$, and for
+all nodes below it in the stack to contain~$A$; the correctness conditions
+include that~$B$ is popped at most once.
+
+%%%%%
+
+\begin{figure}\small
+% Add a label with text #2 just above #1
+\def\addLabel#1#2{\draw #1++(0,0.5) node {#2};}
+\begin{center}
+\begin{tikzpicture}[>= angle 90]
+\draw (0,0) node[draw] (n0) {$B$}; \addLabel{(n0)}{$n_0$}
+\draw (n0) ++ (-2,0) node (top) {$Top$}; \draw[->] (top) -- (n0);
+\draw (n0) ++ (2,0) node[draw,dotted] (n1) {$\,?\,$}; \addLabel{(n1)}{$n_1$}
+\draw[->] (n0) -- (n1);
+\draw (n1) ++ (2,0) node[draw] (n2) {$A$}; \addLabel{(n2)}{$n_2$}
+\draw[->] (n1) -- (n2);
+%%% threads
+\draw (n0) ++ (1,-1.5) node[draw,circle] (t0) {$t_0$};
+\draw[->] (t0) -- (n0); \draw[->] (t0) -- (n1);
+\draw (n1) ++ (1,-1.5) node[draw,circle] (t1) {$t_1$};
+\draw[->] (t1) -- (n1); \draw[->] (t1) -- (n2);
+\end{tikzpicture}
+\end{center}
+\caption{Illustration of a scenario from the Treiber Stack.  Nodes are
+  depicted in rectangular boxes, and threads in circles.}
+\label{fig:missingCommon}
+\end{figure}
+
+%%%%%
+
+Consider the following two views
+%
+\begin{eqnarray*}
+pre & = &  (Top(n_0), WD_B; Thread_{pop,B}(t_0, n_0, n_1), Nd_B(n_0, n_1)), \\
+v & = & (Top(n_0), WD_B; Thread_{pop,B}(t_1, n_1, n_2), Nd_A(n_2, null)).
+\end{eqnarray*}
+%
+These are depicted in Figure~\ref{fig:missingCommon}.  Both principals are
+threads that are attempting to perform a pop, of nodes~$n_0$ and~$n_1$,
+respectively, each having read~$B$ from that node.  Both views have an omitted
+reference to node~$n_1$, depicted as dotted in the figure.  Both are possible
+views of the system, but they are not consistent.
+
+From the state $pre$, thread~$t_0$ can advance \SCALA{top} to~$n_1$,
+popping~$B$, in a transition that produces
+\[\mit
+(Top(n_1); Thread(t_0), Nd_B(n_0, n_1)).
+\]
+Without condition~(c), this transition  induces a transition from~$v$ to
+\[\mit
+(Top(n_1); Thread_{pop,B}(t_1, n_1, n_2), Nd_A(n_2, null)).
+\]
+But now $t_1$ can pop~$B$ (from~$n_1$).  The watchdog will then falsely signal
+an error (since it has seen~$B$ popped twice). 
+
+Including condition~(c) will prevent this false error, since there is no state
+for~$n_1$ that is consistent with the states of both~$t_0$ and~$t_1$.
+Thread~$t_0$ is in a state that is consistent only with~$n_1$ holding~$A$ (it
+is an invariant of the model that a $B$-node can point only to an $A$-node);
+and $t_1$ is in a state that is consistent only with~$n_1$ holding~$B$.
+
+%% Without condition~(c), the analysis finds a false error: $t_0$ pops~$B$
+%% (from~$n_0$), advancing $Top$ to~$n_1$; and then $t_1$ also pops~$B$
+%% (from~$n_1$).
+
+%% In order to avoid false positives like this, we identify if the principals of
+%% the two views~$pre$ and~$v$ both have a reference to the same missing
+%% component, say with identity $id$.  If so, we search the set of views~$V$ to
+%% try to identify a component~$c$ with identity~$id$ such that each of
+%% \[
+%% (pre.\fixed, \set{pre.\princ, c}) \quad\mbox{and}\quad 
+%% (v.\fixed, \set{v.\princ, c}
+%% \]
+%% are in $V$ (recall $pre.\fixed = v.\fixed$ here). 
+
+\begin{impNote}
+This is done in \texttt{EffectOn.\linebreak[1]check\-Compatible\-Missing}.  To
+fit with breadth-first search, if there is no way to instantiate the common
+missing component, we store relevant information in \texttt{EffectOnStore} in
+case relevant views are found subsequently.
+\end{impNote}

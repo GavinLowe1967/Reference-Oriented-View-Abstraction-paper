@@ -50,7 +50,9 @@ partitioned into active and passive processes.  Each transition involves:
 \item possibly other passive fixed processes.
 \end{itemize}
 
-\improve{check this in implementation.}
+\begin{improve}
+check this in implementation.
+\end{improve}
 
 For a transition with an active component~$princ$, assume that at most one
 component~$c$ to which $princ$ does not initially have a reference, and such
@@ -376,12 +378,13 @@ and sets \SCALA{head} and \SCALA{tail} to point to it.
 
 %The datatype uses a lock, and a variable $Top$ that points to the top node on
 %the stack.  
-Each thread performs enqueue and dequeue operations upon the stack: the
+Each thread performs enqueue and dequeue operations upon the queue: the
 exact details aren't important here.  In the state machine, each thread
 component has an identity~$me$ from a type of thread identities.  It
 synchronises with node components to initialise them, or to get their $next$
 or~$x$ fields.  It synchronises with the lock to lock and unlock the datatype,
-and with $Top$ to get or set a reference to the current top node in the stack.
+and with the $Hd$ and $Lt$ processes  to get or set a reference to the current
+head or last node.
 %% It performs additional \emph{signal} events, $push_x.me$, $pop_x.me$ and
 %% $popEmpty.me$ to indicate the operation it is performing and the result; we
 %% later use these to capture the property that the system implements a stack.
@@ -399,15 +402,16 @@ node, which threads may get or set.  The constructor initialises the dummy
 header node, and sets $Head$ and $Tail$ to point to it; it is an active
 process.  In Section~\ref{sec:examples} we describe how to extend the fixed
 processes to include a watchdog part that checks that the system does indeed
-implement a stack.
+implement a queue.
 
 List of assumptions:
 %
+\begin{assumption}\label{assump}
 \begin{enumerate}
 \item Each concrete transition involves exactly one active process (either a
 component or fixed process).
 
-\item Each transition involves at most one passive process.
+\item Each transition involves at most one passive component.
 
 \item Each transition can involve any number of passive fixed processes.
 
@@ -420,3 +424,4 @@ reference.
 In each transition, a passive component can gain a reference only to a
 component to which the active process initially holds a reference.
 \end{enumerate}
+\end{assumption}

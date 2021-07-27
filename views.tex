@@ -2,13 +2,12 @@
 \section{Choosing the views}
 
 We say that a process state $cpt$ \emph{references} a component~$c$ if $c.\id
-\in cpt.\params$.  Note that this implies that $c.\id$ is not a distinguished
-value.
+\in cpt.\params$.  Note that $c.\id$ is not a distinguished value.
 
-Consider a system state $(\fixed, \cpt)$, and a particular component $cpt
-\in \cpts$.  We write $view((\fixed, \cpt), cpt)$ for the view of the system
-state from~$cpt$, i.e.~the fixed processes and all the processes to which
-$cpt$ has a reference (including itself):
+Consider a system state $s$, and a particular component $cpt \in s.\cpts$.  We
+write $view(s, cpt)$ for the view of the system state from~$cpt$, i.e.~the
+fixed processes of~$s$, and all the components of~$s$ to which $cpt$ has a
+reference (including itself):
 %
 %% Let $\cpts' = \set{c \in \cpts | c.id \in cpt.params}$ be all
 %% components in $\cpts$ that are referenced by $cpt$ (including $cpt$ itself).
@@ -16,39 +15,29 @@ $cpt$ has a reference (including itself):
 %% $view(s, cpt)$.  
 %
 \begin{eqnarray*}
-view((\fixed, \cpt), cpt) & = &
-  (\fixed, \set{c \in \cpts | c.\id \in cpt.\params}).
+view(s, cpt) & = &
+  (s.\fixed, \set{c \in s.\cpts \| c.\id \in cpt.\params}).
 \end{eqnarray*}
 %
 We say that $cpt$ is the \emph{principal component} of this view, and the
 other components are \emph{secondary components}.  Given a view~$v$, we write
-$v.\princ$ for its principal component.  In examples, we will write the
-principal as the first component. 
+$v.\princ$ for its principal component. 
 
-In the example of Figure~\ref{fig:lock-based-queue}, the views will include,
-for instance,
+In examples, we will write views by listing their fixed components in some
+standard order, then listing the components with the principal first, and then
+following the order of the references in the principal's parameters.  For
+instance, in the example of Figure~\ref{fig:lock-based-queue}, the views will
+include,
 \[
 \begin{align}
 (\Lock'(t), \Head(n_h), \Last(n_l), \Con_3; 
   Enq_4(t, n_l, n), \Node_y(n_l, null),\Node_x(n, n_l)),
 \end{align}
 \]
-for $t \in ThreadID$, $n_h, n_l, n \in NodeID$, and~$x, y \in D$.  Here $t$
-has references to~$n_l$ and~$n$, so the two corresponding nodes are included
-as secondary components.
+for $t \in ThreadID$, $n_h, n_l, n \in NodeID$, and~$x, y \in D$.  Here the
+principal~$t$ has references to~$n_l$ and~$n$, so the two corresponding nodes
+are included as secondary components.
 
-Note that if one of the principal's parameters is a distinguished value, then
-there is no corresponding component in the view.  For example, the following
-would be a valid view, where the thread's second reference is the
-distinguished value~$null$ (in fact, no such state is reachable in the
-lock-based queue example).
-\[
-\begin{align}
-(\Lock'(t), \Head(n_h), \Last(n_l), \Con_3;   Enq_4(t, null, n), \Node_x(n, n_l)).
-\end{align}
-\]
-
-%
 The initial views are of the form
 \[
 \begin{array}{ll}
@@ -59,11 +48,32 @@ The initial views are of the form
 \end{array}
 \]
 
+For examples based on Figure~\ref{fig:lock-based-queue}, in the interests of
+conciseness, we define
+\begin{eqnarray*}
+fixed(t, n_h, n_l) & = & (\Lock'(t), \Head(n_h), \Last(n_l), \Con_3), \\
+fixed(\_, n_h, n_l) & = & (\Lock, \Head(n_h), \Last(n_l), \Con_3).
+\end{eqnarray*}
+%
+These are fixed processes where the constructor has completed, the head and
+last nodes are $n_h$ and~$n_l$, and, respectively, the lock is held by~$t$ or
+not held. 
+
+Note that if one of the principal's parameters is a distinguished value, then
+there is no corresponding component in the view.  For example, the following
+would be a valid view, where the thread's second reference is the
+distinguished value~$null$ (in fact, no such state is reachable in the
+lock-based queue example).
+\[\it
+(fixed(t, n_h, n_l);   Enq_4(t, null, n), \Node_x(n, n_l)).
+\]
+
+
 We let $\V$ be the set of all views of system states:
 %
 \begin{eqnarray*}
 \V & = & 
-  \set{view(s, cpt) | s \in \S, cpt \in s.\cpt}. %%  \union 
+  \set{view(s, cpt) \| s \in \S, cpt \in s.\cpt}. %%  \union 
   %% \set{srvView(s) | s \in \S}.
 \end{eqnarray*}
 %
@@ -87,7 +97,7 @@ efficiently.  In fact, we slightly over-estimate $aPost(V)$.
 %% for some $s$, $s'$, $a$.
 
 In order to motivate our approach, we present example abstract transitions
-from the lock-based stack example, and how they can be extracted from
+from the lock-based queue example, and how they can be extracted from
 corresponding concrete transitions of components.  We use these examples to
 define how we calculate (an over-approximation of) the abstract post-image of
 the current set of views.  We then prove that our approach is correct.
@@ -102,17 +112,17 @@ We start by considering abstract transitions triggered by an active process
 call these \emph{active-process transitions}.
 
 Informally, our approach will be as follows.  We will start with a view $v \in
-V$ whose principal component is an active component, and consider the
-transitions of that active component.  In some cases we will need to expand
+V$, and consider transitions involving either an active principal or active
+fixed process synchronising on the transition.
+%% ; (1)~of the principal, if it is an active component; (2)~of any active
+%% fixed process, either synchronising with the principal or no component.
+In some cases we will need to expand
 the view to include additional relevant components: either those components
 that synchronise on the transition, or to which the principal component
 obtains a reference.  We assume that there is at most one such new component.
 When we expand a view in this way, we do so only in a way that is compatible
 with the set $V$ of views.
 
-\framebox{Active server transitions}
-
-%
 Each such transition will be built from a \emph{view transition}, i.e.~a
 transition formed by considering a single view in isolation, as captured by
 the following definition.
@@ -122,8 +132,10 @@ We define a \emph{view transition} of view~$v$ to be a transition $v \trans{e}
 v'$ such that
 %
 \begin{itemize}
-\item Either $v$ has an active principal or an active fixed process with $e$
-  in its alphabet;
+\item $v$ has either an active principal or an active fixed process with $e$
+  in its alphabet.
+%, and either the
+%  principal or no component has $e$ in its alphabet.
 
 \item $v'$ is the same as~$v$ except replacing every (fixed or component)
   process~$p$ that has $e$ in its alphabet with a process $p'$ such that \( p
@@ -134,19 +146,19 @@ v'$ such that
 \end{itemize}
 \end{definition}
 
-\impNote{\texttt{system.transitions} generates a representation of the view
+\begin{impNote}
+\texttt{system.transitions} generates a representation of the view
   transitions, together with the identity of another process that synchronises
-  on the transition (where applicable).}
+  on the transition (where applicable).
+\end{impNote}
 
-For example, consider a transition of the lock-based stack where a thread~$t$
-pushing~$x$ performs a $lock$ event.  This can be captured view transitions of
-the form
+For example, consider a transition of the lock-based queue where a thread~$t$
+pushing~$x$ performs a $lock$ event.  This can be captured by view transitions
+of the form
 %
-\begin{equation}
-\begin{align}
-(\Lock, \Head(n_h), \Last(n_l), \Con_3; Enq^x_1(t))  \trans{lock.t} \\
-\qquad  (\Lock'(t), \Head(n_h), \Last(n_l), \Con_3; Enq^x_2(t)) .
-\end{align}
+\begin{equation}\it
+(fixed(\_, n_h, n_l); Enq^x_1(t))  \trans{lock.t}
+  (fixed(t, n_h, n_l); Enq^x_2(t)) .
 \label{trans:lock}
 \end{equation}
 %
@@ -155,11 +167,12 @@ the form
 In this particular case, the view transition is also an abstract transition.
 Each of the pre- and post-states in this transition is a view, with $t$ as the
 principal component.  Further, the pre-view contains all components with
-$lock.t$ in their alphabet, so in a concrete state, no other process would
-synchronise on the transition.
+$lock.t$ in their alphabet (just the principal), so in a concrete state, no
+other process would synchronise on the transition.
 
-As an example of a transition with an active server, the construction of the
-initial dummy header node is described by the following view transition.
+As an example of a transition with an active fixed process, the construction
+of the initial dummy header node is described by the following view
+transition.
 \[
 \begin{align}
 (\Lock, \Head(null), \Last(null), \Con_0; \InitNode(n)) 
@@ -167,7 +180,8 @@ initial dummy header node is described by the following view transition.
 \qquad (\Lock, \Head(null), \Last(null), \Con_1(n); \Node_{v_0}(n, null)).
 \end{align}
 \]
-This view transition is again an abstract transition. 
+Here the only component that synchronises on the transition is the principal.
+This view transition is again an abstract transition.
 
 The above two abstract transitions can be found by looking just at the view
 transitions of the pre-view.  However, this isn't always the case.
@@ -175,13 +189,13 @@ transitions of the pre-view.  However, this isn't always the case.
 %% The abstract transition in the previous paragraphs was fairly straightforward,
 %% as all the relevant component states were in the initial view.  This might not
 %% always be the case.  
-Consider a transition where a dequeueing thread reads the |next| reference
+Consider a transition where a dequeueing thread reads the $next$ reference
 from the head node.  This can be partially described by the view transition
 \[
 \begin{align}
-(\Lock'(t), \Head(n_h), \Last(n_l), \Con_3; Deq_4(t, n_h), \Node(n_h, n))
+(fixed(t, n_h, n_l); Deq_4(t, n_h), \Node(n_h, n))
   \trans{getNext.t.n_h.n} \\
-\qquad (\Lock'(t), \Head(n_h), \Last(n_l), \Con_3; Deq_5(t, n), \Node(n_h, n)).
+\qquad (fixed(t, n_h, n_l); Deq_5(t, n), \Node(n_h, n)).
 \end{align}
 \]
 %% \begin{eqnarray*}
@@ -194,10 +208,9 @@ longer referenced by~$t$.  To deal with the first point, we need to extend
 both states to include this node, giving transitions such as
 \begin{equation}
 \begin{align}
-(\Lock'(t), \Head(n_h), \Last(n_l), \Con_3; 
-  Deq_4(t, n_h), \Node(n_h, n), \Node_y(n, n'))  \trans{getNext.t.n_h.n} \\
-\qquad (\Lock'(t), \Head(n_h), \Last(n_l), \Con_3; 
-  Deq_5(t, n), \Node(n_h, n), \Node_y(n, n')).
+(fixed(t, n_h, n_l); Deq_4(t, n_h), \Node(n_h, n), \Node_y(n, n'))
+  \trans{getNext.t.n_h.n} \\
+\qquad (fixed(t, n_h, n_l);   Deq_5(t, n), \Node(n_h, n), \Node_y(n, n')).
 \label{trans:getNext}
 \end{align}
 \end{equation}
@@ -228,8 +241,10 @@ of each such component to the post state (here the added component does not
 synchronise on the transition so remains in the same state).  The following
 definitions describe what we mean by \emph{compatible}.
 
-\impNote{The implementation represents a transition that requires an
-  additional component by a \texttt{TransitionTemplate}.}
+\begin{impNote}
+The implementation represents a transition that requires an
+  additional component by a \texttt{TransitionTemplate}.
+\end{impNote}
 
 \begin{definition}
 Let $V$ be a set of views.  A component state~$c$ is \emph{strongly
@@ -246,27 +261,41 @@ Let $V$ be a set of views.  A component state~$c$ is \emph{compatible} with a
 view $v \in V$ if:
 %
 \begin{enumerate}
-\item\label{item:compatible-1} $V$ contains a view $v_c$ such that
-  (a)~$v_c.\fixed = v.\fixed$, (b)~$v_c.\princ = c$, and (c)~if $c$ has a
-  reference to a component of~$v$, then $v$ and~$v_c$ agree on that component.
+\item\label{item:compatible-1} $V$ contains a view $v_c$ such that $v_c.\princ
+  = c$, and $v$ and~$v_c$ are accordant.
+
+%% (a)~$v_c.\fixed = v.\fixed$, (b)~$v_c.\princ = c$, and (c)~if $c$ has a
+%% reference to a component of~$v$, then $v$ and~$v_c$ agree on that
+%% component.
 
 \item\label{item:compatible-2} If any component $c'$ of~$v$ has a reference
   to~$c$ then $V$ contains a view $v'$ such that (a)~$v'.\fixed = v.\fixed$,
   (b)~$v'.\princ = c'$, and (c)~$v'$ contains $c$.
 \end{enumerate}
 \end{definition}
+%
+Informally, the condition says that we can find individual views that include
+the references from $c$ to~$v$, and vice versa. 
+
+\begin{improve}
+In clause~(2), we could require accordance, requiring $v$ and $v'$ to agree on
+any other components.  It's not clear if this is best. 
+\end{improve}
 
 In transition~(\ref{trans:getNext}), the state $\Node_y(n, n')$ is compatible
 with the pre-view, assuming the set~$V$ of views contains: (1)~a view of the
-form $v_c = (\Lock'(t), \Head(n_h), \Last(n_l), \Con_3; \Node_y(n, n'),
-\linebreak[1] \Node_z(n', n''))$ for some~$z$ and~$n''$, to satisfy
-clause~\ref{item:compatible-1}; and (2) a view of the form $v' = (\Lock'(t),
-\Head(n_h), \Last(n_l), \Con_3; \Node(n_h, n), \linebreak[1] \Node_y(n, n')$
-to satisfy clause~\ref{item:compatible-2}.
+form $v_c = (fixed(t, n_h, n_l);\linebreak[1] \Node_y(n, n'), \linebreak[1]
+\Node_z(n', n''))$ for some~$z$ and~$n''$, to satisfy
+clause~\ref{item:compatible-1}; and (2) a view of the form $v' = (fixed(t,
+n_h, n_l); \Node(n_h, n), \linebreak[1] \Node_y(n, n'))$ to satisfy
+clause~\ref{item:compatible-2}.
 
-\impNote{This is checked in
+\begin{impNote}
+This is checked in
   \texttt{Extendability.\linebreak[1]compatible\-With}, with
-  \texttt{Extendability.isExtendable} checking the latter clause.}
+  \texttt{Extendability.isExtendable} checking the latter clause.
+\end{impNote}
+
 
 We show in Section~\ref{sec:views-correctness} that strong compatibility
 implies compatibility.  Our implementation uses the weaker definition of
@@ -280,31 +309,24 @@ such a case, we extend the pre-view to add each compatible state of such a
 component that can perform the relevant state.  For example, $initNode$
 transitions can be captured by extending a view such as 
 \[
-(\Lock'(t), \Head(n_h), \Last(n_l), \Con_3; Enq_3^x(t, n_l), \Node_y(n_l, n')
+(fixed(t, n_h, n_l); Enq_3^x(t, n_l), \Node_y(n_l, n')
 \]
 adding the node being initialised (which must necessarily be in the $\InitNode$
 state).
 
 \begin{equation}
 \begin{alignc}
-(\Lock'(t), \Head(n_h), \Last(n_l), \Con_3; 
-   Enq_3^x(t, n_l), \Node_y(n_l, n'), \InitNode(n))
+(fixed(t, n_h, n_l);   Enq_3^x(t, n_l), \Node_y(n_l, n'), \InitNode(n))
     \trans{initNode_x.t.n.null} \\
-\qquad (\Lock'(t), \Head(n_h), \Last(n_l), \Con_3; 
+\qquad (fixed(t, n_h, n_l);
    Enq_4^x(t, n_l, n), \Node_y(n_l, n'), \Node_x(n, null)).
 \end{alignc}
 \label{trans:initNode}
 \end{equation}
-%% \begin{equation}
-%% \begin{alignc}
-%%   (\Lock'(t), Top(n); Push_4^x(t, n), \Node_y(n, n'), \InitNode(n'')) 
-%%     \trans{initNode_x.t.n''.n} \\
-%% \qquad  (\Lock'(t), Top(n); Push_5(t, n''), \Node_y(n, n'), \Node_x(n'', n))
-%% \end{alignc}
-The above transition also illustrates that the post-state might be strictly
-larger than the corresponding view of the principal component: the thread
-loses the reference to~$n$ in the transition.  It is straightforward to remove
-components that are no longer referenced in order to obtain the relevant view.
+%% The above transition also illustrates that the post-state might be strictly
+%% larger than the corresponding view of the principal component: the thread
+%% loses the reference to~$n$ in the transition.  It is straightforward to remove
+%% components that are no longer referenced in order to obtain the relevant view.
 
 %% The transition~(\ref{trans:initNode}) produces a new view for
 %% another component involved in the transition, here the view $(\Lock'(t),
@@ -348,20 +370,19 @@ abstract transition $v \trans{e} v''$.
 
 \subsection{Induced transitions}
 
-So far, we have considered only transitions that produce a view such that the
-primary component synchronised on the transition.  \framebox{?} active server
-transitions?  However, such a transition can induce other abstract
-transitions.  For example the transition~(\ref{trans:lock}) changes the state
-of a fixed process, and so induces corresponding changes in other views; for
-example, it induces abstract transitions concerning another thread or a node
-in its initial state:
+So far, we have considered only transitions that involved an active process
+(either the principal or a fixed process). However, such a transition can
+induce other abstract transitions.  For example the
+transition~(\ref{trans:lock}) changes the state of a fixed process, and so
+induces corresponding changes in other views; for example, it induces abstract
+transitions concerning another thread or a node in its initial state:
 %
 \[
 \begin{align}
-(\Lock, \Head(n_h), \Last(n_l), \Con_3; Thread(t'))  \trans{lock.t} \\
-\qquad  (\Lock'(t), \Head(n_h), \Last(n_l), \Con_3; Thread(t')), \\
-(\Lock,  \Head(n_h), \Last(n_l), \Con_3; \InitNode(n))  \trans{lock.t} \\
-\qquad  (\Lock'(t),  \Head(n_h), \Last(n_l), \Con_3; \InitNode(n)),
+(fixed(\_, n_h, n_l); Thread(t'))  \trans{lock.t} 
+  (fixed(t, n_h, n_l); Thread(t')), \\
+(fixed(\_, n_h, n_l); \InitNode(n))  \trans{lock.t} 
+  (fixed(t, n_h, n_l); \InitNode(n)),
 \end{align}
 \]
 %
@@ -369,85 +390,94 @@ for $t' \in ThreadID$ with $t' \ne t$, and for $n \in NodeID$.
 
 \begin{definition}
 \label{def:induced-transition}
-Consider an extended transition~$pre \trans{e} post$, and a view $v$ such that
-$v$ and $pre$ are accordant.  Then the  transition \emph{induces} a
-new transition $v \trans{} v'$ where
-\begin{itemize}
-\item $v'.\fixed = post.\fixed$;
+Consider an extended transition~$pre \trans{e} post$, and a view $v \in V$
+such that $v$ and $pre$ are accordant.  Then the transition \emph{induces} a
+new transition $v \trans{} v'$ where:
+\begin{enumerate}
+\item $v'.\fixed = post.\fixed$.
 
 \item If $v.\princ$ is in $pre$ then $v'.\princ$ is the corresponding
-  component in~$post$; otherwise $v'.princ = v.princ$;
+  component in~$post$; otherwise $v'.princ = v.princ$.
 
 \item The secondary components of~$v'$ are the components referenced by
   $v'.princ$, either from $post$ if the component is part of the transition,
   or otherwise from~$v$.  (Note that all such components are included in
-  either $post$ or~$v$, by assumption~\ref{assump:secondary-cpts-new-refs}.)
-\end{itemize}
+  either $post$ or~$v$, by clause~\ref{assump:secondary-cpts-new-refs} of
+  Assumption~\ref{assump}.)
+\end{enumerate}
 \end{definition}
 
-Note that if $pre.princ = v.princ$ then the induced transition is identical to
-the original transition.  An obvious optimisation avoids recreating this
-transition. 
+%%%%%
 
 For example, the  transition~(\ref{trans:initNode}) induces a transition
 \[
 \begin{align}
-(\Lock'(t), \Head(n_h), \Last(n_l), \Con_3; \InitNode(n)) \trans{} \\
-\qquad  (\Lock'(t), \Head(n_h), \Last(n_l), \Con_3; \Node_x(n, null)),
+(fixed(t, n_h, n_l); \InitNode(n)) \trans{} 
+  (fixed(t, n_h, n_l); \Node_x(n, null)),
 \end{align}
 \]
-where $n''$ evolves as in (\ref{trans:initNode}).
-
+where $n$ evolves as in (\ref{trans:initNode}).
+%
 As another example, consider the extended transition where an enqueueing
 thread sets the next reference of the last node:
 \[
 \begin{align}
-(\Lock'(t), \Head(n_h), \Last(n_l), \Con_3;  
-  Enq_4(t, n_l, n), \Node_y(n_l, null), \Node_x(n, null)) \\
-\qquad \trans{setNext.t.n_l.n} \\
-\qquad (\Lock'(t), \Head(n_h), \Last(n_l), \Con_3;  
-  Enq_5(t, n), \Node_y(n_l, n), \Node_x(n, null)).
+(fixed(t, n_h, n_l);  Enq_4(t, n_l, n), \Node_y(n_l, null), \Node_x(n, null)) 
+ \trans{setNext.t.n_l.n} \\
+\qquad (fixed(t, n_h, n_l);  Enq_5(t, n), \Node_y(n_l, n), \Node_x(n, null)).
 \end{align}
 \]
 This induces the following transition on the view of~$n_l$:
 \[
 \begin{align}
-(\Lock'(t), \Head(n_h), \Last(n_l), \Con_3;  
-  \Node_y(n_l, null))
-\trans{setNext.t.n_l.n} \\
-\qquad (\Lock'(t), \Head(n_h), \Last(n_l), \Con_3;  
-  \Node_y(n_l, n), \Node_x(n, null)).
+(fixed(t, n_h, n_l);  \Node_y(n_l, null)) \trans{}  % setNext.t.n_l.n} \\
+  (fixed(t, n_h, n_l);  \Node_y(n_l, n), \Node_x(n, null)).
 \end{align}
 \]
 
-
-%% As another example, consider a different datatype (e.g.~a queue) where a
-%% thread~$t$ sets the \SCALA{next} reference of a node~$n$ to point to another
-%% node~$n'$.  This can be captured by a transition such as the following.
-%% \[
-%% \begin{align}
-%% (\fixed; Thread(t, n, n'), \Node_x(n, null), \Node_y(n', n'')) 
-%%   \trans{setNext.t.n.n'} \\
-%% \qquad (\fixed'; Thread'(t, n, n'), \Node_x(n, n'), \Node_y(n', n'')).
-%% \end{align}
-%% \]
-%% If some other node (or thread) has a reference to the node~$n$, this can
-%% induce new transitions, such as the following (assuming the pre-state is
-%% in~$V$). 
-%% \[
-%% \begin{align}
-%% (\fixed; \Node_z(n''', n), \Node_x(n, null))  \trans{setNext.t.n.n'} \\
-%% \qquad  (\fixed'; \Node_z(n''', n), \Node_x(n, n')).
-%% \end{align}
-%% \]
-
-
 %%%%%
+
+We note some optimisations concerning the use of
+Definition~\ref{def:induced-transition}.  
+%
+\begin{opt}
+\label{opt:avoid-induced}
+A straightforward use of Definition~\ref{def:induced-transition} would
+consider many different extended transitions $pre \trans{e} post$ and
+views~$v$ to create new post-views.  However, it turns out that many of these
+induced transitions create identical post-views.
+%
+\begin{itemize}
+\item If $pre.\princ = v.\princ$ then the induced transition is identical to the
+  original transition. % We therefore avoid recreating this transition.
+
+\item Suppose $pre.\fixed = post.\fixed$ and $v$ contains no component that
+  changes state in the transition.  Then the new view~$v'$ is identical
+  to~$v$. 
+
+\item Now suppose $pre.\fixed \ne post.\fixed$, but $v$ again contains no
+  component that changes state in the transition.  Then the new view~$v'$ will
+  be different from~$v$.  However, suppose we subsequently consider another
+  extended transition $pre' \trans{} post'$ with $pre'.\fixed = pre.\fixed$
+  and $post'.\fixed = post.\fixed$, and consider its effect on the same~$v$.
+  Then this will induce a transition to the same post-view~$v'$.   
+\end{itemize}
+
+We identify such cases early, and avoid producing the duplicate post-views. 
+\end{opt}
+
+\begin{impNote}
+The above optimisation is implemented in
+\texttt{Unification.isSufficientUnif}.  
+\end{impNote}
+
+\begin{improve}
+Can it be done earlier?  Also, it would seem better to store the relevant
+information in the view.
+\end{improve}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
 
 \subsection{Correctness}
 \label{sec:views-correctness}
@@ -505,13 +535,13 @@ This is a view of the system, resulting from~$s_0$.  Let
 \[
 c = N_C(n_3,n_2).
 \]  
-Then  $c$ is compatible with~$v$.
+Then  $c$ is compatible with~$v$:
 %
-Clause~\ref{item:compatible-1} of Definition~\ref{def:compatible} is satisfied
+clause~\ref{item:compatible-1} of Definition~\ref{def:compatible} is satisfied
 by $(\fixed; N_C(n_3,n_2), N_B(n_2))$, which is a view resulting
-from~$s_1$.
+from~$s_1$;
 %
-And clause~\ref{item:compatible-2} is satisfied for $c' = N_A(n_1,n_3)$ by
+and clause~\ref{item:compatible-2} is satisfied for $c' = N_A(n_1,n_3)$ by
 $(\fixed; N_A(n_1, n_3), N_C(n_3,n_2))$, which is a view resulting
 from~$s_2$. 
 %%  And it is satisfied for $c' = N_D(n_4,n_1,n_3)$ by $(\fixed;
@@ -575,14 +605,14 @@ is extracted; this equals~$v'$ by construction, as required.
 %% is then  identical to the previous case.
 
 \item
-Now suppose the transition $s \trans{e} s'$ has an active component other than
-$pId$.  Let $pre \trans{e} post$ be the corresponding extended transition,
-built as in Definition~\ref{def:active-process-transition}.  Let $v =
-view(princ, s)$.  Then necessarily $v$ and $pre$ are accordant, since they are
-both substates of~$s$.  Then the transition $v \trans{} v'$ is induced, as in
-Definition~\ref{def:induced-transition}.
+Now suppose the transition $s \trans{e} s'$ has an active component other
+than~$pId$.  Let $pre \trans{e} post$ be the corresponding extended
+transition, built as in Definition~\ref{def:active-process-transition}.  Let
+$v = view(princ, s)$.  Then necessarily $v$ and $pre$ are accordant, since
+they are both substates of~$s$.  Then the transition $v \trans{} v'$ is
+induced, as in Definition~\ref{def:induced-transition}.
 
-\item
+\item\label{step:abs-trans-correct-3}
 Finally suppose the transition $s \trans{e} s'$ has an active fixed process.
 Consider an arbitrary corresponding view transition (i.e.~with an arbitrary
 principal), and consider the corresponding extended transition $pre \trans{e}
@@ -591,16 +621,27 @@ post$.  This case is then identical to the previous case.
 \end{proof}
 
 
-\impNote{The fact that point~3 covers all transitions with active fixed
+\begin{impNote}
+The fact that point~3 covers all transitions with active fixed
   processes suggests that we could be more restrictive about generating such
-  transitions in Definition~\ref{def:active-process-transition}.}
+  transitions in Definition~\ref{def:active-process-transition}.
+\end{impNote}
+
+
+\begin{opt}
+Case~\ref{step:abs-trans-correct-3} above considered an \emph{arbitrary}
+corresponding view transition.  All such view transitions will generate the
+same abstract transition, so clearly, it would be enough to consider fewer, as
+long as we include at least one.  In the case that the active fixed process
+synchronises with a passive component~$c$, we consider just the view
+transition with~$c$ as principal.  (In the case that the active fixed process
+synchronises with no component, we consider all such view transitions; there
+is potential for further optimisation here, but these cases seem rare.)
+\end{opt}
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\textbf{Note:} Now consider the changes that have to be made with singleRef,
-both for correctness and to avoid false positives. 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

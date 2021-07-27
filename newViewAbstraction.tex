@@ -2,12 +2,17 @@
 \usepackage{mathsx,tech,mytheorems}
 \usepackage{tikz}
 \usetikzlibrary{arrows}
-\usepackage{scalalistings}\unScalaMid
+\usepackage{scalalistings}%\unScalaMid
 
 \newtheorem{lemma}{Lemma}
-\newtheorem{conjecture}{Conjecture}
-\newtheorem{definition}{Definition}
-\newtheorem{example}{Example}
+\newtheorem{conjecture}[lemma]{Conjecture}
+\newtheorem{definition}[lemma]{Definition}
+\newtheorem{example}[lemma]{Example}
+\newtheorem{assumption}[lemma]{Assumption}
+
+\newtheorem{improve}{IMPROVE}
+\newtheorem{impNote}{Implementation note}
+\newtheorem{opt}{Optimisation}
 
 \def\vec#1{\mathsf{#1}}
 \def\trans#1{\stackrel{#1}\rightarrow}
@@ -18,14 +23,16 @@
 \def\params{\mathrm{params}}
 %\def\srv{\vec{srvs}}
 \def\fixed{\mathrm{fixed}}
-\def\cpt{\vec{cpts}}
+\def\cpt{\mathrm{cpts}}
 \def\cpts{\cpt}
 \def\princ{\mathrm{princ}}
 \def\S{\mathcal{S}}
 \def\V{\mathcal{V}}
 
-\def\improve#1{IMPROVE: \emph{#1}}
-\def\impNote#1{\textbf{Implementation note:} #1}
+\def\mit{\it}
+
+%\def\improve#1{IMPROVE: \emph{#1}}
+%\def\impNote#1{\textbf{Implementation note:} #1}
 
 %\def\floatpagefraction{0.85} 
 \def\topfraction{0.9}
@@ -45,6 +52,8 @@
 \input{views}
 %\newpage
 \input{singleRef}
+\input{singleRef2} % induced transitions
+\input{singleRef3} % correctness
 \input{implementation}
 %\newpage
 \input{effectOn}
