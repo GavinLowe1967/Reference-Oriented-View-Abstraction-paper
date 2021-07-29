@@ -65,6 +65,7 @@ secondary component must be included in the view transition.  The definition
 of an extended transition is then as earlier. 
 %
 \begin{definition}
+\label{def:active-process-transition-singleRef}
 We define a \emph{view transition} of view~$v$ to be a transition $v \trans{e}
 v'$ such that
 %
@@ -81,9 +82,11 @@ v'$ such that
 \end{itemize}
 
 Given a view transition $v \trans{e} v'$, we define the corresponding
-\emph{extended transitions} $pre \trans{e} post$ as in
-Definition~\ref{def:active-process-transition}.
+\emph{extended transitions} $pre \trans{e} post$,  as in
+Definition~\ref{def:active-process-transition}.  Finally, we extract views of
+the principal component.  
 \end{definition}
+
 
 For example, consider the following view transition using full
 views, as in the previous section.

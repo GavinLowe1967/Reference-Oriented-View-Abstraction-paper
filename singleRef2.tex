@@ -61,11 +61,11 @@ transition.
 
 More generally, consider an extended transition $pre \trans{e} post$ and a
 view $v$ such that $v$ and $pre$ are accordant, and such that a secondary
-component~$c$ of~$post$ has a reference to $v.\princ$.  Then (subject to some
+component~$sc$ of~$post$ has a reference to $v.\princ$.  Then (subject to some
 extra conditions that we describe below) the transition induces a new
 transition producing
 \[\mit
-v' = (post.\fixed, \set{c, v.\princ}).
+v' = (post.\fixed, \set{sc, v.\princ}).
 \]
 
 \begin{impNote}
@@ -136,10 +136,10 @@ transition $v \trans{} v'$ where
   either $post$ or $v$, then no new transition is induced.
 \end{enumerate}
 %
-Further, if a secondary component~$c$ of~$post$ has a reference to $v.\princ$,
+Further, if a secondary component~$sc$ of~$post$ has a reference to $v.\princ$,
 then the transition induces a new transition producing
 \[\mit
-v' = (post.\fixed, \set{c, v.\princ}).
+v' = (post.\fixed, \set{sc, v.\princ}).
 \]
 \end{definition}
 
