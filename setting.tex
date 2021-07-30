@@ -415,7 +415,8 @@ component or fixed process).
 
 \item Each transition can involve any number of passive fixed processes.
 
-\item For each transition there is at most one component to which the
+\item\label{assump:max-one-extra-component}
+For each transition there is at most one component to which the
 active component doesn't initially hold a reference, and that either
 synchronises on the transition, or to which the active component gains a
 reference.

@@ -134,6 +134,15 @@ transition $v \trans{} v'$ where
   $post$ if the component is part of the transition, or otherwise from~$v$, if
   such a component exists.  If $v'.\princ$ references only components not in
   either $post$ or $v$, then no new transition is induced.
+
+\item[3$'$.] (Alternative version) If $v'.\princ$ has no reference to another
+  component, then $v'$ has no secondary component.  Otherwise the secondary
+  component of~$v'$ is a component~$cId$ referenced by $v'.princ$, and such
+  that if $v.princ$ also referenced~$cId$, then a component for~$cId$ was
+  included in~$v$.  The component for~$cId$ in~$v'$ is either from $post$ if
+  the component is part of the transition, or otherwise from~$v$, if such a
+  component exists.  If there was no component for~$cId$ in either $post$
+  or~$v$, then no new transition is induced.
 \end{enumerate}
 %
 Further, if a secondary component~$sc$ of~$post$ has a reference to $v.\princ$,
@@ -149,6 +158,8 @@ At present we don't support Optimisation~\ref{opt:avoid-induced} with reduced
 views: it's not sound for some reason.  Work out why.  It might be due to the
 use of c2Refs.
 \end{improve}
+
+\framebox{Examples illustrating item 3.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
