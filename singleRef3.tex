@@ -50,14 +50,12 @@ reference~$cId$ in~$s'$); if $v'$ has no secondary component, then $cId$ is
 undefined.  Given an identity~$id$, we write $s(id)$ and~$s'(id)$ for the
 states of the corresponding components in~$s$ and~$s'$.
 
-%% , and suppose that component has states $princ$ and $princ'$ in~$s$
-%% and~$s'$, respectively (so $v'$ is a view of~$s'$ for $princ'$).  If $v'$
-%% has a secondary component, let $cId$ be its identity, and let $c$ and $c'$
-%% be the states of that component in~$s$ and~$s'$, respectively (so $princ'$
-%% has a reference to~$cId$); if $v'$ has no secondary component, then $cId$,
-%% $c$ and~$c'$ are undefined.
-
-We perform a case analysis.
+We perform a case analysis.  At various points we will induce a transition
+from an extended transition $pre \trans{e} post$ and some view~$v$.  In each
+case, $v$ will be a view of~$s$, and so a member of~$V$; and $v$ and~$pre$
+will both be substates of~$s$, so conditions~a--c of
+Definition~\ref{def:induced-transition-singleRef} will be satisfied, by
+Lemma~\ref{lem:induced-conditions}.
 %
 \begin{enumerate}
 \item
@@ -78,11 +76,6 @@ First suppose $pId$ is the active component in the concrete transition \( {s
   component~$cId' \ne cId$.
 \end{enumerate}
 
-%% (a)~$v'$ has no secondary component; (b)~$pId$ synchronises with the
-%% secondary component~$cId$ on the transition; (c)~$pId$ synchronises with no
-%% other component; or (d)~$pId$ synchronises with some other component, and
-%% gains a reference to~$cId$ from the transition.
-
 We build a view~$v$ of~$s$ for $pId$ in each of the four cases as follows:
 \begin{enumerate}
 \item[(a)] Let $v$ be an arbitrary view of~$s$ for $pId$;
@@ -94,32 +87,9 @@ We build a view~$v$ of~$s$ for $pId$ in each of the four cases as follows:
 \item[(d)] Let $v = (s.\fixed, \set{s(pId), s(cId')})$
 %%  where $c_1$ is the state of~$cId'$ in~$s$
   (note that $s(pId)$ must hold a reference to~$cId'$, by
-  clause~\ref{assump:max-one-extra-component} of Assumption~\ref{assump}).
+  clause~\ref{assump:max-one-extra-component} of Assumption~\ref{assump},
+  since $pId$ gains a reference to~$cId$ in the transition).
 \end{enumerate}
-
-%%  In case~b, let $v =
-%% (s.\fixed, \set{princ, c})$.  In case~d, let $v = (s.\fixed, \set{princ,
-%%   c_1})$ where $c_1$ is the state of~$cId'$ in~$s$ (note that $princ$ must
-%% hold a reference to~$cId'$, by clause~\ref{assump:max-one-extra-component} of
-%% Assumption~\ref{assump}).  In cases~a and~c, let $v$ be an arbitrary view
-%% of~$s$ for $princ$
-
-%% If $princ$ has a reference to~$cId$ and either synchronises on the transition
-%% with it (in case~b), or synchronises with no other component~(in case~c), then
-%% let $v$ be the corresponding view of~$s$, i.e.~$(s.\fixed, \set{princ, c})$.
-%% If the principal synchronises with some other component~$c_1$, and gains a
-%% reference to $cId$ from the transition (case~d), let $v$ be the
-%% view~$(s.\fixed, \set{princ, c_1})$ (note that $princ$ must hold a reference
-%% to~$c_1$, by clause~\ref{assump:max-one-extra-component} of
-%% Assumption~\ref{assump}).  Otherwise (case~a or where $pId$ gains a
-%% reference to $cId$ in case~b or case~c), let $v$ be an arbitrary view of~$s$
-%% for~$princ$.
-
-%% Otherwise (case~a or where $princ$ gains a reference to $cId$ from the
-%% transition in either case~b or case~d), if $princ$ synchronises with some
-%% other component~$c_1$ to which it has a reference, let $v$ be the
-%% view~$(s.\fixed, \set{princ, c_1})$; otherwise, let $v$ be an arbitrary view
-%% of~$s$ for~$princ$.
 
 As in the proof of Lemma~\ref{lem:abstract-transitions-sound}, let $pre$ be
 the extension of~$v$ to include any other component that is necessary for the
@@ -130,7 +100,7 @@ Definition~\ref{def:active-process-transition-singleRef} builds the transition
 \( pre \trans{e} post \), and extracts the view $v'$ from~$post$.
 
 
-\item 
+\item %%% 2
 Now suppose $pId$ is the active component in the concrete transition \( {s
   \trans{e} s'} \), but the previous case does not apply; i.e.~$v'$ has a
 secondary component with identity~$cId$,\, $s(pId)$ has a reference to~$cId$,
@@ -141,51 +111,16 @@ Definition~\ref{def:active-process-transition-singleRef} builds a transition
 \( pre \trans{e} post \) that includes the other component~$cId'$, but
 not~$cId$.
 %
-Let $v = (s.\fixed, \set{s(pId), s(cId)})$; this is a view of~$s$, so $v \in V$.
+Let $v = (s.\fixed, \set{s(pId), s(cId)})$.
+%; this is a view of~$s$, so $v \in V$.
 Then the transition \( pre \trans{e} post \) induces a transition $v \trans{}
-v'$: in particular, $v$ and~$pre$ are both substates of~$s$, so
-conditions~a--c of Definition~\ref{def:induced-transition-singleRef} are
-satisfied, by Lemma~\ref{lem:induced-conditions}.
+v'$.
+%% : in particular, $v$ and~$pre$ are both substates of~$s$, so
+%% conditions~a--c of Definition~\ref{def:induced-transition-singleRef} are
+%% satisfied, by Lemma~\ref{lem:induced-conditions}.
 
 
-
-%% \item 
-%% Now suppose that the principal~$pId$ of~$v'$ is a passive component that
-%% synchronises on the concrete transition.  Then as in previous cases, the
-%% technique of Definition~\ref{def:active-process-transition-singleRef} builds a
-%% transition \( pre \trans{e} post \) that involves all the relevant components,
-%% including $pId$.  
-
-%% Suppose, first, that either $v'$ has no secondary component (so $princ'$ has
-%% no reference to another component), or the secondary component of~$v'$ is
-%% included in the transition \( pre \trans{e} post \).  Let $v$ be a view of~$s$
-%% for~$princ$.  Then the transition induces a transition $v \trans{} v'$ (again
-%% using Lemma~\ref{lem:induced-conditions}).
-
-%% Alternatively, suppose that $v'$ has a secondary component with
-%% state~$c$ that is not included in the transition $pre \trans{e} post$.
-%% Let $v$ be a view of~$s$ for~$c$.  Then the  transition induces a
-%% transition producing~$v'$ (in particular using the final clause of
-%% Definition~\ref{def:induced-transition-singleRef} with $sc = princ'$). 
-
-%% \item
-%% Finally suppose that the principal~$pId$ of~$v'$ does not synchronise on the
-%% concrete transition.  Again, the technique of
-%% Definition~\ref{def:active-process-transition-singleRef} builds a transition
-%% \( pre \trans{e} post \) that involves all the relevant components.
-
-%% Suppose that $v'$ has no secondary component, or the secondary component is
-%% included in the transition \( pre \trans{e} post \).  Let $v$ be a view of~$s$
-%% for~$princ$.  Then the transition induces a transition $v \trans{} v'$ (again
-%% using Lemma~\ref{lem:induced-conditions}).
-
-%% Alternatively, suppose that $v'$ has a secondary component with state~$c$ that
-%% is not included in the transition $pre \trans{e} post$.  Let $v = (pre.\fixed,
-%% \set{princ, c})$, which is a view of~$s$.  Then the transition again induces a
-%% transition $v \trans{} v'$.
-
-
-\item % Combining two previous cases. 
+\item 
 Now suppose the transition $s \trans{e} s'$ has an active component other
 than~$pId$.  The component for~$pId$ might be a secondary component in the
 transition, or it might not be involved in the transition.  Then as in
@@ -193,13 +128,35 @@ previous cases, the technique of
 Definition~\ref{def:active-process-transition-singleRef} builds an extended
 transition \( pre \trans{e} post \) that involves all the relevant
 components.  We perform a case analysis.
-\begin{itemize}
-\item First suppose that either $v'$ has no secondary component (so $s'(pId)$
-  has no reference to another component), or the secondary component of~$v'$
-  is included in the extended transition; $pId$ might or might not be in the
-  extended transition.  Let $v$ be an arbitrary view of~$s$ for~$pId$.  Then
-  the extended transition induces a transition $v \trans{} v'$ (again using
-  Lemma~\ref{lem:induced-conditions}).
+%
+\begin{enumerate}
+\item First, suppose that $v'$ has a secondary component~$cId$ which
+  is included in the extended transition, and $s(pId)$ has a reference
+  to~$cId$; $pId$ might or might not be in the extended transition.
+%  
+  Let $v = (s.\fixed, \set{s(pId), s(cId)})$.  Then the extended transition
+  induces a transition $v \trans{} v'$.
+% (again using  Lemma~\ref{lem:induced-conditions}).  
+  Note that the state for~$cId$ in~$v'$ is taken from~$s'$ in this case.
+
+\item Next suppose that either $v'$ has no secondary component (so $s'(pId)$
+  has no reference to another component), or $v'$ has a secondary
+  component~$cId$ which is included in the extended transition, but $s(pId)$
+  does \emph{not} have a reference to~$cId$.  In the former case, $pId$ might
+  or might not be in the extended transition; but in the latter case, $pId$
+  changes state so must be in the transition.  Let $v$ be an arbitrary view
+  of~$s$ for~$pId$.  Then the extended transition induces a transition $v
+  \trans{} v'$.  Then the state for~$cId$ in~$v'$ is again taken from~$s'$.
+
+%% \item First suppose that either $v'$ has no secondary component (so $s'(pId)$
+%%   has no reference to another component), or the secondary component~$cId$
+%%   of~$v'$ is included in the extended transition; $pId$ might or might not be
+%%   in the extended transition.  If $s(pId)$ has a reference to~$cId$ then let
+%%   $v = (s.\fixed, \set{s(pId), s(cId)})$; otherwise (so either $v'$ has no
+%%   secondary component or $pId$ is in the transition and gains a reference
+%%   to~$cId$), let $v$ be an arbitrary view of~$s$ for~$pId$.  Then the extended
+%%   transition induces a transition $v \trans{} v'$ (again using
+%%   Lemma~\ref{lem:induced-conditions}).
 
 \item Next suppose that $v'$ has a secondary component with identity~$cId$,
   and neither $pId$ nor~$cId$ is included in the extended transition; so
@@ -209,12 +166,19 @@ components.  We perform a case analysis.
   most the fixed processes change state).
 
 \item Finally suppose that again $v'$ has a secondary component with
-  identity~$cId$ that is not in the extended transition, but that $pId$
-  \emph{is} in this transition.  Let $v$ be an arbitrary view of~$s$
-  for~$cId$.  Then the transition induces a transition producing~$v'$, using
-  the final clause of Definition~\ref{def:induced-transition-singleRef} (with
-  $sc = s'(pId)$).
-\end{itemize}
+  identity~$cId$ that is not in the extended transition (so $s'(cId) =
+  s(cId)$), but that $pId$ \emph{is} in this transition.
+  \begin{itemize}
+  \item If $s(pId)$ has a reference to~$cId$, then let $v =
+    (pre.\fixed,\linebreak[1] \set{s(pId), s(cId)})$.  Then, as in earlier
+    cases, the transition induces a transition $v \trans{} v'$.
+
+  \item If $s(pId)$ does not have a reference to~$cId$, then let $v$ be an
+    arbitrary view of~$s$ for~$cId$.  Then the transition induces a transition
+    producing~$v'$, using the final clause of
+    Definition~\ref{def:induced-transition-singleRef} (with $sc = s'(pId)$).
+  \end{itemize}
+\end{enumerate}
 
 \item
 Finally suppose the transition $s \trans{e} s'$ has an active fixed process.
@@ -235,40 +199,4 @@ consider fewer induced transitions?
 The final case could be re-written so that the final subcase applies only when
 $pId$ acquires the reference to~$c$ in the transition
 \end{improve}
-
-
-
-%% Let $fixed = s.\fixed$ and $fixed' = s'.\fixed$.  
-
-%% Consider a corresponding extended transition $pre \trans{e} post$, i.e.~such
-%% that: $pre.\fixed = fixed$,\, $post.\fixed = fixed'$; the principal of $pre$
-%% and $post$ is the active component of the concrete transition; if another
-%% component to which the principal has a reference synchronises on the
-%% transition, then that is included in~$pre$ and $post$ (otherwise choose an
-%% arbitrary view of the principal); and $pre$ and~$post$ also include any other
-%% component relevant to the transition (i.e.~that synchronises on the transition
-%% or to which the principal gains a reference).
-
-%% \framebox{active fixed component}
-
-%% Let $pId = v'.\princ.id$ be the identity of the principal of~$v'$, and suppose
-%% that component has states $princ$ and $princ'$ in~$s$ and~$s'$, respectively
-%% (so $princ \trans{e} princ'$).
-
-%% \begin{enumerate}
-%% \item First suppose that $pId$ is the active component in the concrete
-%%   transition $s \trans{e} s'$, and so in the extended transition $pre
-%%   \trans{e} post$.  And suppose that either (a)~no other component
-%%   synchronises on the transition, or (b)~that another component does
-%%   synchronise and is included in~$v'$, or (c)~that the principal gains a
-%%   reference to another component in the transition, and that component is
-%%   included in~$v'$.  In each case, the extended transition captures the
-%%   relevant information, and so $v'$ can be extracted from~$post$.
-
-%% \item Now suppose again that $pId$ is the active component in the concrete
-%%   transition $s \trans{e} s'$, but that the secondary component~$c$ in~$v'$ is
-%%   not in the corresponding extended transition (as in the previous case).
-%%   Then necessarily $pId$ had a reference to~$c$ in~$s$, and $c$ did not change
-%%   state in the transition.  Let $v = (fixed, \set{princ, c})$.  Then the
-%%   transition $v \trans{} v'$ is induced, as in Definition\ref{def:induced-transition}
 

@@ -1,0 +1,178 @@
+\subsection{Restricted views}
+\label{sec:effectOn-restricted}
+
+We now consider how to adapt the approach to deal with restricted views.  For
+primary induced transitions, the approach will be as in the previous
+subsection.  For secondary induced transitions, the approach will be slightly
+different. 
+
+\framebox{Note, 2021/08/10.}  I think what follows isn't what we want: it is
+proving the wrong result.  It considers a representative remapping to make $pre$
+and $v$ accordant.  If two remappings would  produce the same
+induced transition, only one is considered.  However, the side conditions of
+Definition~\ref{def:induced-transition-singleRef} might be satisfied by one of
+those remappings and not the other.  More concretely, consider the transition
+\begin{eqnarray*}
+(fixed(N_1); Th(T_1,N_1), Nd(N_2,N1)) & \trans{} &
+ (fixed'(N_1); Th'(T_1), Nd(N_2,N_1))
+\end{eqnarray*}
+on
+\begin{eqnarray*}
+v & = & (fixed(N_1); Th''(T_1,N_2,N_1), Nd'(N_1,N_2)).
+\end{eqnarray*}
+%
+At present, this will consider only the remapping $\set{T_1 \mapsto T_2, N_1
+  \mapsto N_1,\linebreak[1] {N_2 \mapsto N_3}}$, which would require (for
+condition~(b)) the view
+\[
+(fixed(N_1); Nd(N_2,N_1), Nd'(N_1,N_3))
+\]
+to induce a transition to
+\[
+\begin{align}
+(fixed'(N_1); Th''(T_2,N_3,N_1), Nd'(N_1,N_3)) \equiv \\
+\qquad (fixed'(N_1); Th''(T_1,N_2,N_1), Nd'(N_1,N_2)).
+\end{align}
+\]
+We should also consider the remapping $\set{T_1 \mapsto T_2, N_1 \mapsto N_1,
+  N_2 \mapsto N_2}$, which would require the view
+\[
+(fixed(N_1); Nd(N_2,N1), Nd'(N_1,N_2))
+\]
+to induce a transition to
+\[
+\begin{align}
+(fixed'(N_1); Th''(T_2,N_2,N_1), Nd'(N_1,N_2)) \equiv \\
+\qquad (fixed'(N_1); Th''(T_1,N_2,N_1), Nd'(N_1,N_2)).
+\end{align}
+\]
+I think it would be sound to allow a parameter to be remapped to an arbitrary
+parameter in~$pre$ (subject to the normal conditions).  It might be possible
+to do with fewer cases. 
+
+
+\begin{definition} 
+\label{def:representative-consistent-extension-singleRef}
+Suppose we are performing an analysis using restricted views.  Consider an
+extended transition~$pre \trans{e} post$ and a view~$v$.  Consider a renaming
+function~$\pi$ that unifies some (maybe none) of the components of~$v$ with
+components of~$pre$.  
+
+We define a consistent extension~$\pi'$ of~$\pi$ to be a
+\emph{representative primary consistent extension} if  $\pi'$ is as in
+  Definition~\ref{def:representative-consistent-extension}.
+
+We define a consistent extension~$\pi'$ of~$\pi$ to be a \emph{representative
+  secondary consistent extension} if a secondary component~$cId$ in the
+transition acquires a parameter~$p$ of the same type as the identity $pId$ of
+$v.\princ$, $\pi'(pId) = p$, and every other parameter of $v.\princ$ is
+remapped either to (1)~a parameter of $post.\fixed$, (2)~a parameter of the
+state of $cId$ in $post$, or (3)~the minimal fresh parameter.
+\end{definition}
+
+%%%%%
+
+\begin{example}
+Consider the effect of the transition
+\[
+\begin{align}
+(fixed; Th(T_0,N_0,N_1), Nd_x(N_0,N_2,null))   \trans{setNext.T_0.N_0.N_1} \\
+\qquad (fixed'(N_3); Th'(T_0,N_0,N_1), Nd_x(N_0,N_2,N_1)) 
+\end{align}
+\]
+on
+\begin{eqnarray*}
+v & = &  (fixed; Nd_y(N_0,N_1), Nd_z(N_1,null).
+\end{eqnarray*}
+%
+This has representative secondary consistent extensions
+\begin{eqnarray*}
+\pi_X & = & \set{N_0 \mapsto N_1, N_1 \mapsto X},
+  \quad \mbox{for $X = N_2, N_3, N_4$}.
+\end{eqnarray*}
+%
+The secondary component of the transition acquires a reference to~$N_1$, so
+the identity~$N_0$ of~$v.\princ$ is mapped to to~$N_1$.  The parameter~$N_1$
+can be mapped to match the parameter~$N_3$ of the fixed processes, the
+parameter~$N_2$ of the secondary component of the transition, or the minimal
+fresh parameter~$N_4$.
+%
+This gives secondary transitions producing
+\[{\it
+(fixed'(N_3); Nd_x(N_0,N_2,N_1), Nd_y(N_1,X)),}
+\] 
+which are then reduced to distinct normal forms.
+\end{example}
+
+%% \framebox{The current implementation is incorrect.}  
+%% I think we need all parameters of that secondary component in the
+%% post-state.  Consider \[ \begin{align} (fixed; Th(t, n_1, n_2), Nd_A(n_1,
+%% n_3, n_4)) \trans{setNext.t.n_1.n_2} \\ \qquad (fixed'; Th'(t), Nd_A(n_1,
+%% n_2, n_4)) \end{align} \] on $(fixed; Nd_B(n_2, n_4))$.  This induces a
+%% transition producing $(fixed'; Nd_A(n_1, n_2, n_4), Nd_B(n_2, n_4))$.  So
+%% when producing a secondary induced transition, we need to include all
+%% parameters of that secondary component in the post-state.  At present, the
+%% implementation includes all parameters of all components in the \emph{pre}-
+%% state (which is also inefficient).
+
+%%%%%
+
+\begin{prop}
+Consider an extended transition $pre \trans{e} post$ and a view~$v$, both in
+normal form, and a renaming function~$\pi$ unifying some components (maybe
+none).  Let $\pi'$ be a consistent extension of~$\pi$, and let $v'$ be the
+view produced by Definition~\ref{def:induced-transition-singleRef} considering
+the effect of $pre \trans{e} post$ on~$\pi'(v)$.
+%
+Then there is an extension~$\pi''$ of~$\pi$ such that
+%
+\begin{itemize}
+\item if the induced transition is a primary induced transition, then $\pi''$
+  is a representative primary consistent extension; and
+
+\item If the induced transition is a secondary induced transition, then $\pi''$
+  is a representative secondary consistent extension; 
+\end{itemize}
+and in each case, letting $v''$ be the view produced by
+Definition~\ref{def:induced-transition-singleRef} considering the effect of
+$pre \trans{e} post$ on~$\pi''(v)$, we have $v'' \equiv v'$.
+\end{prop}
+
+%%%%%
+
+\begin{proof}
+For primary induced transitions, the proof is as for
+Proposition~\ref{prop:unfiying-renaming}.
+
+Consider a secondary induced transition, producing~$v'$ as in the statement of
+the proposition.  Then
+%
+\begin{eqnarray*}
+v' & = & (post.\fixed, \set{sc, \pi'(v.\princ)}),
+\end{eqnarray*}
+%
+where $sc$ is the secondary component that gains a reference to
+$\pi'(v.\princ)$.  We describe how to construct~$\pi''$ and a
+renaming~$\hat\pi$ such that $\pi' = \hat\pi \circ \pi''$.  This will imply
+that $\hat\pi(v'') = v'$.
+
+Let $pId = v.\princ.\id$ and $p = \pi'(pId)$; this equals the parameter
+of~$sc$ that is a reference to $\pi'(v.\princ)$.  We define $\pi''(pId) = p$,
+and $\hat\pi(p) = p$.  This is a consistent extension of~$\pi$, because~$\pi'$
+is a consistent extension of~$\pi$.
+
+For every other parameter~$x$ of~$v.\princ$ such that $y = \pi'(x)$ appears
+in~$post.\fixed$ or~$sc$,  we define $\pi''(x) = y$, and $\hat\pi(y) = y$.
+Note that each such value~$y$ is included under case~(1) or~(2) of
+Definition~\ref{def:representative-consistent-extension-singleRef}.  Again,
+this is a consistent extension of~$\pi$, because~$\pi'$ is a consistent
+extension of~$\pi$.
+
+For every other parameter~$x$ of $v.\princ$ not in the domain of~$\pi$, we
+define $\pi''(x)$ to be the minimal fresh parameter~$z$, and define
+$\hat\pi(z) = \pi'(x)$.  This is a consistent extension of~$\pi$, by
+construction.
+\end{proof}
+
+
+% LocalWords:  unifications

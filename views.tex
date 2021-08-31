@@ -235,11 +235,11 @@ loses the reference to~$n_h$ in the transition.  It is straightforward to remove
 components that are no longer referenced in order to obtain the relevant view.
 
 We can generate extended transitions by considering the view transitions; then
-extending the pre-state to add a compatible state of a component to which the
+extending the pre-state to add a consistent state of a component to which the
 principal component acquires a reference; and adding the corresponding state
 of each such component to the post state (here the added component does not
 synchronise on the transition so remains in the same state).  The following
-definitions describe what we mean by \emph{compatible}.
+definitions describe what we mean by \emph{consistent}.
 
 \begin{impNote}
 The implementation represents a transition that requires an
@@ -446,21 +446,24 @@ consider many different extended transitions $pre \trans{e} post$ and
 views~$v$ to create new post-views.  However, it turns out that many of these
 induced transitions create identical post-views.
 %
-\begin{itemize}
-\item If $pre.\princ = v.\princ$ then the induced transition is identical to the
-  original transition. % We therefore avoid recreating this transition.
+\begin{enumerate}
+\item\label{case:avoid-induced-1} If $pre.\princ = v.\princ$ then the induced
+  transition is identical to the original transition. % We therefore avoid
+  recreating this transition.
 
-\item Suppose $pre.\fixed = post.\fixed$ and $v$ contains no component that
-  changes state in the transition.  Then the new view~$v'$ is identical
-  to~$v$. 
+\item\label{case:avoid-induced-2} Suppose $pre.\fixed = post.\fixed$ and $v$
+  contains no component that changes state in the transition.  Then the new
+  view~$v'$ is identical to~$v$.
 
-\item Now suppose $pre.\fixed \ne post.\fixed$, but $v$ again contains no
-  component that changes state in the transition.  Then the new view~$v'$ will
-  be different from~$v$.  However, suppose we subsequently consider another
-  extended transition $pre' \trans{} post'$ with $pre'.\fixed = pre.\fixed$
-  and $post'.\fixed = post.\fixed$, and consider its effect on the same~$v$.
-  Then this will induce a transition to the same post-view~$v'$.   
-\end{itemize}
+\item\label{case:avoid-induced-3} Now suppose $pre.\fixed \ne post.\fixed$,
+  but $v$ again contains no component that changes state in the transition.
+  Then the new view~$v'$ will be different from~$v$.  However, suppose we
+  subsequently consider another extended transition $pre' \trans{} post'$ with
+  $post'.\fixed = post.\fixed$, and consider its effect on the same~$v$
+  (necessarily $pre'.\fixed = pre.\fixed = v.\fixed$), and $v$ again contains
+  no component that changes state in the transition.  Then this will induce a
+  transition to the same post-view~$v'$.
+\end{enumerate}
 
 We identify such cases early, and avoid producing the duplicate post-views. 
 \end{opt}
@@ -473,6 +476,10 @@ The above optimisation is implemented in
 \begin{improve}
 Can it be done earlier?  Also, it would seem better to store the relevant
 information in the view.
+
+Also, if a single component changes state but doesn't gain any
+reference, it is enough to consider one such case for each view~$v$ and for
+each transition of the fixed processes and the component.
 \end{improve}
 
 
@@ -493,6 +500,11 @@ v'$, as in Definition~\ref{def:active-process-transition}.
 We then also create every transition that $pre \trans{e} post$ induces on a
 view in~$V$, as in Definition~\ref{def:induced-transition}. 
 \end{definition}
+
+\begin{improve}
+\framebox{***} I think effectOn is being called twice with the same arguments,
+at least with singleRef on lazySet.csp. 
+\end{improve}
 
 We start by comparing the properties of compatibility and consistency
 %

@@ -6,11 +6,11 @@ subsumes a fairly obvious adaptation of
 Definition~\ref{def:induced-transition}.  For example, the
 transition~(\ref{trans:setNext-singleRef}) induces a transition on
 \[\mit
-v = (fixed; Thread(t, n, n'), Node_y(n', n''))
+v = (fixed; Th(t, n, n'), Nd_y(n', n''))
 \]
 to produce
 \[\mit
-v' = (fixed'; Thread'(t, n, n'), Node_y(n', n'')). 
+v' = (fixed'; Th'(t, n, n'), Nd_y(n', n'')). 
 \]
 Thus omitting view transitions from~$v$ (as discussed above) does not prevent
 us producing~$v'$. 
@@ -39,21 +39,21 @@ transitions; and then justify the extra conditions mentioned in point~2.
 Consider again the transition (\ref{trans:setNext}).  When using full views,
 this would induce a transition from 
 \[\mit
-v = (fixed,  Node_x(n, null))\]
+v = (fixed,  Nd_x(n, null))\]
 to produce
 \[\mit
-v' = (fixed';  Node_x(n, n'), Node_y(n', n'')).
+v' = (fixed';  Nd_x(n, n'), Nd_y(n', n'')).
 \]
 However, with restricted views and a direct adaptation of
 Definition~\ref{def:induced-transition}, no corresponding transition
 producing~$v'$ via transition~(\ref{trans:setNext-singleRef}) is induced,
-because the component state $Node_y(n', n'')$ is in neither~$v$ nor the
+because the component state $Nd_y(n', n'')$ is in neither~$v$ nor the
 post-state of the view transition.
 
 Instead, we consider the effect of the 
 transition~(\ref{trans:setNext-singleRef}) on views such as
 \[\mit
-v = (fixed; Node_y(n', n''), Node_z(n'', n''')).
+v = (fixed; Nd_y(n', n''), Nd_z(n'', n''')).
 \]
 We identify that the secondary component in the  transition gains a
 reference to the principal node of~$v$, and use that to deduce the induced
@@ -76,7 +76,7 @@ At present this is done in EffectOn, via c2Refs.
 I don't think this is the
 best way.  I think that we want to separately record that for every view
 \[\mit 
-(\fixed; Thread(t, n, n'), Node_y(n', n''))
+(\fixed; Th(t, n, n'), Nd_y(n', n''))
 \]
 we generate the view~$v'$ (for all $y$ and~$n''$).  More generally, if a
 secondary component changes state, and gains a reference to a missing
@@ -104,8 +104,8 @@ such that:
 \begin{enumerate}
 \item[(a)] $v$ and $pre$ are accordant;
 
-\item[(b)] If a component $c$ of $pre$ has a reference
-  to a component~$c'$ of~$v$, or vice versa, then $V$ also contains the view
+\item[(b)] If a component $c$ of $pre$ has a reference to a component~$c'$
+  of~$v$, or vice versa \framebox{check!}, then $V$ also contains the view
 \begin{eqnarray*}
 v_\cross & = & (pre.\fixed, \set{c, c'});
 \end{eqnarray*}
@@ -120,7 +120,10 @@ v_\cross & = & (pre.\fixed, \set{c, c'});
 (recall $pre.\fixed = v.\fixed$ here).
 \end{enumerate}
 %
-Then the transition \emph{induces} a new
+Then:
+\begin{description}
+\item[Primary induced transitions.]
+The transition \emph{induces} a new
 transition $v \trans{} v'$ where
 \begin{enumerate}
 \item $v'.\fixed = post.\fixed$.
@@ -128,39 +131,62 @@ transition $v \trans{} v'$ where
 \item If $v.\princ$ is in $pre$ then $v'.\princ$ is the corresponding
   component in~$post$; otherwise $v'.\princ = v.\princ$.
 
-\item\label{induce-clause-3} If $v'.\princ$ has no reference to another
-  component, then $v'$ has no secondary component.  Otherwise the secondary
-  component of~$v'$ is a component referenced by $v'.princ$, either from
-  $post$ if the component is part of the transition, or otherwise from~$v$, if
-  such a component exists.  If $v'.\princ$ references only components not in
-  either $post$ or $v$, then no new transition is induced.
+%% \item\label{induce-clause-3} If $v'.\princ$ has no reference to another
+%%   component, then $v'$ has no secondary component.  Otherwise the secondary
+%%   component of~$v'$ is a component referenced by $v'.princ$, either from
+%%   $post$ if the component is part of the transition, or otherwise from~$v$, if
+%%   such a component exists.  If $v'.\princ$ references only components not in
+%%   either $post$ or $v$, then no new transition is induced.
 
-\item[3$'$.] (Alternative version) If $v'.\princ$ has no reference to another
-  component, then $v'$ has no secondary component.  Otherwise the secondary
-  component of~$v'$ is a component~$cId$ referenced by $v'.princ$, and such
-  that if $v.princ$ also referenced~$cId$, then a component for~$cId$ was
-  included in~$v$.  The component for~$cId$ in~$v'$ is either from $post$ if
-  the component is part of the transition, or otherwise from~$v$, if such a
-  component exists.  If there was no component for~$cId$ in either $post$
-  or~$v$, then no new transition is induced.
+ % (Alternative version) 
+\item\label{induce-clause-3}
+  If $v'.\princ$ has no reference to another component, then $v'$ has no
+  secondary component.  Otherwise the secondary component of~$v'$ is a
+  component~$cId$ referenced by $v'.princ$, and such that if $v.princ$ also
+  referenced~$cId$, then a component for~$cId$ was included in~$v$.  The
+  component for~$cId$ in~$v'$ is either from $post$ if the component is part
+  of the transition, or otherwise from~$v$, if such a component exists.  If
+  there was no component for~$cId$ in either $post$ or~$v$, then no new
+  transition is induced.
 \end{enumerate}
 %
-Further, if a secondary component~$sc$ of~$post$ has a reference to $v.\princ$,
+We call such a transition a \emph{primary induced transition}.
+
+\item[Secondary induced transitions.]
+If a secondary component~$sc$ of~$post$ has a reference to $v.\princ$,
 then the transition induces a new transition producing
 \[\mit
 v' = (post.\fixed, \set{sc, v.\princ}).
 \]
+We call such a transition a \emph{secondary induced transition}.
+\end{description}
 \end{definition}
+
+
+Clause~\ref{induce-clause-3} for primary induced transitions prevents the
+secondary component of~$v'$ from being a missing component in~$v$.  For
+example, consider the transition~(\ref{trans:setNext-singleRef}) together with
+\begin{eqnarray*}
+v & = & (fixed; Th''(t', n, n''), Nd_y(n'',null)) .
+\end{eqnarray*}
+%
+We do not include an induced transition to produce
+\begin{eqnarray*}
+v' & = & (fixed'; Th''(t', n, n''),  Nd_x(n, n'))
+\end{eqnarray*}
+from~$v$, because $v$ has a missing component for~$n$.  However, we would
+induce a transition to produce~$v'$ from
+\begin{eqnarray*}
+v & = & (fixed; Th''(t', n, n''),Nd_x(n, null) ).
+\end{eqnarray*}
+
 
 \begin{improve}
 Can we reduce the number of combinations we have to consider?
 At present we don't support Optimisation~\ref{opt:avoid-induced} with reduced
 views: it's not sound for some reason.  Work out why.  It might be due to the
-use of c2Refs.
+use of c2Refs.  \framebox{Is this still true?}
 \end{improve}
-
-\framebox{Examples illustrating item 3.
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -174,8 +200,8 @@ must also contain the view
 \begin{eqnarray*}
 v_\cross & = & (pre.\fixed, \set{c, c'}).
 \end{eqnarray*} 
-In effect, this requires cross references between $c$ and~$pre$ to be
-represented by other views.  If $c$ and $pre$ are views of the same system
+In effect, this requires cross references between $v$ and~$pre$ to be
+represented by other views.  If $v$ and $pre$ are views of the same system
 state, then the view $v_X$ will also be a view of that state; hence requiring
 it is sound.
 %
@@ -190,10 +216,10 @@ Consider the following transition for the lock-based queue.
 \qquad (fixed(t, n_1, n_2); Enq_6(t), Nd_B(n_2, null)).
 \end{align}
 \]
-The thread is enqueueing~$B$ in node~$n_2$.  It has previously set $n_1$ to
-point to $n_2$, and now advances \SCALA{last} to~$n_2$.  This implies that
-$n_1$ is of the form $Nd_x(n_1, n_2)$ for some~$x$ in any corresponding system
-state.  However, consider also the view
+The thread is enqueueing~$B$ in node~$n_2$.  It has previously set $n_1$ (the
+last node in the list) to point to $n_2$, and now advances \SCALA{last}
+to~$n_2$.  This implies that $n_1$ is of the form $Nd_x(n_1, n_2)$, for
+some~$x$, in any corresponding system state.  However, consider also the view
 %
 \begin{eqnarray*}
 v & = & (fixed(t, n_1, n_1) ; Nd_A(n_1, null)).
@@ -281,7 +307,7 @@ that a $C$ node never points to an~$A$ node.  This prevents the false error.
 We now justify condition~(c) from
 Definition~\ref{def:induced-transition-singleRef}, that if the principals
 of~$pre$ and~$v$ both have a reference to the same missing component, say with
-identity $id$, then there must be some component~$c$ with identity~$id$ such
+identity~$id$, then there must be some component~$c$ with identity~$id$ such
 that $V$ contains each of
 \[
 (pre.\fixed, \set{pre.\princ, c}) \quad\mbox{and}\quad 
@@ -338,27 +364,28 @@ include that~$B$ is popped at most once.
 Consider the following two views
 %
 \begin{eqnarray*}
-pre & = &  (Top(n_0), WD_B; Thread_{pop,B}(t_0, n_0, n_1), Nd_B(n_0, n_1)), \\
-v & = & (Top(n_0), WD_B; Thread_{pop,B}(t_1, n_1, n_2), Nd_A(n_2, null)).
+pre & = &  (Top(n_0), WD_B; Th_{pop,B}(t_0, n_0, n_1), Nd_B(n_0, n_1)), \\
+v & = & (Top(n_0), WD_B; Th_{pop,B}(t_1, n_1, n_2), Nd_A(n_2, null)).
 \end{eqnarray*}
 %
 These are depicted in Figure~\ref{fig:missingCommon}.  Both principals are
 threads that are attempting to perform a pop, of nodes~$n_0$ and~$n_1$,
 respectively, each having read~$B$ from that node.  Both views have an omitted
 reference to node~$n_1$, depicted as dotted in the figure.  Both are possible
-views of the system, but they are not consistent.
+views of the system, but they are not consistent (since no system state has
+two $B$-nodes in the stack).
 
 From the state $pre$, thread~$t_0$ can advance \SCALA{top} to~$n_1$,
 popping~$B$, in a transition that produces
 \[\mit
-(Top(n_1); Thread(t_0), Nd_B(n_0, n_1)).
+(Top(n_1); Th(t_0), Nd_B(n_0, n_1)).
 \]
 Without condition~(c), this transition  induces a transition from~$v$ to
 \[\mit
-(Top(n_1); Thread_{pop,B}(t_1, n_1, n_2), Nd_A(n_2, null)).
+(Top(n_1); Th_{pop,B}(t_1, n_1, n_2), Nd_A(n_2, null)).
 \]
 But now $t_1$ can pop~$B$ (from~$n_1$).  The watchdog will then falsely signal
-an error (since it has seen~$B$ popped twice). 
+an error, since it has seen~$B$ popped twice. 
 
 Including condition~(c) will prevent this false error, since there is no state
 for~$n_1$ that is consistent with the states of both~$t_0$ and~$t_1$.

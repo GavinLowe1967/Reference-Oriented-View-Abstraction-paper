@@ -1,0 +1,34 @@
+\section{Symmetry reduction}
+
+Note: some of this lives before the definition of the abstract algorithm.
+Some is more related to the BFS implementation. 
+
+Idea of symmetry reduction.
+
+Define renaming functions: partial injective function over non-distinguished
+identities, preserving types.
+
+For each type of identities, assume a linear order over the type.  In examples
+below, for node identities we will assume a total order $N_0 < N_1 < N_2 <
+\ldots$; and similarly for thread identities.  (In the implementation,
+identities are represented by non-negative integers: we use the integer
+order.)
+
+\begin{definition}
+Define normal form.  Fixed processes in some fixed order (defined in the input
+script).  For a view, list components, with principal first, followed by
+secondary components in the order corresponding to the references from the
+principal (without repetitions).  For extended views necessary for extended
+transitions, append any additional component at the end.
+
+For each type, the first occurrences of each value must form an
+initial segment of the type.
+\end{definition}
+
+
+Example.
+
+\begin{lemma}
+If $s$ and~$s'$ are both in normal form, and $\pi(s)$ and~$\pi'(s')$ are
+substates of the same system state, then $s.\fixed = s'.\fixed$.
+\end{lemma}
