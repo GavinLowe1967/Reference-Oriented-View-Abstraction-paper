@@ -1,10 +1,189 @@
 \subsection{Restricted views}
 \label{sec:effectOn-restricted}
 
-We now consider how to adapt the approach to deal with restricted views.  For
-primary induced transitions, the approach will be as in the previous
-subsection.  For secondary induced transitions, the approach will be slightly
-different. 
+We now consider how to adapt the approach to deal with restricted views.
+
+
+\begin{definition} 
+\label{def:representative-consistent-extension-singleRef}
+Suppose we are performing an analysis using restricted views.  Consider an
+extended transition~$pre \trans{e} post$ and a view~$v$.  Consider a renaming
+function~$\pi$ that unifies some (maybe none) of the components of~$v$ with
+components of~$pre$.  
+
+We define a consistent extension~$\pi'$ of~$\pi$ to be a
+\emph{representative primary consistent extension} if  $\pi'$ is as in
+  Definition~\ref{def:representative-consistent-extension}, except with the
+  addition of allowing $\pi'(x)$ to be
+\begin{enumerate}
+\item[5.] a parameter of a component of~$pre$.
+\end{enumerate}
+
+We define a consistent extension~$\pi'$ of~$\pi$ to be a \emph{representative
+  secondary consistent extension} if a secondary component~$cId$ in the
+transition acquires a parameter~$p$ of the same type as the identity $pId$ of
+$v.\princ$, $\pi'(pId) = p$, and every other parameter of $v.\princ$ is
+remapped either to (1)~a parameter of $post.\fixed$, (2)~a parameter of the
+state of $cId$ in $post$, (3) a parameter of a component of~$pre$, or (4)~the
+minimal fresh parameter.
+\end{definition}
+
+\framebox{FIX ME} I think the current implementation doesn't include~(3). 
+
+*** Example here
+
+\begin{prop}
+Consider an extended transition $pre \trans{e} post$ and a view~$v$, both in
+normal form, and a renaming function~$\pi$ unifying some components (maybe
+none).  Let $\pi'$ be a consistent extension of~$\pi$, and let $v'$ be the
+view produced by Definition~\ref{def:induced-transition-singleRef} considering
+the effect of $pre \trans{e} post$ on~$\pi'(v)$.
+%
+Then there is an extension~$\pi''$ of~$\pi$ such that
+%
+\begin{itemize}
+\item if the induced transition is a primary induced transition, then $\pi''$
+  is a representative primary consistent extension; and
+
+\item If the induced transition is a secondary induced transition, then $\pi''$
+  is a representative secondary consistent extension; 
+\end{itemize}
+and in each case, letting $v''$ be the view produced by
+Definition~\ref{def:induced-transition-singleRef} considering the effect of
+$pre \trans{e} post$ on~$\pi''(v)$, we have $v'' \equiv v'$.
+\end{prop}
+
+%%%%%
+
+\begin{proof}
+We start by considering primary induced transitions.  We describe how to
+construct the renaming~$\pi''$ and a renaming~$\hat\pi$ such that $\pi' =
+\hat\pi \circ \pi''$.  The proof is similar to that of
+Proposition~\ref{prop:unifying-renaming}.  Below, we concentrate on aspects of
+the proof that are different.
+
+As in the proof of Proposition~\ref{prop:unifying-renaming}, for each
+parameter~$x$ of~$v$ such that $y = \pi'(x)$ is a parameter of either
+$post.\fixed$ or a component of $v'$ taken from $post$, we define $\pi''(x) =
+y$ and $\hat\pi(y) = y$.  The details are then as earlier.
+
+In addition, for clause (b) of
+Definition~\ref{def:induced-transition-singleRef}, suppose a component~$c$ of
+$pre$ has a reference to a component~$\pi'(c')$ of~$\pi'(v)$, or vice versa.
+Then, since clause~(b) is satisfied for~$\pi'(v)$, the current set of
+representative views must contain a view equivalent to 
+\begin{eqnarray*}
+v_\cross & = & (pre.\fixed, \set{c,\pi'(c')}).
+\end{eqnarray*}
+%
+We will ensure that $\pi''$ is such that
+%
+\begin{eqnarray*}
+v_\cross' & = & (pre.\fixed, \set{c,\pi''(c')})
+\end{eqnarray*}
+%
+is such that $v_\cross \equiv v_\cross'$, and hence that the current set of
+representative views must contain a view equivalent to $v_\cross'$, as
+required for clause~(b) for~$\pi''(v)$.  To this end, if $x$ is a parameter
+of~$c'$ such that $y = \pi'(x)$ is a parameter of~$c$, then define $\pi''(x) =
+y$ and $\hat\pi(y) = y$.  Note that $y$ is included under condition~5.  Also,
+if $x$ was included under one of the cases considered earlier, then this
+definition is consistent with that earlier case.  We return to clause~(b)
+below, and justify that $v_\cross \equiv v_\cross'$.
+
+In general, there might be several views required to satisfy clause (b),
+corresponding to different cross references.  We perform the above procedure
+for each such. 
+
+As in the proof of Proposition~\ref{prop:unifying-renaming}, each other
+parameter~$y$ in~$v'$ must necessarily be in a component taken from~$\pi'(v)$.
+As earlier, if the parameter is $\pi'(x)$ with $x$ not in the domain of~$\pi$,
+we define $\pi''(x)$ to be the minimal fresh parameter~$z$, and we let
+$\hat\pi(z) = y$.  The details are as earlier.
+
+We now return to clause~(b) and justify that $v_\cross \equiv v_\cross'$.
+Note that we have defined $\pi''$ to agree with~$\pi'$, other than for the
+case in the previous paragraph.  Hence $v_\cross$ and $v_\cross'$ differ only
+on parameters~$x$ of~$c'$ such that $\pi''(x)$ is a fresh parameter.  Note
+that each such fresh parameter is distinct from the parameters in~$pre.\fixed$
+and~$c$ (by the definition of freshness).
+%
+Likewise, each corresponding parameter $\pi'(x)$ in $\pi'(c)$ is distinct from
+the parameters of~$pre.\fixed$ (since each parameter in $pre.\fixed$ is in the
+range of~$\pi$); and $\pi'(x)$ is distinct from any parameter of~$c$ (since
+such~$x$ are not mapped to fresh parameters by~$\pi''$).
+%
+Thus, $v_\cross$ and $v_\cross'$ are related via the remapping that maps
+each such $\pi''(x)$ to~$\pi'(x)$, and is otherwise the identity (this is the
+same as the remapping that extends $\hat\pi$ with the identity function over
+the parameters of~$c$).  Hence clause~(b) is satisfied for~$\pi''(v)$.
+
+For clause (c) of Definition~\ref{def:induced-transition-singleRef}, suppose
+the principals of $pre$ and $\pi'(v)$ both have a reference to the same
+missing component, with identity~$id$.  Suppose the corresponding parameter in
+the principal of~$v$ is~$x$, so $\pi'(x) = id$.  Then, since clause~(c) is
+satisfied for~$\pi'(v)$, there is some component~$c$ with identity~$id$ such
+that the current set of representative views must contain views equivalent to
+each of
+\[
+(pre.\fixed, \set{pre.\princ, c}) \qquad\mbox{and}\qquad
+(pre.\fixed, \set{\pi'(v).\princ, c}).
+\]
+We can assume, without loss of generality, that~$c$ contains none of the fresh
+parameters chosen when defining~$\pi''$: if not, we can rename those
+parameters of~$c$ to distinct fresh parameters.  Then
+\begin{eqnarray*}
+(pre.\fixed, \set{\pi'(v).\princ, c}) & \equiv & 
+  (pre.\fixed, \set{\pi''(v).\princ, c}).
+\end{eqnarray*}
+They are related by~$\hat\pi$, extended by the identity function over any
+additional parameters in~$c$.  Hence clause~(c) is satisfied for~$\pi''(v)$.
+
+\paragraph{Secondary induced transitions}
+
+Suppose a secondary component $sc$ of $post$ has a reference in parameter~$p$
+to~$\pi'(v).\princ$, so a secondary induced transition from~$\pi'(v)$ produces
+$(post.\fixed, \set{sc, \pi'(v).\princ})$.  Let $pId = v.\princ.\id$, so
+$\pi'(pId) = p$.
+
+We construct a corresponding representative secondary consistent
+extension~$\pi''$ of~$\pi$ as follows.
+
+We define $\pi''(pId) = p$ and $\hat\pi(p) = p$. 
+
+For each other parameter~$x$ of $v.\princ$ such that $y = \pi'(x)$ is a
+parameter of either $post.\fixed$ or~$sc$, we define $\pi''(x) = y$ and
+$\hat\pi(y) = y$.  Each such value~$y$ is included under case~1 or~2 of
+Definition~\ref{def:25}.   
+
+We deal with clause~(b) of Definition~\ref{def:induced-transition-singleRef}
+as earlier.  Relevant values are included under case~3 of
+Definition~\ref{def:25}.
+
+All other parameters map to minimal fresh param, as earlier ........
+
+We deal with clause~(c) as earlier. 
+\end{proof}
+
+Note: above suggests we can do with fewer choices under 5 (primary case).  It
+should only be invoked to map a parameter of~$c'$ to match a parameter of~$c$
+if $c$ has a reference to the renaming of~$c'$, or vice versa.  Perhaps:
+\begin{itemize}
+\item for each $c \in pre$, for each $c' \in v$, for each parameter~$y$ of~$c$,
+  map $c'.\id$ to~$y$ (if possible), and then continue, allowing remapping of
+  other parameters of~$c'$ to other parameters of~$c$;
+
+\item for each $c \in pre$, for each $c' \in v$, for each parameter~$y$
+  of~$c'$, map $y$ to $c.\id$ (if possible), and then continue, allowing
+  remapping of other parameters of~$c'$ to other parameters of~$c$.
+\end{itemize}
+%
+But there might be multiple instances.  Perhaps start by considering all
+combinations of cross references. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{Previous version}
 
 \framebox{Note, 2021/08/10.}  I think what follows isn't what we want: it is
 proving the wrong result.  It considers a representative remapping to make $pre$
@@ -52,7 +231,7 @@ to do with fewer cases.
 
 
 \begin{definition} 
-\label{def:representative-consistent-extension-singleRef}
+%\label{def:representative-consistent-extension-singleRef}
 Suppose we are performing an analysis using restricted views.  Consider an
 extended transition~$pre \trans{e} post$ and a view~$v$.  Consider a renaming
 function~$\pi$ that unifies some (maybe none) of the components of~$v$ with
@@ -142,7 +321,7 @@ $pre \trans{e} post$ on~$\pi''(v)$, we have $v'' \equiv v'$.
 
 \begin{proof}
 For primary induced transitions, the proof is as for
-Proposition~\ref{prop:unfiying-renaming}.
+Proposition~\ref{prop:unifying-renaming}.
 
 Consider a secondary induced transition, producing~$v'$ as in the statement of
 the proposition.  Then

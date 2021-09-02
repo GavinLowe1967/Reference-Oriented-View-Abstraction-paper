@@ -234,7 +234,7 @@ The following proposition shows that considering representative consistent
 extensions is enough to produce all induced transitions, up to equivalence. 
 %
 \begin{prop}
-\label{prop:unfiying-renaming}
+\label{prop:unifying-renaming}
 Consider an extended transition $pre \trans{e} post$ and a view~$v$, both in
 normal form, with $v.\fixed = pre.\fixed$.  Consider also a minimal renaming
 function~$\pi$ that is the identity on parameters of $v.\fixed$, and that
@@ -249,7 +249,9 @@ that, letting $v''$ be the view produced by
 Definition~\ref{def:induced-transition} considering the effect of $pre
 \trans{e} post$ on~$\pi''(v)$, we have $v'' \equiv v'$.
 \end{prop}
+
 %%%%%%
+
 \begin{proof}
 Let $pre$, $post$, $v$, $\pi$, $\pi'$ and~$v'$ be as in the statement of the
 lemma.  We describe how to construct the renaming~$\pi''$, and a
@@ -276,10 +278,15 @@ aide-m\'emoire).
 \path[draw, ->] (v'') -- node[right]{\scriptsize $\hat\pi$} (v');
 \end{tikzpicture}
 \end{center}
+%
+In fact, $\hat\pi$ will be the identity over all parameters except for fresh
+parameters chosen under clause~\ref{clause:remap-4} of
+Definition~\ref{def:representative-consistent-extension}.
 
 We define $\pi''$ as an extension of~$\pi$.  This implies that $\pi''$
 and~$\pi'$ agree on values in the domain of~$\pi$, and unify the same
-components.
+components.  For all values~$y$ in the range of~$\pi$, we define $\hat\pi(y) =
+y$. 
 
 Recall that $v'.\fixed = v''.\fixed = post.\fixed$; each component of~$v'$ is
 taken from~$post$ if the corresponding component of~$\pi'(v)$ is in~$pre$, and
