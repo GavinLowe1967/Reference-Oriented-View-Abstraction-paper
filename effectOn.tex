@@ -1,32 +1,34 @@
-\section{Notes on EffectOn}
+\section{Calculating induced transitions with symmetry reduction}
+\label{sec:induced-symmetry}
 
-\framebox{``Renaming'' or ``remapping''?  Inconsistent.}
+In this section, we consider consider how to calculate the transition induced
+by a transition $pre \trans{e} post$ on a view~$v$, given that both are in
+normal form and represent all members of their equivalence classes.  
+%
+Following Definition~\ref{def:induced-transition}, in principle, we need to
+find all ways of renaming parameters of~$v$ and~$pre$ to produce views that
+are accordant.  However, if two different renamings would produce equivalent
+post-views, it is enough to consider just one of them.  It is therefore enough
+to keep the parameters of $pre$ fixed, and to rename the parameters of~$v$.
+Each renaming can be defined by an renaming~$\pi$ over the parameters of~$v$.
+That is, we consider renamings~$\pi$ such that $\pi(v)$ and~$pre$ are
+accordant, and consider the effect of the transition on~$\pi(v)$.
+%
+Below, we restrict the range of such renamings further, while ensuring we
+produce a representative of each equivalence class of resulting post-views.
 
-We consider how to implement the effect of a transition $pre \trans{e} post$
-on a view~$v$, given that both are in normal form. 
 
-Since both $pre$ and $v$ represent all views in their equivalence classes, we
-need to find all ways of renaming parameters to produce views that are
-accordant.  It is enough to keep the parameters of $pre$ fixed, and to rename
-the parameters of~$v$.  Each renaming can be defined by an injective
-function~$\pi$ over the parameters of~$v$.  That is, we consider
-renamings~$\pi$ such that $\pi(v)$ and~$pre$ are accordant, and consider the
-effect of the transition on~$\pi(v)$.
-
-
-Further, it is enough to find all such renamings up to
-equivalence of the resulting post-views~$v'$: if two different renamings would
-produce equivalent post-views, it is enough to produce one of them.  We build
-up all renamings as follows.    We start by considering full views; in
-Section~\ref{sec:effectOn-restricted} we consider restricted views.
+%% We start by considering full views; in Section~\ref{sec:effectOn-restricted}
+%% we consider restricted views.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Full views} 
+%\subsection{Full views} 
+%\label{ssec:effectOn-full}
 
 Recall that in order to be accordant, if $\pi(v)$ and $pre$ each have a
 component with the same identity, then those components must be equal.  We say
-that the remapping has \emph{unified} these components.
+that the renaming has \emph{unified} these components.
 %
 \begin{definition}
 Let $v$ and $pre$ be in normal form.  Then renaming function~$\pi$ over the
@@ -36,21 +38,23 @@ accordant.
 If $c$ is a component of~$v$, $c'$ is a component of~$pre$, and $\pi(c) = c'$,
 we say that $c$ and~$c'$ are \emph{unified}.
 \end{definition}
+%
+Of course, it is possible to unify two components only if they have the same
+control state. 
 
 Recall that if $\pi(v)$ and~$pre$ are accordant, then their fixed processes
-are equal.  But $v$ and $pre$ are stored in normal form, so this will be the
-case only if the fixed processes of $v$ and~$pre$ are equal, and
-$\pi$ is be the identity function on all parameters of those fixed
-processes.  
+are equal.  The following lemma follows from the way we have defined normal
+forms. 
+%% But $v$ and $pre$ are stored in normal form, so this will be the
+%% case only if the fixed processes of $v$ and~$pre$ are equal, and
+%% $\pi$ is be the identity function on all parameters of those fixed
+%% processes.  
 %
 \begin{lemma}
-Suppose $s$ and~$s'$ are two substates that are in normal form, and $s \equiv
-s'$.  Then $s.\fixed = s'.\fixed$.  Equivalently, if $\pi(s) = s'$ then $\pi$
-is the identity function on the parameters of~$s.\fixed$. 
+If $v$ and~$pre$ are both in normal form, and $\pi(v)$ and~$pre$ are
+accordant, then $v.\fixed = pre.\fixed$ and $\pi$ is the identity over the
+parameters of~$v.\fixed$.
 \end{lemma}
-%
-\framebox{Need formal definition of normal form}, particularly for extensions
-of views.
 
 %%%%%
 
@@ -73,53 +77,55 @@ the partial renaming function $\pi = \set{N_0 \mapsto N_0}$, the identity over
 the parameters of the fixed processes.
 
 It is worth noting that the identifiers $N_1$, $N_2$ and~$N_3$ that appear in
-both~$pre$ and~$v$ might represent different parameters: each is just a
-representative of its equivalence class; the fact that the same identifiers
-appear in each substate is just an artefact of the way we produce normal
-forms.
+both~$pre$ and~$v$ might represent different parameters, since each substate
+is just a representative of its equivalence class.  The fact that the same
+identifiers appear in each substate is just an artefact of the way we produce
+normal forms.
 \end{example}
 
 %%%%%
 
 In general, any subset of the components of~$v$ might be unified with
-components of~$pre$ (including no unifications).  For each candidate choice of
-which components to unify, we construct the minimal extension of the renaming
-function~$\pi$ (the identity over the parameters of the fixed processes), to
-rename the parameters of each unified component of~$v$ to the parameters of
-the corresponding component of~$pre$.  However, some such choices of
-unifications might prove impossible, if they are not consistent with an
-injective extension of~$\pi$.
+components of~$pre$ (including no unifications).  For each potential choice of
+which components to unify, we construct the minimal renaming function that
+extends the identity function over the parameters of the fixed processes so as
+to rename the parameters of each unified component of~$v$ to the parameters of
+the corresponding component of~$pre$.  We call the resulting function a
+\emph{partial unification function}.  However, some such choices of
+unifications might prove impossible, if no such function exists.
+%
+\begin{definition}
+Let $v$ and $pre$ be in normal form with $v.\fixed = pre.\fixed$.  Then a
+partial renaming function~$\pi$ is a \emph{partial unification function} if
+\begin{itemize}
+\item $\pi$ is the identity function over the parameters of $v.\fixed$;
 
-\framebox{Definition here.}  Note minimal.  Use term ``unifying remapping''
-subsequently. 
+\item $\pi$ is defined over the parameters of a subset of the components
+  of~$v$, mapping each such component to unify it with a component of $pre$;
+
+\item $\pi$ is undefined over all parameters not included under the previous
+  two points.
+\end{itemize}
+\end{definition}
+
 
 %%%%%
 
 \begin{example}
 We continue with the running example.  Unifying the two $Nd_A$ processes
-gives the renaming
+gives the partial unification function
+%
 \begin{eqnarray*}
 \pi_1 & = & \set{N_0 \mapsto N_0, N_1 \mapsto N_1, N_2 \mapsto N_3}.
 \end{eqnarray*}
-Alternatively, unifying the two $Nd_B$ processes gives the renaming
+%
+Alternatively, unifying the two $Nd_B$ processes gives
 \begin{eqnarray*}
 \pi_2 & = & \set{N_0 \mapsto N_0, N_2 \mapsto N_2, N_3 \mapsto N_4}.
 \end{eqnarray*}
 It is not possible to unify both pairs simultaneously, since $N_2$ cannot be
-mapped consistently.
-%%  It is not possible to unify the two
-%% $Th$ processes, since the injectivity of~$\pi$ means that we cannot
-%% map~$N_1$ to~$N_0$.  For a similar reason, neither $Node$ in~$v$ can be
-%% unified with~$Node(N_0, N_1)$.  However, either node in~$v$ could be unified
-%% with $Node(N_1,N_2)$, giving the renamings
-%% \begin{eqnarray*}
-%% \pi_1 & = & \set{N_0 \mapsto N_0, N_1 \mapsto N_1, N_3 \mapsto N_2}, \\
-%% \pi_2 & = & \set{N_0 \mapsto N_0, N_2 \mapsto N_1, N_4 \mapsto N_2},
-%% \end{eqnarray*}
-%% respectively.  
-In addition, the renaming~$\pi$ corresponds to unifying no components.
-%% It is not possible to simultaneously unify more than one component of~$v$
-%% with components of~$pre$ in this case.
+mapped consistently.  In addition, the renaming~$\pi$ corresponds to unifying
+no components.
 \end{example}
 
 We now need to extend each such renaming function in a consistent way.  The
@@ -130,19 +136,29 @@ following definition describes what that means.
 Let $pre \trans{e} post$ be an extended transition, and $v$ be a view, both in
 normal form, with $v.\fixed = pre.\fixed$.
 %
-Consider a minimal renaming function~$\pi$ that is the identity on the
-parameters of~$pre.\fixed$, and unifies some (maybe none) of the components
-of~$v$ with components of~$pre$.  We define an extension~$\pi'$ of~$\pi$ to be
-a \emph{consistent extension} if (a)~the renaming~$\pi'$ is injective; and
-(b)~whenever a component~$c$ in~$v$ is not unified with any component
-of~$pre$, the identity of~$c$ is not mapped to an identity of a component~$c'$
-in~$pre$ (since that would require unifying~$c$ and~$c'$).
+Consider a partial unification function~$\pi$.  We define an extension~$\pi'$
+of~$\pi$ to be a \emph{consistent extension} if (a)~the renaming~$\pi'$ is
+injective and defined over all parameters of~$v$; and (b)~whenever a
+component~$c$ in~$v$ is not unified with any component of~$pre$, the identity
+of~$c$ is not mapped to an identity of a component~$c'$ in~$pre$ (since that
+would require unifying~$c$ and~$c'$).
 \end{definition}
 
 %%%%%
 
-Many different consistent extensions will end up producing the same new view,
-up to equivalence; we will build only representative renamings.  Recall
+The following lemma follows directly from the definitions.
+%
+\begin{lemma}
+Let $pre \trans{e} post$ be an extended transition, and $v$ be a view, both in
+normal form, with $v.\fixed = pre.\fixed$.  Then every unification
+function~$\pi$ is a consistent extension of a partial unification function,
+and vice versa.
+\end{lemma}
+
+In principal, then, we need to consider all consistent extensions of all
+partial unification functions.  However, many different consistent extensions
+will end up producing the same new view, up to equivalence, so it will be
+enough to build only representative renamings.  Recall
 (Definition~\ref{def:induced-transition}) that when we build an induced
 transition, the state of each component in the new view is: (1)~the state
 from~$post$ for components in the transition; or (2)~the state from~$v$ for
@@ -150,17 +166,18 @@ other components.  The unifications already tell us the states in case~(1).
 In case~(2), each parameter in the component might or might not be the same as
 a parameter taken from $post$.  We need to find all ways of renaming
 parameters in such components to give distinct new views, up to equivalence.
+The following definition captures the required consistent extensions; we
+verify this fact as Proposition~\ref{prop:unifying-renaming}.
 
 %%%%%
 
 \begin{definition}
 \label{def:representative-consistent-extension}
-Consider an extended transition~$pre \trans{e} post$ and a view~$v$. 
-Consider a minimal renaming function~$\pi$ that unifies some (maybe none) of the
-components of~$v$ with components of~$pre$.  We define a consistent
-extension~$\pi'$ of~$\pi$ to be a \emph{representative consistent extension}
-if for every parameter~$x$ in~$v$ but not in the domain of~$\pi$,\, $\pi'(x)$
-is one of the following:
+Consider an extended transition~$pre \trans{e} post$, a view~$v$, and a
+partial unification function~$\pi$.  We define a consistent extension~$\pi'$
+of~$\pi$ to be a \emph{representative consistent extension} if for every
+parameter~$x$ in~$v$ but not in the domain of~$\pi$,\, $\pi'(x)$ is one of the
+following:
 %
 \begin{enumerate}
 \item\label{clause:remap-1} a parameter of $post.\fixed$; 
@@ -209,7 +226,7 @@ clause~\ref{clause:remap-3}, it can be mapped to~$N_4$ (from the post-state of
 the $Nd_B$ process).  Finally, by clause~\ref{clause:remap-4}, it can be
 mapped to the minimal fresh value, namely~$N_6$.
 %
-This then produces four remappings:
+This then produces four renamings:
 \[
 \pi_X = \set{N_0 \mapsto N_0, N_1 \mapsto N_1, N_2 \mapsto N_3, N_3 \mapsto X},
 \quad \mbox{for $X = N_2, N_4, N_5, N_6$}.
@@ -219,7 +236,7 @@ For each such renaming~$\pi_X$,\, $v$ gets remapped to a view of the form
 (fixed(N_0); Nd_A(N_1, N_3), Nd_B(N_3, N_0, X)).
 \]
 The $fixed$ and $Nd_A$ processes evolve under the transition \( pre
-\trans{} post \), and the latter gains a reference to the $Nd_B$ process in
+\trans{} post \), and the latter gains a reference to~$N_2$ in
 $post$.  This produces the four views
 \[
 (fixed'(N_5); Nd_C(N_1, N_2, N_3), Nd_B(N_2, N_0, N_4), Nd_B(N_3, N_0, X)).
@@ -236,9 +253,8 @@ extensions is enough to produce all induced transitions, up to equivalence.
 \begin{prop}
 \label{prop:unifying-renaming}
 Consider an extended transition $pre \trans{e} post$ and a view~$v$, both in
-normal form, with $v.\fixed = pre.\fixed$.  Consider also a minimal renaming
-function~$\pi$ that is the identity on parameters of $v.\fixed$, and that
-unifies some components (maybe none).
+normal form, with $v.\fixed = pre.\fixed$.  Consider also a partial
+unification function~$\pi$.
 %
 Let $\pi'$ be a consistent extension of~$\pi$, and
 let $v'$ be the view produced by Definition~\ref{def:induced-transition}
@@ -330,7 +346,7 @@ Also note that this is a consistent extension of~$\pi$, by construction.
 \begin{impNote}
 \texttt{Unification.combine} produces the remapped version of~$v$, together
 with information about the unifications.  If uses \texttt{allUnifs} to find
-all choices of unification and corresponding remapping function~$\pi$.  Then
+all choices of unification and corresponding renaming function~$\pi$.  Then
 \texttt{extendUnif} extends this, and produces the remapped state.
 
 \texttt{EffectOn.apply} produces the corresponding post-views.
@@ -338,13 +354,8 @@ all choices of unification and corresponding remapping function~$\pi$.  Then
 
 %%%%%
 
-\begin{improve} 
-If the principal of~$v$ is unified with a component of $pre$, then for
-case~\ref{clause:remap-2} of
-Definition~\ref{def:representative-consistent-extension}, we can ignore
-components to which the principal loses a reference.  This might be relevant
-when a node has a reference to the thread, but loses that reference. 
-\end{improve}
+\subsection{Optimisations} 
+
 
 %%%%%
 
@@ -359,8 +370,11 @@ Recall Optimisation~\ref{opt:avoid-induced}.
   changes state.
 
 \item For case~\ref{case:avoid-induced-3}, we store a record of pairs
-  $(post.\fixed, v)$ for which we have considered the effect of a transition
-  $pre \trans{e} post$ on~$v$ for which $pre.\fixed \ne post.\fixed$ and $v$
+  $(v, post.\fixed)$ for which we have considered the effect of a transition
+  $pre \trans{e} post$ on~$v$ for which $pre.\fixed \ne post.\fixed$,\,
+  %% $unifs$ describes which components of~$v$ unify with which components
+  %% of~$pre$ (
+  and $v$
   unifies with no component.
 %
   If subsequently we consider a similar case ---that is, the same
@@ -380,13 +394,70 @@ Optimisation~\ref{opt:avoid-induced}.  There we included cases where $pre$
 and~$v$ shared a component that did not change state.  An obvious attempt to
 implement this goes wrong: if there are two cases with the same $post.\fixed$
 and~$v$, that include unifications of \emph{different} components that do not
-change state, we need to capture both of them, since they might give different
-new views (with the unified components having different parameters in
-$post.\fixed$).
+change state, they might give different new views (with the unified components
+having different parameters in $post.\fixed$).
+%
+For example
+\begin{eqnarray*}
+pre & = & (fixed; Th_1(T_0,N_0), Nd_A(N_0,N_1)) \\
+post & = & (fixed'(N_1); Th_1'(T_0), Nd_A(N_0,N_1)) \\
+v & = & (fixed; Th_v(T_0,N_0), Nd_A(N_0,N_1))
+\end{eqnarray*}
+unifying the two $Nd_A$ processes, with remapping $\set{T_0 \mapsto T_1, N_0
+  \mapsto N_0,\linebreak[1] {N_1 \mapsto N_1}}$, induces
+\[
+(fixed'(N_1); Th_v(T_1,N_0), Nd_A(N_0,N_1) \equiv
+(fixed'(N_0); Th_v(T_0,N_1), Nd_A(N_1,N_0)).
+\]
+But with 
+\begin{eqnarray*}
+pre' & = & (fixed; Th_2(T_0,N_0,N_1), Nd_A(N_0,N_2), Nd_N(N_1,Null)) \\
+post' & = & (fixed'(N_1); Th_2'(T_0), Nd_A(N_0,N_2), Nd_N(N_1,Null))
+\end{eqnarray*}
+unifying the two $Nd_A$ processes, with remapping $\set{T_0 \mapsto T_1, N_0
+  \mapsto N_0,\linebreak[1] {N_1 \mapsto N_2}}$, induces a transition to
+\[\mit
+(fixed'(N_1); Th_v(T_1,N_0), Nd_A(N_0,N_2)) \equiv
+  (fixed'(N_0); Th_v(T_0,N_1), Nd_A(N_1, N_2)).
+\]
 
-I think that it's enough to consider each choice of $post.\fixed$, $v$, and
-\emph{the components that unify} only once.
+
+If we have two cases concerning the same $post.\fixed$, $v$, and component~$c$
+of~$v$ that unifies and doesn't change state, and $c$ unifies respectively
+with~$c_1$ and~$c_2$ which differ only on parameters not in $post.\fixed$,
+then it is enough to consider just one such case.  In the above example, we
+had $c_1 = Nd_A(N_0,N_1)$,\, $c_2 = Nd_A(N_0,N_2)$ which differ on~$N_1$. 
+
+\framebox{Do this.}  For the components, it's enough to store the list of
+parameters shared with $post.\fixed$ and their indices. 
 \end{improve}
 
  
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%
+
+\begin{opt}
+If the principal of~$v$ is unified with a component of~$pre$, and loses a
+reference to a component~$c$, then all renamings of~$c$ produce the same final
+view.  Thus it is enough to consider a single renaming, say the renaming that
+agrees with the renaming within other components, but otherwise maps to fresh
+parameters.  There is no need to explicitly construct the renaming of~$c$.  
+%
+\framebox{Consider this.}
+
+This won't work with singleRef, however, because of cross references or
+missing references. 
+\end{opt}
+
+%%%%%
+
+\begin{improve} 
+If the principal and another component~$c$ of~$v$ are both unified with
+components of $pre$, and the principal of~$v$ loses the reference to~$c$ in
+the transition, then for case~\ref{clause:remap-2} of
+Definition~\ref{def:representative-consistent-extension}, we can ignore
+parameters of~$c$.  This is only relevant for renaming of some third
+component.
+%
+This might be useful when a node has a reference to the thread, but loses
+that reference.
+\end{improve}

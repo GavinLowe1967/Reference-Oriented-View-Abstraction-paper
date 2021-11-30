@@ -1,0 +1,571 @@
+\subsection{Significant and incidental linkages}
+
+\framebox{Introduce} term \emph{linkage} earlier.
+
+Having to deal with linkages when considering induced transitions adds
+considerable complexity to the checking procedure.  In this section we show
+that it is sound not to consider certain combinations of transitions and views
+when applying symmetry reduction: we show that in such cases equivalent views
+can be produced by other induced transitions with fewer linkages.  
+
+We start by considering when two different extensions of the same partial
+unification function produce equivalent primary induced views.  The following
+examples help to illustrate. 
+
+\begin{example}\label{example:29}
+Consider the normal-form transition
+\begin{eqnarray*}
+(fixed(N_0); Th(T_0,N_1), Nd_x(N_1,N_2)) & \trans{} &
+  (fixed'(N_0); Th'(T_0,N_1), Nd_x(N_1,N_2))
+\end{eqnarray*}
+acting on 
+\[
+(fixed(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_3)).
+\]
+No unification is possible.  If we consider the mapping $\pi_1 = \set{N_0
+  \mapsto N_0, \linebreak[1] {N_1 \mapsto N_3,} \linebreak[1] N_2 \mapsto N_4,
+  N_3 \mapsto N_5}$ (mapping all parameters other than those in the fixed
+processes to fresh values), then this induces a transition to
+\[
+(fixed'(N_0); Nd_y(N_3,N_4), Nd_z(N_4,N_5)) \equiv 
+  (fixed'(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_3)).
+\] 
+
+Consider instead the mapping $\pi_2 = \set{N_0 \mapsto N_0, N_1 \mapsto N_3,
+  N_2 \mapsto N_4,\linebreak[1] {N_3 \mapsto N_1}}$.  This mapping produces a
+linkage that would require a view equivalent to $v_\cross = (fixed(N_0);
+Nd_z(N_4,N_1), Nd_x(N_1,N_2))$.  If such a view exists, the induced transition
+produces
+\[
+(fixed'(N_0); Nd_y(N_3,N_4), Nd_z(N_4,N_1)) \equiv 
+  (fixed'(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_3)).
+\]
+The two mappings produce equivalent views.  Thus it is enough to consider one
+of them.  We consider only the mapping~$\pi_1$, as it subsumes~$\pi_2$, and is
+simpler to deal with as it does not require the additional view equivalent
+to~$v_\cross$.
+
+The same is true of all remappings with $N_1$ and/or $N_2$ in the range (there
+are seven in total).
+\end{example}
+
+%%%%%
+
+\begin{example}\label{example:singleRef-remapping-post-servers}
+Consider the transition
+% 
+\begin{eqnarray*}
+(fixed(N_0); Th(T_0,N_1), Nd_x(N_1,N_2)) & \trans{} &
+  (fixed'(N_1); Th'(T_0,N_1), Nd_x(N_1,N_2))
+\end{eqnarray*}
+acting on
+\[
+v = (fixed(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_3)).
+\]
+Again no unification is possible.  The unification function $\pi_1 = \set{N_0
+  \mapsto N_0, \linebreak[1] {N_1 \mapsto N_3}, \linebreak[1] N_2 \mapsto N_4,
+  \linebreak[1] {N_3 \mapsto N_5}}$ induces a transition to
+\[
+(fixed'(N_1); Nd_y(N_3,N_4), Nd_z(N_4,N_5)) \equiv
+(fixed'(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_3)).
+\]
+
+Alternatively, the unification function $\pi_2 = \set{N_0 \mapsto N_0, N_1
+  \mapsto N_3, N_2 \mapsto N_4, \linebreak[1] {N_3 \mapsto N_1}}$  creates
+a linkage via~$N_1$, requiring a view equivalent to $(fixed(N_0);
+Nd_z(N_4,N_1), Nd_x(N_1,N_2))$.  If such a view does exist, the induced
+transition produces
+\[
+(fixed'(N_1); Nd_y(N_3,N_4), Nd_z(N_4,N_1)) \equiv
+(fixed'(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_0)).
+\]
+This is not equivalent to the view produced previously.  Thus it is necessary
+to consider both unification functions.
+
+The critical point is that $\pi_2$ maps~$N_3$ to a value in $post.\fixed$.
+\end{example}
+
+%% the parameter~$N_1$ of the linkage appears twice in
+%% the induced view (prior to reduction to normal form): once in the fixed
+%% processes and once in the $Nd_z$ component taken from $\pi'(v)$.  It is
+%% necessary for the remapping function to include $N_3 \mapsto N_1$ in order to
+%% create this coincidence, and that creates the linkage. 
+
+%%%%%
+
+
+We say that two remapping functions~$\pi_1$ and~$\pi_2$ \emph{range-agree}
+on~$y$ if they map the same variables to~$y$:
+\[
+\forall x \spot \pi_1(x) = y \iff \pi_2(x) = y.
+\]
+Necessarily there is at most one~$x$ that each remapping function maps
+to~$y$.
+
+\begin{lemma}
+\label{lem:singleRef:remappings-equivalent}
+Consider a transition $pre \trans{} post$ and a view~$v$, both in normal form.
+Consider a partial unification function~$\pi_0$, and two consistent
+extensions~$\pi_1$ and~$\pi_2$.  Let $v_1 = \pi_1(v)$ and $v_2 = \pi_2(v)$.
+Suppose that $\pi_1$ and $\pi_2$ range-agree on:
+%
+\begin{enumerate}
+\item\label{item:singleRef:remappings-equivalent:post-servers} All parameters
+  of $post.\fixed$;
+
+\item For each component~$c$ of~$v$ that is unified with a component of~$pre$,
+  all new parameters gained by~$c$ in the transition;
+
+\item If the principal of~$v$ is unified with a component of~$pre$, and
+  acquires a reference to a component~$c'$ of~$post$, then all parameters
+  of~$c'$. 
+\end{enumerate}
+%
+Then for each view~$v_1'$ produced by a primary induced transition from~$v_1$,
+there is a view~$v_2'$ produced by a primary induced transition from~$v_2$,
+such that $v_1' \equiv v_2'$; and vice versa.
+\end{lemma}
+
+%%%%%
+
+\framebox{**} Discussion of examples.
+Example~\ref{example:singleRef-remapping-post-servers} illustrates
+item~\ref{item:singleRef:remappings-equivalent:post-servers}.  Examples to
+illustrate other aspects. 
+
+%%%%%
+
+\begin{proof}
+Consider a particular view~$v_1'$ produced by a primary induced transition
+from~$v_1$.  Let $v_2'$ be the corresponding view produced by a primary
+induced transition from~$v_2$, i.e.~if the secondary component of~$v_1'$ (if
+any) corresponds to the $k$th reference of~$v_1'.\princ$, then the secondary
+component of~$v_2'$ corresponds to the $k$th reference of~$v_2'.\princ$.
+
+Note that if the principals of $v_1$ and~$v_2$ are unified with a component
+of~$pre$ (necessarily the same component in each case), the principals of the
+induced views are the corresponding components of~$post$ (so equal).
+Concerning secondary components, note that one of the following holds:
+%
+\begin{itemize}
+\item The secondary components of~$v_1'$ and~$v_2'$ are the same component
+  of~$post$; 
+
+\item The secondary components of~$v_1'$ and~$v_2'$ are, respectively, the
+  secondary components of~$v_1$ and~$v_2$, which were not unified with a
+  component of~$pre$; or
+
+\item Neither has a secondary component.
+\end{itemize}
+
+This implies that $v_1'$ and~$v_2'$ agree on all parameters of~$post.\fixed$,
+and all parameters of components that were taken from~$post$, by the three
+conditions of the lemma.  All other parameters are only in components of~$v_1$
+or~$v_2$, respectively, that did not unify with any component and so did not
+change state in the transition; the parameters will be $\pi_1(x)$
+and~$\pi_2(x)$, respectively, where $x$ is the corresponding parameter of~$v$.
+Thus $v_1' \equiv v_2'$.
+\end{proof}
+
+Optimisation: I think we don't need to agree on parameters of the secondary
+component if that isn't included in the subsequent view.  That means qualify
+condition~(2) of the lemma with: ``if $c$ is a secondary component of~$v$,
+then the principal of~$v$ does not lose the reference to~$c$.''  This is an
+issue only if both components of~$v$ change state, which is quite rare.
+
+%%%%%
+
+%% \framebox{Examples} Example~\ref{example:29} satisfies conditions of
+%% Lemma~\ref{lem:singleRef:remappings-equivalent}.  Example~\ref{example:30}
+%% doesn't, via parameter of $post.\fixed$. 
+
+\begin{definition}
+Consider a partial unification function~$\pi_u$.  We call a partial
+extension~$\pi_{rd}$ an \emph{result-defining extension} if all values in the
+range of~$\pi_{rd}$ that are not in the range of~$\pi_u$ correspond to one of the
+three cases of Lemma~\ref{lem:singleRef:remappings-equivalent}.
+\end{definition}
+
+For instance, in Example \ref{example:29}, the extension $\set{N_0
+  \mapsto N_0, \linebreak[1] {N_3 \mapsto N_1}}$ of $\set{N_0 \mapsto N_0}$ is
+result-defining since $N_1$ corresponds to the first case of
+Lemma~\ref{lem:singleRef:remappings-equivalent}. 
+
+Note that all extensions of a result-defining remapping produce the same
+resulting view (up to equivalence).
+
+Out approach will be as follows: (1) consider all unification
+functions~$\pi_u$; (2) for each such unification function, produce all
+result-defining extensions~$\pi_{rd}$; (3) extend each such result-defining
+extension.  However, it turns out that we might have to consider more than one
+extension of each~$\pi_{rd}$: it might be that only certain extensions satisfy
+conditions~(b) and~(c) of Definition~\ref{def:induced-transition-singleRef}.
+The following example illustrates this.
+
+%%   ,  decide which components to unify, and produce minimal unifying
+%% map; (2) decide which parameters to map to parameters under the three
+%% conditions of the above lemma; (3) where there is a linkage involving
+%% component~$c$ of~$v$ and component~$c'$ of~$pre$, consider all combinations of
+%% mapping a parameter of~$c$ to a parameter of~$v'$ (including no such); (4) map
+%% all other parameters to fresh parameters. 
+
+%%%%%
+
+
+\begin{example}
+Consider the effect of the transition
+\begin{eqnarray*}
+(fixed(N_0); Th(T_0,N_1), Nd(N_1,N_0)) & \trans{} &
+ (fixed'(N_0); Th'(T_0), Nd(N_1,N_0))
+\end{eqnarray*}
+on
+\begin{eqnarray*}
+v & = & (fixed(N_0); Th''(T_0,N_0), Nd'(N_0,N_1)).
+\end{eqnarray*}
+%
+No unification of components is possible.  The only result-defining extension
+is $\pi_{rd} = \set{{N_0 \mapsto N_0}}$.  This necessarily creates a linkage
+via~$N_0$.  
+
+For an extension~$\pi$ of~$\pi_{rd}$, condition~(b) of
+Definition~\ref{def:induced-transition-singleRef}, would require the current
+set of representative views to contain
+%
+\begin{eqnarray*}
+v_\cross & = & (fixed(N_0); Nd(N_1,N_0), Nd'(N_0,\pi(N_1)))
+\end{eqnarray*}
+in order to induce a transition to
+\[
+\begin{align}
+(fixed'(N_0); Th''(T_1,N_0),  Nd'(N_0,N_2)) \equiv \\
+\qquad  (fixed'(N_0); Th''(T_0,N_0,N_1), Nd'(N_0,N_1)).
+\end{align}
+\]
+Depending upon the value of $\pi(N_1)$, values for~$v_\cross$ fall into two
+equivalence classes, with representative members
+\[
+\begin{align}
+(fixed(N_0); Nd(N_1,N_0), Nd'(N_0,N_1)), \\
+(fixed(N_0); Nd(N_1,N_0), Nd'(N_0,N_2)).
+\end{align}
+\]
+It is necessary to consider both these possibilities: it is possible that the
+current set of representative views contains only one of them.
+
+Note that the former case (with $\pi(N_1) = N_1$) creates two new linkages
+via~$N_1$, which for condition~(b) would require
+\[
+\begin{array}{c}
+(fixed(N_0); Nd'(N_0,N_1), Nd(N_1,N_0)), \\
+(fixed(N_0);Th''(T_0,N_0,N_1),Nd(N_1,N_0)).
+\end{array}
+\]
+\end{example}
+
+%%%%%
+
+%% \begin{example}
+%% Consider the effect of the transition
+%% \begin{eqnarray*}
+%% (fixed(N_0); Th(T_0,N_1), Nd(N_1,N_0)) & \trans{} &
+%%  (fixed'(N_0); Th'(T_0), Nd(N_1,N_0))
+%% \end{eqnarray*}
+%% on
+%% \begin{eqnarray*}
+%% v & = & (fixed(N_0); Th''(T_0,N_0,N_1), Nd'(N_0,N_1)).
+%% \end{eqnarray*}
+%% %
+%% As in the previous example, the only result-defining extension $\set{{N_0
+%%     \mapsto N_0}}$ creates a linkage via~$N_0$.  
+
+%% Mapping $N_1$ to~$N_1$ requires $(fixed(N_0); Nd(N_1,N_0), Nd'(N_0,N_1))$.
+%% But also creates two new linkages via~$N_1$ which requires
+%% \[
+%% (fixed(N_0); Th''(T_0,N_0,N_1), Nd(N_1,N_0))
+%% (fixed(N_0);
+%% \end{example}
+
+
+%% However, suppose the current representative views do not contain~$v_\cross$,
+%% but do contain the two views
+%% \begin{eqnarray*}
+%% v_\cross' & = & (fixed(N_0); Nd(N_1,N_0), Nd'(N_0,N_1)) \\
+%% v_\cross'' & = & (fixed(N_0); Nd'(N_0,N_1), Nd(N_1,N_0)).
+%% \end{eqnarray*}
+%% %
+%% With the additional clause~5, we also consider the renaming $\pi'' =
+%% \set{{T_0 \mapsto T_1}, \linebreak[1] N_0 \mapsto N_0,\linebreak[1] {N_1
+%%     \mapsto N_1}}$, because the component $c = Nd(N_1,N_0)$ contains a
+%% reference to the component $Nd'(N_0,N_1)$ of~$\pi''(v)$.  Condition~(b) is now
+%% satisfied for $\pi''(v)$, because of the presence of~$v_\cross'$
+%% and~$v_\cross''$.  This then induces a transition to
+%% \[
+%% \begin{align}
+%% (fixed'(N_0); Th''(T_1,N_0), Nd'(N_0,N_1)) \equiv \\
+%% \qquad (fixed'(N_0); Th''(T_0,N_0), Nd'(N_0,N_1)),
+%% \end{align}
+%% \]
+%% as one would expect.
+
+Given a result-defining extension mapping~$\pi$, we identify the linkages
+defined by~$\pi$.  Consider a linkage involving component~$c$ of~$v$ and
+component~$c'$ of~$pre$.  We extend~$\pi$ to the remaining parameters of~$c$,
+mapping each either to a parameter of~$c'$ or to a fresh variable.  The former
+choice has the possibility of creating another linkage involving different
+components; we repeat the process with those.  Once all such linkages have
+been considered, we map the remaining parameters to distinct fresh
+parameters. 
+
+Note that the above process creates linkages only where they are, in a sense,
+required.  We will show below that any other remapping is subsumed by one of
+the remappings we do consider.  The following example illustrates the idea. 
+%%%%%%
+\begin{example}
+Consider again (from Example~\ref{example:29}) the normal-form transition
+\begin{eqnarray*}
+(fixed(N_0); Th(T_0,N_1), Nd_x(N_1,N_2)) & \trans{} &
+  (fixed'(N_0); Th'(T_0,N_1), Nd_x(N_1,N_2))
+\end{eqnarray*}
+acting on 
+\[
+(fixed(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_3)).
+\]
+This has result-defining mapping~$\pi_{rd} = \set{N_0 \mapsto N_0}$.  Consider
+the extension $\pi = \set{N_0 \mapsto N_0, N_1 \mapsto N_3, N_2 \mapsto
+  N_4,\linebreak[1] {N_3 \mapsto N_1}}$.  This creates a linkage on~$N_1$.
+However, this linkage is unnecessary: replacing $N_1$ in the range of~$\pi$
+with a fresh parameter $N_5$ creates the remapping $\pi' = \set{N_0 \mapsto
+  N_0, N_1 \mapsto N_3, N_2 \mapsto N_4,\linebreak[1] {N_3 \mapsto N_5}}$,
+which would lead to the same final induced view (up to equivalence), but
+requires a subset of the linking views.
+\end{example}
+
+%% A linkage on parameter~$x$ is \emph{necessary} for a remapping~$\pi$ if either:
+%% %
+%% \begin{itemize}
+%% \item It is defined by~$\pi$, i.e., the linking parameter~$x$ is in the range
+%%   of~$\pi$;
+
+%% \item There is a necessary linkage on some parameter~$y$, and extending the
+%%   remapping, as above, to create a remapping~$\pi'$ produces a new linkage
+
+%%  For some necessary linkage, extending the mapping as above to create
+%%   remapping~$\pi'$, then $\pi'$  creates a new
+%%   linkage.
+%% \end{itemize}
+
+\begin{lemma}
+Consider a result-defining mapping~$\pi_{rd}$, and an extension~$\pi$ defined
+over all the parameters of~$v$.  Consider some set $X$ of linkage parameters
+for~$\pi$, none of which is in the range of~$\pi_{rd}$.  Let $\pi'$ be
+obtained from $\pi$ by replacing each element of~$X$ in the range of~$\pi$ by
+a distinct fresh variable.  Then the views required to satisfy the linkages
+for $\pi'$ are a subset of those for~$\pi$, and the resulting views are
+equivalent.
+\end{lemma}
+
+%%%%%
+
+\begin{proof}
+That $\pi$ and~$\pi'$ produce the same resulting views follows from the fact
+that they are both extensions of the same result-defining mapping~$\pi_{rd}$. 
+
+Every linkage for $\pi'$ is also a linkage for~$\pi$ (excluding those on
+parameters from~$X$).  Hence the views required for~$\pi'$ are a subset of
+those required for~$\pi$. 
+\end{proof}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%
+
+More generally, if there are two renamings $\pi$ and~$\pi'$, where the two
+induced views are equivalent, and the linkages produced by $\pi$ are a subset
+of those produced by~$\pi'$, then there is no need to consider~$\pi'$.  In
+this case, we say that the additional linkages produced by~$\pi'$ are
+\emph{incidental}.  We aim to identify sufficient conditions for linkages
+being incidental.  We consider more examples.
+
+%%%%%
+
+\begin{example}\label{example:30}
+Now consider the normal-form transition
+\begin{eqnarray*}
+(fixed(N_0); Th(T_0,N_0), Nd_x(N_0,N_1)) & \trans{} &
+  (fixed'(N_0); Th'(T_0,N_0), Nd_x(N_0,N_1))
+\end{eqnarray*}
+acting on 
+\[
+(fixed(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_0)).
+\]
+Again no unification is possible.  However, any unification function~$\pi$
+necessarily contains $N_0 \mapsto N_0$, so creates a linkage via~$N_0$ that
+would require a view equivalent to $(fixed(N_0); Nd_z(\pi(N_2),N_0),
+Nd_x(N_0,N_1))$.  This linkage is not incidental because it uses the
+parameter~$N_0$ in the fixed processes.
+\end{example}
+
+%%%%%
+
+Similarly, a linkage involving a parameter that appears in $post.\fixed$ might
+not be incidental.  
+%
+
+\framebox{***} Any unification that creates a cross reference must necessarily
+be within $pre$ or~$v$.
+
+%%%%%
+
+\begin{example}
+Consider the transition
+\begin{eqnarray*}
+(fixed; Th(T_0,N_1,N_2), Nd_x(N_1,N_3)) & \trans{} &
+  (fixed; Th'(T_0,N_1), Nd_y(N_1,N_3,N_2))
+\end{eqnarray*}
+acting on
+\[
+(fixed; Nd_x(N_0,N_1), Nd_z(N_1,N_2) .
+\]
+
+Consider the mapping $\pi = \set{N_0 \mapsto N_1, N_1 \mapsto N_3, N_2 \mapsto
+  N_2}$.  This unifies the two $Nd_x$ components.  It also creates a linkage
+via $N_2$ which requires (for clause~(c) of
+Definition~\ref{def:induced-transition-singleRef}), for some component~$c$
+with identity~$N_2$, that the current set of representative views include
+views equivalent to each of $(fixed; Th(T_0,N_1,N_2), c)$ and $(fixed;
+Nd_y(N_3,N_2), c)$.  If such views do exist, this induces a transition to
+\[
+(fixed; Nd_y(N_1,N_3,N_2), Nd_z(N_3,N_2)) \equiv 
+  (fixed; Nd_y(N_0,N_1,N_2), Nd_z(N_1,N_2)).
+\]
+
+Alternatively, consider the mapping $\pi' = \set{N_0 \mapsto N_1, N_1 \mapsto
+  N_3,\linebreak[1] {N_2 \mapsto N_4}}$, which again unifies the $Nd_x$
+components, but does not create a linkage via~$N_2$.  This induces a
+transition to
+\[
+(fixed; Nd_y(N_1,N_3,N_2), Nd_z(N_3,N_4)) \equiv
+  (fixed; Nd_y(N_0,N_1,N_2), Nd_z(N_1,N_3)).
+\]
+This is not the same as the view produced using~$\pi$.  Hence the linkage
+via~$N_2$ produced by~$\pi$ is not incidental.  The reason for this is that
+$N_2$ appears in two components of the induced view: one taken from $post$;
+and one taken from~$v$.
+\end{example}
+
+%% How do we induce the transition to 
+%% \[
+%% (fixed; Nd_y(N_1,N_3,N_2), Nd_?(N_2,?)) ?
+%% \]
+
+
+%%%%%
+
+
+\begin{definition}
+\label{def:incidental-linkage}
+Consider a transition $pre \trans{} post$ and an accordant view~$v$, with
+neither necessarily in normal form.  Define a linkage using parameter~$x$
+between a component of~$v$ and a component of~$pre$ to be \emph{significant}
+if one of the following holds.
+%
+\begin{enumerate}
+\item \label{item:incidental-linkage-fixed}
+$x$ is a parameter of $pre.\fixed = v.\fixed$;
+
+\item \label{item:incidental-linkage-common-component}
+$x$ is a parameter of a component that appears in both $pre$ and $v$;
+
+\item \label{item:incidental-linkage-post-fixed} $x$ is a parameter of
+  $post.\fixed$;
+
+\item \label{item:incidental-linkage-post-common-component} $x$ is a parameter
+  of a component~$c'$ of~$post$ such that there is a component~$c$ in~$v$ with
+  the same identity as~$c'$ ($c$ is necessarily also in~$pre$);
+
+\item \label{item:incidental-linkage-acquired-reference} the principal of~$v$
+  is also a component of~$pre$ and changes state in the transition to acquire
+  a reference to a component~$c$ of~$post$, and $x$ is a component of~$c$;
+
+\item $x$ is a linkage between component~$c$ of~$v$ and component~$c'$
+  of~$pre$, and these components have a significant linkage via some other
+  parameter~$y$ (this step is applied inductively).
+\end{enumerate}
+%
+We say that a linkage is \emph{incidental} if it is not significant.
+\end{definition}
+
+\framebox{Just primary below?}
+
+I'm not sure about \ref{item:incidental-linkage-post-common-component} and
+\ref{item:incidental-linkage-acquired-reference}.  It might be when the
+linkage variable appears in two components of the induced view, one taken
+from~$post$ and one from~$v$.
+
+%%%%%
+
+\begin{lemma}
+Consider a transition $pre \trans{} post$ acting on a view~$v_1$ to induce a
+transition to~$v_1'$.  Let $\pi$ be a remapping that maps the parameters of
+some incidental linkages to distinct fresh parameters (not in $pre$, $post$
+or~$v_1$), but is the identity on all other parameters (including those of
+significant linkages).  Let $v_2 = \pi(v_1)$.  Then the transition acting
+on~$v_2$ induces a transition to $v_2' = \pi(v_1')$; note that $v_2' \equiv
+v_1'$.
+
+\framebox{***} I think I want to say something about the relative linkages.
+\end{lemma}
+
+Note that the lemma implies that the transition from~$v_2$ subsumes that
+from~$v_1$, and involves fewer linkages. 
+
+%%%%%
+
+\begin{proof}
+Our proof is in two parts: we show that \emph{if} the conditions of
+Definition~\ref{def:induced-transition-singleRef} are satisfied for~$v_2$,
+then the induced transition produces $v_2' = \pi(v_1')$; and we show that those
+conditions are implied by the fact that they are satisfied for~$v_1$.
+
+By condition~\ref{item:incidental-linkage-fixed} of
+Definition~\ref{def:incidental-linkage}, there are no incidental linkages
+involving parameters of $v_1.\fixed$.  Hence $\pi$ is the identity on the
+parameters of $v_1.\fixed$, so $v_2.\fixed = v_1.\fixed = pre.\fixed$.
+
+By condition~\ref{item:incidental-linkage-common-component}, there are no
+incidental linkages involving any component~$c$ of~$v_1$ that also appears
+in~$pre$.  Hence $\pi$ is the identity on the parameters of~$c$, so $c$ also
+appears in~$v_2$.  Recall, that when $\pi$ is not the identity mapping, it
+maps parameters to fresh parameters: it cannot remap a component identity
+in~$v_1$ to match an identity in~$pre$.  Hence the common components between
+$v_1$ and $pre$ are the same as between $v_2$ and~$pre$; so $v_2$ and $pre$
+are accordant.
+
+We now show that $\pi$ is the identity on all parameters of processes
+of~$v_1'$ taken from $post$; and hence ---if the relevant side conditions are
+satisfied, and so a transition from $v_2$ is indeed induced--- that $v_2'$
+agrees with $v_1'$ on all such processes.
+%
+\begin{itemize}
+\item This is true of the fixed processes, by
+  condition~\ref{item:incidental-linkage-post-fixed}.
+
+\item Suppose~$c'$ is a component of~$post$ for which there is a component~$c$
+  with the same identity in~$v_1$ (necessarily, the same component~$c$ is in
+  $pre$; and so it is also in~$v_2$ by the above).  Then $\pi$ is the identity
+  on the parameters of~$c'$ by
+  condition~\ref{item:incidental-linkage-post-common-component}.
+
+\item
+Suppose the principal~$p$ of~$v_1$ is also a component of~$pre$, changes state
+in the transition, and acquires a reference to a component~$c$ of~$post$; then
+this is true of~$c$, by
+condition~\ref{item:incidental-linkage-acquired-reference}.
+\end{itemize}
+
+
+
+\end{proof}
+

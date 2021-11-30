@@ -19,6 +19,8 @@
 \def\trans#1{\stackrel{#1}\rightarrow}
 \def\sqge{\sqsupseteq}
 \def\sqle{\sqsubseteq}
+\def\rangeRes{\rhd}
+\def\domRes{\lhd}
 
 \def\id{\mathrm{id}}
 \def\params{\mathrm{params}}
@@ -51,15 +53,19 @@
 \input{setting}
 \input{va}
 \input{views}
-%\newpage
-\input{singleRef}
+\input{symmetry}
+\input{effectOn}
+%%% singleRef
+
+\input{singleRef} % Definition and start of transitions
 \input{singleRef2} % induced transitions
 \input{singleRef3} % correctness
-\input{symmetry}
-\input{implementation}
-%\newpage
-\input{effectOn}
+\input{singleRef4} % relevant cross references
 \input{effectOn2}
+
+\appendix
+
+\input{implementation}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

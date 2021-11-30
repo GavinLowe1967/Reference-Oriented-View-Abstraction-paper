@@ -120,7 +120,8 @@ v'$.
 %% satisfied, by Lemma~\ref{lem:induced-conditions}.
 
 
-\item 
+\item %%% 3
+\label{case:singleRef-correct-3}
 Now suppose the transition $s \trans{e} s'$ has an active component other
 than~$pId$.  The component for~$pId$ might be a secondary component in the
 transition, or it might not be involved in the transition.  Then as in
@@ -134,10 +135,9 @@ components.  We perform a case analysis.
   is included in the extended transition, and $s(pId)$ has a reference
   to~$cId$; $pId$ might or might not be in the extended transition.
 %  
-  Let $v = (s.\fixed, \set{s(pId), s(cId)})$.  Then the extended transition
-  induces a transition $v \trans{} v'$.
-% (again using  Lemma~\ref{lem:induced-conditions}).  
-  Note that the state for~$cId$ in~$v'$ is taken from~$s'$ in this case.
+  Let $v = (s.\fixed, \set{s(pId), s(cId)})$.  This produces a primary induced
+  transition $v \trans{} v'$.  Note that the state for~$cId$ in~$v'$ is taken
+  from~$s'$ in this case.
 
 \item Next suppose that either $v'$ has no secondary component (so $s'(pId)$
   has no reference to another component), or $v'$ has a secondary
@@ -145,8 +145,8 @@ components.  We perform a case analysis.
   does \emph{not} have a reference to~$cId$.  In the former case, $pId$ might
   or might not be in the extended transition; but in the latter case, $pId$
   changes state so must be in the transition.  Let $v$ be an arbitrary view
-  of~$s$ for~$pId$.  Then the extended transition induces a transition $v
-  \trans{} v'$.  Then the state for~$cId$ in~$v'$ is again taken from~$s'$.
+  of~$s$ for~$pId$.  This produces a primary induced transition $v \trans{}
+  v'$.  The state for~$cId$ in~$v'$ is again taken from~$s'$. 
 
 %% \item First suppose that either $v'$ has no secondary component (so $s'(pId)$
 %%   has no reference to another component), or the secondary component~$cId$
@@ -162,21 +162,22 @@ components.  We perform a case analysis.
   and neither $pId$ nor~$cId$ is included in the extended transition; so
   neither changes state, and $pId$ has a reference to~$cId$ in both~$s$
   and~$v'$.  Let $v = (pre.\fixed, \set{s(pId), s(cId)})$, which is a view
-  of~$s$.  Then the transition again induces a transition $v \trans{} v'$ (at
+  of~$s$.  This again produces a primary induced transition $v \trans{} v'$ (at
   most the fixed processes change state).
 
 \item Finally suppose that again $v'$ has a secondary component with
   identity~$cId$ that is not in the extended transition (so $s'(cId) =
   s(cId)$), but that $pId$ \emph{is} in this transition.
   \begin{itemize}
-  \item If $s(pId)$ has a reference to~$cId$, then let $v =
+  \item Suppose $s(pId)$ has a reference to~$cId$.  Let $v =
     (pre.\fixed,\linebreak[1] \set{s(pId), s(cId)})$.  Then, as in earlier
-    cases, the transition induces a transition $v \trans{} v'$.
+    cases, this gives a primary induced transition $v \trans{} v'$.
 
-  \item If $s(pId)$ does not have a reference to~$cId$, then let $v$ be an
-    arbitrary view of~$s$ for~$cId$.  Then the transition induces a transition
-    producing~$v'$, using the final clause of
-    Definition~\ref{def:induced-transition-singleRef} (with $sc = s'(pId)$).
+  \item Suppose $s(pId)$ does not have a reference to~$cId$ (so $pId$ acquires
+    the reference in the transition).  Let $v$ be an arbitrary view of~$s$
+    for~$cId$.  Then this gives a secondary induced transition producing~$v' =
+    (post.\fixed, \set{s'(pId), s'(cId)})$ (so $sc = s'(pId)$ in the notation
+    of Definition~\ref{def:induced-transition-singleRef}).
   \end{itemize}
 \end{enumerate}
 
@@ -185,7 +186,7 @@ Finally suppose the transition $s \trans{e} s'$ has an active fixed process.
 Consider an arbitrary corresponding view transition (i.e.~with an arbitrary
 principal), and consider the corresponding extended transition $pre \trans{e}
 post$.  Then this extended transition induces a transition that produces~$v'$,
-exactly as in the previous case.
+exactly as in case~\ref{case:singleRef-correct-3}.
 \end{enumerate}
 
 \end{proof}
@@ -193,10 +194,19 @@ exactly as in the previous case.
 %%%%%
 
 \begin{improve}
-The uses of induced transitions seem rather restricted.  Does that allow us to
-consider fewer induced transitions?  
-
-The final case could be re-written so that the final subcase applies only when
-$pId$ acquires the reference to~$c$ in the transition
+The uses of secondary induced transitions seem rather restricted: only when
+$pId$ acquires the reference in the transition. 
 \end{improve}
 
+%%%%%
+
+\begin{impNote}
+When considering transitions induced by a transition $pre \trans{e} post$ upon
+an accordant view~$v$, it will often be the case that one or both of the
+conditions~(b) or~(c) does not hold with the current set of views.  However,
+it is possible that the additional views required by those conditions are
+encountered later in the search, at which point the new transition can be
+induced.  To this end, we store information about such potential induced
+transitions, so that if the required views are subsequently encountered, they
+can then be fired.
+\end{impNote}

@@ -1,34 +1,104 @@
 \section{Symmetry reduction}
+\label{sec:symmetry}
 
-Note: some of this lives before the definition of the abstract algorithm.
-Some is more related to the BFS implementation. 
 
 Idea of symmetry reduction.
 
-Define renaming functions: partial injective function over non-distinguished
-identities, preserving types.
+\begin{definition}
+We define a \emph{renaming} function to be a partial injective function~$\pi$
+over non-distinguished parameters, that preserves types (for example, maps
+each node identity to a node identity, and each thread identity to a thread
+identity).
 
-For each type of identities, assume a linear order over the type.  In examples
-below, for node identities we will assume a total order $N_0 < N_1 < N_2 <
-\ldots$; and similarly for thread identities.  (In the implementation,
+If $\pi$ is a renaming function defined over the parameters of a component
+state~$s$, then we write $\pi(s)$ for the effect of replacing each
+parameter~$x$ of~$s$ by~$\pi(x)$.  We extend this to sets of states, views,
+etc., by pointwise application.  For example, given
+%
+\begin{eqnarray*}
+v & = & 
+  \begin{align}
+  (\Lock'(T_1), \Head(N_0), \Last(N_1), \Con_3; \\
+  \qquad  Enq_4(T_1, N_1, N_3), \Node_y(N_1, null),\Node_x(N_3, N_1))
+  \end{align} \\
+\pi & = & 
+  \set{ T_1 \mapsto T_0, N_0 \mapsto N_1, N_1 \mapsto N_2, N_3 \mapsto N_0 },
+\end{eqnarray*}
+%
+we have 
+\begin{eqnarray*}
+\pi(v) & = & 
+  \begin{align}
+  (\Lock'(T_0), \Head(N_1), \Last(N_2), \Con_3; \\
+  \qquad Enq_4(T_0, N_2, N_0), \Node_y(N_2, null),\Node_x(N_0, N_2)) .
+  \end{align}
+\end{eqnarray*}
+\end{definition}
+
+%%%%%
+
+\begin{definition}
+Given two views~$v$ and $v'$, we say that~$v$ and~$v'$ are \emph{equivalent},
+written $v \equiv v'$, if there is a renaming~$\pi$ such that $\pi(v) = v'$.
+Note that this is an equivalence relation.
+\end{definition}
+
+%%%%%
+
+\framebox{Explain} why it's enough to store views, up to equivalence.  As in
+previous paper. 
+
+We represent each equivalence class of views by a single representative.  More
+precisely, we define a normal form of views, and take the representatives to
+be the views in normal form: there will be one per equivalence class.  We
+describe the normal form below. 
+
+For each type of identities, we assume a linear order over the type.  In
+examples below, for node identities we will assume an order $N_0 < N_1 <
+N_2 < \ldots$; and similarly for thread identities.  (In the implementation,
 identities are represented by non-negative integers: we use the integer
 order.)
 
+The following definition captures our normal form.
+%
 \begin{definition}
-Define normal form.  Fixed processes in some fixed order (defined in the input
-script).  For a view, list components, with principal first, followed by
-secondary components in the order corresponding to the references from the
-principal (without repetitions).  For extended views necessary for extended
-transitions, append any additional component at the end.
+Within views, extended views, etc., we use a standard order for the fixed
+processes (in the implementation, this order is defined in the input script).
+We order components in the order we have been using in examples: principal
+first, followed by secondary components in the order corresponding to the
+references from the principal (without repetitions).  For extended views, any
+additional component is added at the end.  
 
-For each type, the first occurrences of each value must form an
-initial segment of the type.
+Given this ordering or processes, we say that a view or extended view is in
+\emph{normal form}, if for each type, the first occurrences of each parameter,
+when read from left to right, form an initial segment of that type (according
+to the linear order described above).
+
+A transition $pre \trans{} post$ is in normal form if $pre$ is in normal form,
+the components of~$post$ are in the same order as for~$pre$ (so $post$ itself
+might not be in normal form), and the first occurrences of each parameter
+within the concatenation of $pre$ ad $post$ form an initial segment of that
+type.
 \end{definition}
 
+For example, the following view is in normal form; we have underlined the
+first occurrence of each parameter.
+\[
+\begin{align}
+(\Lock'(\underline{T_0}), \Head(\underline{N_0}), 
+    \Last(\underline{N_1}), \Con_3; 
+  Enq_4(T_0, N_1, \underline{N_2}), \Node_y(N_1, null),\Node_x(N_2, N_1)) .
+\end{align}
+\]
 
-Example.
+\framebox{Example} of transition in normal form. 
 
-\begin{lemma}
-If $s$ and~$s'$ are both in normal form, and $\pi(s)$ and~$\pi'(s')$ are
-substates of the same system state, then $s.\fixed = s'.\fixed$.
-\end{lemma}
+A view can be reduced to normal form by a simple left-to-right traversal,
+keeping track of the renaming built so far, and extending it to map the first
+occurrence of each parameter to the first unused parameter of that type.
+
+%% \begin{lemma}
+%% \label{lem:normal-form-fixed}
+%% If $s$ and~$s'$ are both in normal form, and $\pi(s)$ and~$\pi'(s')$ are
+%% substates of the same system state, then $s.\fixed = s'.\fixed$.
+%% \end{lemma}

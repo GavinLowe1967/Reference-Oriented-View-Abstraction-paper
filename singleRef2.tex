@@ -67,6 +67,7 @@ transition producing
 \[\mit
 v' = (post.\fixed, \set{sc, v.\princ}).
 \]
+We call this a \emph{secondary induced transition}. 
 
 \begin{impNote}
 At present this is done in EffectOn, via c2Refs. 
@@ -102,10 +103,11 @@ Consider an extended transition~$pre \trans{e} post$, and a view $v \in V$
 such that:
 %
 \begin{enumerate}
-\item[(a)] $v$ and $pre$ are accordant;
+\item[(a)] $v$ and $pre$ are accordant (recall that this implies that
+  $v.\fixed = pre.\fixed$);
 
 \item[(b)] If a component $c$ of $pre$ has a reference to a component~$c'$
-  of~$v$, or vice versa \framebox{check!}, then $V$ also contains the view
+  of~$v$, or vice versa, then $V$ also contains the view
 \begin{eqnarray*}
 v_\cross & = & (pre.\fixed, \set{c, c'});
 \end{eqnarray*}
@@ -115,16 +117,16 @@ v_\cross & = & (pre.\fixed, \set{c, c'});
   component~$c$ with identity~$id$ such that $V$ contains each of
 \[
 (pre.\fixed, \set{pre.\princ, c}) \quad\mbox{and}\quad 
-(v.\fixed, \set{v.\princ, c})
+(pre.\fixed, \set{v.\princ, c}) .
 \]
-(recall $pre.\fixed = v.\fixed$ here).
+In addition, if $c$ has a reference to a a secondary component $c_2$ of
+$pre.\cpts$ or $v.\cpts$, then $V$ contains $(pre.\fixed, \set{c, c_2})$.
 \end{enumerate}
 %
-Then:
-\begin{description}
-\item[Primary induced transitions.]
-The transition \emph{induces} a new
-transition $v \trans{} v'$ where
+Then
+%% \begin{description}
+%% \item[Primary induced transitions.]
+the transition induces a \emph{primary induced transition} $v \trans{} v'$ where
 \begin{enumerate}
 \item $v'.\fixed = post.\fixed$.
 
@@ -150,16 +152,19 @@ transition $v \trans{} v'$ where
   transition is induced.
 \end{enumerate}
 %
-We call such a transition a \emph{primary induced transition}.
+%We call such a transition a \emph{primary induced transition}.
 
-\item[Secondary induced transitions.]
-If a secondary component~$sc$ of~$post$ has a reference to $v.\princ$,
-then the transition induces a new transition producing
+%\item[Secondary induced transitions.]
+Further, suppose a secondary component acquires a reference to $v.\princ$ in
+the transition (i.e.~it the component does not have a reference to $v.\princ$
+before the transition, but does afterwards).  Let $sc$ be the state of that
+secondary component in $post$.  Then the transition induces a \emph{secondary
+  induced transition} producing
 \[\mit
 v' = (post.\fixed, \set{sc, v.\princ}).
 \]
-We call such a transition a \emph{secondary induced transition}.
-\end{description}
+%We call such a transition a \emph{secondary induced transition}.
+%\end{description}
 \end{definition}
 
 
@@ -180,13 +185,53 @@ induce a transition to produce~$v'$ from
 v & = & (fixed; Th''(t', n, n''),Nd_x(n, null) ).
 \end{eqnarray*}
 
+\begin{opt}
+\label{opt:induced-trans-singleRef}
+We can reduce the number of cases to consider.
+%
+\begin{enumerate}
+\item\label{case:opt-induced-trans-singleRef-1} If $pre.\princ = v.\princ$,
+  and the secondary component of~$v$ is included in $pre$, then the induced
+  transition is identical to the original transition.  There is no need to
+  consider this case. 
 
-\begin{improve}
-Can we reduce the number of combinations we have to consider?
-At present we don't support Optimisation~\ref{opt:avoid-induced} with reduced
-views: it's not sound for some reason.  Work out why.  It might be due to the
-use of c2Refs.  \framebox{Is this still true?}
-\end{improve}
+\item\label{case:opt-induced-trans-singleRef-2} Suppose $pre.\fixed =
+  post.\fixed$, and $v$ contains no component that changes state in the
+  transition.  Then the primary induced transition creates a view identical
+  to~$v$.  (Note, though, that a secondary induced transition might produce a
+  new view.)  \framebox{IMPROVE:} if secondary induced transition possible, we
+  consider both.
+
+\item\label{case:opt-induced-trans-singleRef-3} Suppose $pre.\fixed =
+  post.\fixed$, and $post$ contains no component with a reference to
+  $v.\princ$; then no secondary induced transition is possible.  Similarly, if
+  $pre.\fixed = post.\fixed$ and any component~$sc$ of $post$ that has a
+  reference to~$v.\princ$ does not change state, then the secondary induced
+  transition produces a view that is already in the set of views. 
+  \framebox{IMPROVE} do this.
+
+\item\label{case:opt-induced-trans-singleRef-4} Now suppose $pre.\fixed \ne
+  post.\fixed$, but $v$ again contains no component that changes state in the
+  transition, and all the conditions of
+  Definition~\ref{def:induced-transition-singleRef} are satisfied. Then the
+  new view~$v'$ produced by the primary induced transition will be different
+  from~$v$.  However, suppose we subsequently consider another extended
+  transition $pre' \trans{} post'$ with $post'.\fixed = post.\fixed$, and
+  consider its effect on the same~$v$ (necessarily $pre'.\fixed = pre.\fixed =
+  v.\fixed$), and $v$ again contains no component that changes state in the
+  transition.  Then (assuming the conditions are satisfied) the primary
+  induced transition will produce the same view~$v'$.  (Again, a secondary
+  induced transition might produce a new view.)  
+\end{enumerate}
+We revisit these points in Optimisation~\ref{opt:effectOn-singleRef}.
+\end{opt}
+
+%% \begin{improve}
+%% Can we reduce the number of combinations we have to consider?
+%% At present we don't support Optimisation~\ref{opt:avoid-induced} with reduced
+%% views: it's not sound for some reason.  Work out why.  It might be due to the
+%% use of c2Refs.  \framebox{Is this still true?}
+%% \end{improve}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -219,7 +264,8 @@ Consider the following transition for the lock-based queue.
 The thread is enqueueing~$B$ in node~$n_2$.  It has previously set $n_1$ (the
 last node in the list) to point to $n_2$, and now advances \SCALA{last}
 to~$n_2$.  This implies that $n_1$ is of the form $Nd_x(n_1, n_2)$, for
-some~$x$, in any corresponding system state.  However, consider also the view
+some~$x$, in any corresponding concrete system state.  However, consider also
+the view
 %
 \begin{eqnarray*}
 v & = & (fixed(t, n_1, n_1) ; Nd_A(n_1, null)).
@@ -274,9 +320,12 @@ Consider also the view
 \begin{eqnarray*}
 v & = & (Top(n_1), WD_B ;  Nd_A(n_2, null)).
 \end{eqnarray*}
-This is accordant with the pre-state of the transition (and consistent with a
-system state where $n_2$ is at the bottom of the stack, below the $B$-node).
-Hence, without condition~(b), a transition to
+This is accordant with the pre-state of the transition.  However, no concrete
+system state is consistent with both~$v$ and the pre-state of the transition,
+because the watchdog is consistent only with system states where the stack
+contains a~$B$.  (The view $v$ on its own is consistent with a system state
+where $n_2$ is at the bottom of the stack, below the $B$-node.)  Hence,
+without condition~(b), a transition to
 \begin{eqnarray*}
 v' & = & (Top(n_2), WD_B ;  Nd_A(n_2, null)).
 \end{eqnarray*}
@@ -291,6 +340,11 @@ v_\cross & = &  (Top(n_1), WD_B ; Nd_C(n_1, n_2), Nd_A(n_2, null)).
 %
 However, no such view exists in the model: it is an invariant of the model
 that a $C$ node never points to an~$A$ node.  This prevents the false error.
+
+
+\textbf{Note:} the case of considering cross references from a component
+of~$v$ to a component of~$post$ is necessary to avoid false errors in the
+Treiber Stack.
 
 %% consistent with $pre$, so induces transition to
 %% \[
@@ -311,12 +365,16 @@ identity~$id$, then there must be some component~$c$ with identity~$id$ such
 that $V$ contains each of
 \[
 (pre.\fixed, \set{pre.\princ, c}) \quad\mbox{and}\quad 
-(v.\fixed, \set{v.\princ, c}).
+(v.\fixed, \set{v.\princ, c});
 \]
-In other words, there is some way of consistently instantiating the missing
-component~$c$ that is common to both views. When using full views,
-$c$ would have been included in both substates, and so the check would have
-been included within Definition~\ref{def:induced-transition}.
+and, in addition, if $c$ has a reference to a a secondary component $c_2$ of
+$pre.\cpts$ or $v.\cpts$, then $V$ contains $(pre.\fixed, \set{c, c_2})$.
+%
+In other words, there is some way of instantiating the missing component~$c$
+that is common to both views, in a way that is consistent with other views.
+When using full views, $c$ would have been included in both substates, and so
+the check would have been included within
+Definition~\ref{def:induced-transition}.
 
 %% Consider transitions induced on view~$v$ by an extended transition $pre
 %% \trans{e} post$.  In particular, consider the case where the principals in
@@ -406,6 +464,11 @@ and $t_1$ is in a state that is consistent only with~$n_1$ holding~$B$.
 %% (v.\fixed, \set{v.\princ, c}
 %% \]
 %% are in $V$ (recall $pre.\fixed = v.\fixed$ here). 
+
+\framebox{FIXME} Add explanation of final clause: ``If $c$ has a reference to
+a a secondary component $c_2$ of $pre.\cpts$ or $v.\cpts$, then $V$ contains
+$(pre.\fixed, \set{c, c_2})$''.  The implementation checks this.  It is
+necessary to avoid a false positive with the lock-free queue.
 
 \begin{impNote}
 This is done in \texttt{EffectOn.\linebreak[1]check\-Compatible\-Missing}.  To
