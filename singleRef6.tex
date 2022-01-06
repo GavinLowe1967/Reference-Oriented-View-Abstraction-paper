@@ -1,0 +1,386 @@
+\subsubsection{Sufficient remappings for condition (c)}
+\label{sec:necessary-c}
+
+The following example shows that we need to consider a wider range of
+remappings when condition~(c) is relevant.
+%
+\begin{example}
+Let 
+\begin{eqnarray*}
+pre & = & (fixed; Th(T_0,N_0,N_1), Nd_A(N_1,N_2)), \\
+v & = & (fixed; Th'(T_0,N_0,N_1), Nd_B(N_1,N_2)).
+\end{eqnarray*}
+%
+Consider a result-defining function~$\pi_{rd} = \set{N_0 \mapsto N_0}$ (this
+would be necessary if $N_0$ is a parameter of $post.\fixed$, say).  Consider a
+consistent extension~$\pi$.  Both $pre.\princ$ and $v.\princ$ have a missing
+reference to a component with identity~$N_0$.  We consider how to instantiate
+this component.
+
+Suppose it is an invariant of the system that all views involving the $Th$
+component and the missing component are equivalent to $(fixed;
+Th(T_0,N_0,N_1), Nd_C(N_0,N_1,n))$ for some~$n$ (so the two components agree
+on the parameter denoted~$N_1$).  This $Nd_C$ component has a reference to the
+secondary component of~$pre$, so condition~(c) would also require a view with
+those two components; suppose it is an invariant that the only such view is
+equivalent to $(fixed; Nd_C(N_0,N_1,N_2), Nd_A(N_1,N_2))$, i.e.~instantiating
+$n$ with~$N_2$ (so the two components agree on the parameter denoted~$N_2$).
+This means that we need to instantiate the missing component with
+%
+\begin{eqnarray*}
+c & = & Nd_C(N_0,N_1,N_2).
+\end{eqnarray*}
+
+Condition~(c) then also requires a view equivalent to
+\[\mit
+(fixed; Th'(\pi(T_0),N_0,\pi(N_1)), Nd_C(N_0,N_1,N_2)).
+\]
+We need to consider separately the cases $\pi(N_1) = N_2$ or $\pi(N_1) \ne
+N_2$, since the resulting views are not equivalent.  (Note we cannot have
+$\pi(N_1) = N_1$, since that would require a unification; likewise, we cannot
+have $\pi(T_0) = T_0$.)
+
+In the case that $\pi(N_1) = N_2$, the component~$c$ has a reference to the
+secondary component of~$\pi(v)$.  Condition~(c) would also require a view
+equivalent to
+\[\mit
+(fixed; Nd_C(N_0,N_1,N_2), Nd_B(N_2, \pi(N_2)).
+\]
+In this case, we need to consider separately the cases  $\pi(N_2) = N_1$ and
+$\pi(N_2) \ne N_1$, since the resulting views are not equivalent.
+
+In summary, we need to consider remappings equivalent to each of the following
+extensions of~$\pi_{rd}$:
+\[
+\begin{array}{c}
+\set{T_0 \mapsto T_1, N_0 \mapsto N_0, N_1 \mapsto N_2, N_2 \mapsto N_1}, \\
+\set{T_0 \mapsto T_1, N_0 \mapsto N_0, N_1 \mapsto N_2, N_2 \mapsto N_3}, \\
+\set{T_0 \mapsto T_1, N_0 \mapsto N_0, N_1 \mapsto N_3, N_2 \mapsto N_4}.
+\end{array}
+\]
+\end{example}
+
+%%%%%
+
+%Define $\pi_{rd}$ creates a missing-common-component.
+
+The following definition describes when a result-defining remapping means that
+there is necessarily a common missing component.
+%
+\begin{definition}
+We say that $\pi_{rd}$ \emph{creates a common missing component} with
+identity~$id$ if: $pre$ has a missing component with identity~$id$; $v$ has a
+missing component with some identity~$x$; and $(x \mapsto id) \in \pi_{rd}$.
+\end{definition}
+
+Our approach is as follows.  If a result-defining remapping does create a
+common missing component, we simply consider all consistent extensions,
+mapping parameters of~$v$ either to a parameter of~$pre$, or to the next fresh
+parameter.  Clearly if any consistent extension satisfies condition~(c), then
+one of these renamings does.
+
+Note, though, that we only do this when necessary: when the minimal
+result-defining remapping creates a common missing component; or our treatment
+of condition~(b) produces a remapping that does so.
+
+\framebox{Performance}
+
+\begin{conjecture}
+I think it would be enough to:
+\begin{itemize}
+\item Map parameters of $v.\princ$ to match parameters in $pre$ or fresh
+  values, in all possible ways;
+
+\item Map identities of secondary components of $v$ to match parameters in
+  $pre$ or fresh values, in all possible ways;
+
+\item If the identity of a secondary component of $v$ is mapped to a parameter
+of~$v$, then map its remaining parameters to match parameters in $pre$
+or fresh values, in all possible ways.
+\end{itemize}
+%
+This would gain because it omits the case where a secondary component~$c_2$
+of~$v$ has its identity mapped to a fresh value, but another parameter~$x$
+mapped to a parameter of~$v$.  In this case, we could also map $x$ to a fresh
+value, because then $c_2$ isn't involved in any required views (this needs to
+hold for all occurrences of~$x$).
+\end{conjecture}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{Calculating sufficient remappings}
+\label{sec:necessary-algorithm}
+
+We now define our technique for extending a minimal result-defining
+remapping~$\pi_{rd}$.  If any extension of~$\pi_{rd}$ satisfies conditions~(b)
+and~(c), then our technique produces such an extension.  
+
+Our technique calculates $makeExtensions(\pi_{rd}, \set{})$, where
+$makeExtensions$ is given in Figure~\ref{fig:makeExtensions}.  The subsidiary
+parameter $doneB$ stores those pairs $(c,c')$, with $c$ a component of~$pre$
+and $c'$ a component of~$v$, for which we have already considered
+condition~(b) (the proof of Lemma~\ref{lem:makeExtensions-doneB} makes this
+more formal).  The function produces a set of result-consistent extensions
+that are completing extensions with respect to all pairs $(c,c') \in doneB$;
+we say that they \emph{respect~$doneB$}.
+
+\begin{definition}
+We say that a total (over the parameters of~$v$) extension~$\pi_{te}$ of a
+remapping function~$\pi$ \emph{respects $doneB$} if
+%
+\begin{enumerate}
+\item it is result-consistent, i.e.~$\pi_{te}$ adds no extra result-relevant
+parameters to the range; and
+\item for each $(c,c') \in doneB$,\, $\pi_{te}$ is a completing extension with
+respect to~$c$ and~$c'$, i.e.~it does not map any additional parameter of~$c'$
+to a parameter of~$c$.
+\end{enumerate}
+\end{definition}
+
+%%%%%
+
+\begin{figure}[th]
+\[
+\begin{align}
+makeExtensions(\pi: Remapping, doneB: \power(\S \cross \S): 
+   \power Remapping =  \\
+\quad\begin{align}
+  \sm{if}(\mbox{$\pi$ creates a common missing component})
+     \; \sm{return } allExtensions(\pi, doneB) \\
+  \sm{else}  \\
+  \quad\begin{align}
+    \sm{let } linksB = \mbox{all pairs $(c,c')$ such that $\pi$ creates a
+     cross reference between $c$ and $c'$} \\
+    \sm{if}(linksB \subseteq doneB) \; \sm{return } \set{extendWithFresh(\pi)} \\
+    \sm{else}  \\
+    \quad\begin{align}
+      \sm{pick } (c,c') \in linksB - doneB \\
+      \sm{let } \Pi = 
+        \begin{align}
+        \mbox{all cross-reference-view-defining extensions of
+           $\pi$ for $c$ and $c'$} \\
+        \mbox{that respect $doneB$}
+        \end{align} \\
+      %\sm{val } \Pi = crossRefViewDefiners(\pi, c, c') \\
+      \sm{return } \Union_{\pi' \in \Pi}
+        makeExtensions(\pi', doneB \union \set{(c,c')})
+       \end{align}
+  \end{align} \\         
+  \end{align} \\
+\end{align}
+\]
+\caption{The $makeExtensions$ function.}
+\label{fig:makeExtensions}
+\end{figure}
+
+%%%%%
+
+
+
+The $makeExtensions$ function uses two subsidiary functions:
+%
+\begin{itemize}
+\item 
+$allExtensions(\pi, doneB)$ returns all consistent extensions of~$\pi$,
+mapping each undefined parameter to either a parameter of~$pre$ or the next
+fresh parameter, and that respect~$doneB$.
+
+\item $extendWithFresh(\pi)$ extends $\pi$, mapping each undefined parameter
+  to the next fresh parameter (the result necessarily respects~$doneB$).
+\end{itemize}
+ 
+%%%%%
+
+The following lemma captures that when $makeExtensions(\pi,doneB)$ is called,
+we have already considered condition~(b) for the elements of $doneB$. Either
+all relevant extensions of~$\pi$ satisfy condition~(b) for every element of
+$doneB$, or none does.  That means that we do not need to consider elements of
+$doneB$ further when picking extensions of~$\pi$ (other than ensuring that
+they continue to respect~$doneB$).
+%
+\begin{lemma}
+\label{lem:makeExtensions-doneB}
+Consider a recursive call of $makeExtensions(\pi,doneB)$.  Suppose $\pi_{te}$
+is a total extension of~$\pi$ that respects~$doneB$, and satisfies
+condition~(b) for every $(c,c') \in doneB$.  Then \emph{every} total extension
+of~$\pi$ that respects~$doneB$ satisfies condition~(b) for every $(c,c') \in
+doneB$.
+\end{lemma}
+
+%% .  Then for each $(c,c') \in
+%% doneB$, if $\pi_{te}$ satisfies condition~(b) for~$c$ and~$c'$, then so
+%% does \emph{every} total extension of~$\pi$ that respects~$doneB$.
+%% % (in particular, $extendWithFresh(\pi)$).
+
+%%%%%
+
+%\framebox{re-express?}  
+
+\begin{proof}
+We prove the result by induction on the depth of the recursion. 
+%
+The result holds for the initial call, with $doneB = \set{}$, vacuously. 
+
+Consider a call $makeExtensions(\pi,doneB)$ and an immediate recursive call
+$make\-Extensions(\pi', doneB \union \set{(c,c')})$.  Suppose $\pi_{te}$ is a
+total extension of~$\pi'$ that respects $doneB \union \set{(c,c')}$ and
+satisfies condition~(b) for each element of $doneB \union \set{(c,c')}$.
+Consider some other total extension~$\pi_{te}'$ that respects
+$doneB \union \set{(c,c')}$.  We show that $\pi_{te}'$ satisfies condition~(b)
+for all elements of $doneB \union \set{(c,c')}$, via a case analysis.
+%
+\begin{itemize}
+\item Note that both $\pi_{te}$ and~$\pi_{te}'$ are also extensions of~$\pi$
+that respect~$doneB$; and $\pi_{te}$ satisfies condition~(b) for all elements
+of~$doneB$.  Hence by the inductive hypothesis $\pi_{te}'$ satisfies
+condition~(b) for all elements of~$doneB$.
+
+\item Suppose $\pi_{te}$ satisfies condition~(b) for $c$ and~$c'$.  Then by
+Lemma~\ref{lem:cross-reference-view-defining}, so does every extension
+of~$\pi'$ that respects $\set{(c,c')}$.  But that includes~$\pi_{te}'$.
+\end{itemize}
+\end{proof}
+
+
+%% .  We show
+%% that for each $(c_1,c_1') \in doneB \union \set{(c,c')}$, if $\pi_{te}$
+%% satisfies condition~(b) for~$c_1$ and~$c_1'$, then so does \emph{every} total
+%% extension of~$\pi'$ that respects~$doneB \union \set{(c,c')}$.
+%% %
+%% \begin{itemize}
+%% \item 
+%% Note that $\pi_{te}$ is also an extension of~$\pi$ that respects~$doneB$.
+%% Hence by the inductive hypothesis, for each $(c_1,c_1') \in doneB$, if
+%% $\pi_{te}$ satisfies condition~(b) for~$c_1$ and~$c_1'$, then so does every
+%% total extension of~$\pi$ that respects~$doneB$.  But that includes every
+%% total extension of~$\pi'$ that respects $doneB \union \set{(c,c')}$.
+
+%% \item Suppose $\pi_{te}$ satisfies condition~(b) for $c$ and~$c'$.  Then by
+%% Lemma~\ref{lem:cross-reference-view-defining}, so does every extension
+%% of~$\pi'$ that respects $\set{(c,c')}$.  But that includes every extension
+%% of~$\pi'$ that respects $doneB \union \set{(c,c')}$.
+%% \end{itemize}
+%% \end{proof}
+
+%%%%%
+
+
+Main result: 
+
+\begin{prop}
+\label{prop:makeExtensions}
+Let $\pi_{rd}$ be a minimal result-defining remapping $\pi_{rd}$.  If any
+result-consistent extension of $\pi_{rd}$ satisfies conditions~(b) and~(c),
+then $makeExtensions(\pi_{rd}, \set{})$ produces such an extension.
+\end{prop}
+%
+\begin{proof}
+We show that for each call $makeExtensions(\pi,doneB)$, if any extension
+of~$\pi$ that respects $doneB$ satisfies conditions~(b) and~(c), then this
+call returns such an extension.  This implies the result of the proposition
+when $doneB = \set{}$. 
+
+Note that the usage of $doneB$ ensures termination ($doneB$ increases in size
+at each recursive call, and is bounded).  This allows us to assume (by
+induction) that the result holds for all recursive calls.
+
+So consider a particular call $makeExtensions(\pi,doneB)$.  Let $\pi_{te}$ be
+a total extension of~$\pi$ that respects $doneB$ and that satisfies
+conditions~(b) and~(c).  
+
+%% By Lemma~\ref{lem:makeExtensions-doneB}, for each
+%% $(c,c') \in doneB$, every extension of $\pi$ that respects~$doneB$ satisfies
+%% condition~(b) for~$c$ and~$c'$.
+
+We perform a case analysis over the branch selected.
+%
+\begin{itemize}
+\item Suppose $\pi$ creates a common missing component.  In this case, the use
+of $allExtensions$ ensures that we return a remapping equivalent to $\pi_{te}$
+(perhaps using different fresh values from~$\pi_{te}$), and that remapping
+satisfies conditions~(b) and~(c). 
+
+\item Suppose $linksB \subseteq doneB$.  Consider $\hat\pi =
+  extendWithFresh(\pi)$.  This respects $doneB$, so by
+  Lemma~\ref{lem:makeExtensions-doneB}, it satisfies condition~(b) for each
+  $(c,c') \in doneB$, i.e.~it satisfies condition~(b) overall.
+%
+Further, $\hat\pi$ satisfies condition~(c) vacuously: $\pi$ does not create a
+common missing component, and so neither does~$\hat\pi$.
+
+\item Otherwise consider the pair $(c,c') \in linksB - doneB$ picked by the
+function.  By Lemma~\ref{lem:cross-reference-view-defining-partition},
+$\pi_{te}$ is a completing extension of some $\pi'$ that is a
+cross-reference-defining extension of~$\pi$ for~$c$ and~$c'$.  Also $\pi'$
+respects $doneB$ (since $\pi_{te}$ does), so $\pi' \in \Pi$.  Consider the
+recursive call $makeExtensions(\pi', doneB \union \set{(c,c')})$.  Note that
+$\pi_{te}$ respects $doneB \union \set{(c,c')}$.  Hence by the inductive
+hypothesis, this recursive call returns an extension~$\hat\pi$ of~$\pi$ that
+respects $doneB$ and satisfies conditions~(b) and~(c).  This $\hat\pi$ is in
+turn returned by $makeExtensions(\pi,doneB)$, as required.
+\end{itemize}
+\end{proof}
+
+%% We show that if any extension of $\pi$ satisfies
+%% conditions~(b) and~(c), then this call to $makeExtensions$ produces such an
+%% extension.
+
+%% Note that the usage of $doneB$ ensures termination.  This allows us, below, to
+%% assume that each recursive call satisfies the conditions of the proposition.
+%% (Formally it's by induction on the number of pairs of components $(c,c')$ not
+%% in $doneB$.)
+
+%% In the case that $\pi_{rd}$ creates a missing common component, this holds
+%% trivially, because we return a representative of every consistent extension.
+
+%% In the case $linksB \subseteq doneB$, it follows from the above lemma.
+
+%% Otherwise .........
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{Unsure below here}
+
+\framebox{***} Folowing looks wrong; see Example 35
+
+\begin{lemma}
+\label{lem:necessary-renamings}
+Consider a (primary- or secondary-)result-defining mapping~$\pi_{rd}$, and an
+extension~$\pi$ defined over all the parameters of~$v$.  Consider some set $X$
+of linkage parameters for~$\pi$.  Let $\pi'$ be obtained from $\pi$ by
+replacing each element of~$X$ in the range of~$\pi$ by a distinct fresh
+variable.  Suppose that
+%
+\begin{enumerate}
+\item No member of~$X$  is in the range of~$\pi_{rd}$;
+
+\item If $\pi'$ produces a linkage that for condition~(b) creates a linkage
+  involving component $c \in pre.\cpts$, then $\pi$ and~$\pi'$ range-agree on
+  all parameters of~$c$.
+\end{enumerate}
+%
+Then the views required to satisfy the linkages for $\pi'$ are a subset of
+those for~$\pi$, and the resulting views are equivalent.
+\end{lemma}
+
+%%%%%
+
+Example~\ref{example:singleRef:unnecessary-linkage} corresponds to applying
+this lemma with $X = \set{N_1}$. 
+
+%%%%%
+
+\begin{proof}
+That $\pi$ and~$\pi'$ produce the same resulting views follows from the fact
+that they are both extensions of the same result-defining mapping~$\pi_{rd}$. 
+
+Every linkage for $\pi'$ is also a linkage for~$\pi$ (excluding those on
+parameters from~$X$).  Hence the views required for~$\pi'$ are a subset of
+those required for~$\pi$. 
+\end{proof}
+
+\framebox{Not true}  first example in this subsection is a counterexample. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+

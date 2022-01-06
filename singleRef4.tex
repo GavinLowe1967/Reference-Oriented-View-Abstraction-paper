@@ -1,12 +1,76 @@
-\subsection{Significant and incidental linkages}
+\subsection{Identifying sufficient remappings}
 
 \framebox{Introduce} term \emph{linkage} earlier.
 
-Having to deal with linkages when considering induced transitions adds
-considerable complexity to the checking procedure.  In this section we show
-that it is sound not to consider certain combinations of transitions and views
-when applying symmetry reduction: we show that in such cases equivalent views
-can be produced by other induced transitions with fewer linkages.  
+\framebox{*** combine this with the next subsection}  Arguably some of this
+should be covered when considering full views. 
+
+In this section we consider the problem of calculating all induced transitions
+produced by a transition $pre \trans{} post$ acting on view~$v$, given that
+both are represented in normal form.  We want to produce all resulting views
+corresponding to the transition acting on a remapping of~$v$, up to
+equivalence.  Our aim, then, is to identify sufficient remappings to guarantee
+this.  But, in the interests of efficiency, we want to avoid considering too
+many remappings.  The necessity of considering linkages complicates the
+process over that for full views.
+
+%% Having to deal with linkages when considering induced transitions adds
+%% considerable cost to the checking procedure.  In this section we show that it
+%% is sound to omit certain renamings of a view~$v$ when considering the effects
+%% of a transition on it: we show that in such cases equivalent views can be
+%% produced by induced transitions from a different renaming.  
+
+There are two facets to consider.
+%
+\begin{enumerate}
+\item Two different remappings of the view~$v$ may lead to equivalent views
+  being produced by the induced transition (on the assumption that
+  conditions~(b) and~(c) are satisfied in each case).
+
+\item Tho different remappings of~$v$ that lead to equivalent views may
+  require different views to satisfy conditions~(b) and~(c).  When these
+  required views are unrelated, we need to consider both remappings.  However,
+  in some cases, the required views for one remapping may be a proper subset
+  of those for the other remapping (up to equivalence); in this case it is
+  sound, and more efficient, to consider just the former.  
+\end{enumerate}
+
+Our approach is as follows.  We build up each remapping function in stages; in
+early stages, the remapping will be a partial function, that is gradually
+extended to give values for all parameters of the view~$v$. 
+\begin{itemize}
+\item We start with a partial unification function~$\pi_u$. 
+
+\item We then extend $\pi_u$ in all ways that will lead to distinct resulting
+  views (cf.~item~1 above).  For each distinct resulting view (up to
+  equivalence), we define a single extension that will produce it.  We call
+  each such extension a \emph{result-defining remapping}.  Each is a partial
+  function, extending $\pi_u$ over those parameters that are necessary to
+  define the result.  
+  We describe our approach in Sections~\ref{sec:primary-result-defining}
+  and~\ref{sec:secondary-result-defining} for primary- and secondary-induced
+  transitions, respectively.
+
+\item We then consider conditions~(b) and~(c) of
+  Definition~\ref{def:induced-transition-singleRef}.  For each result-defining
+  remapping, we consider different extensions that will correspond to
+  different required views, but omitting a remappings that requires a
+  proper superset of those for another (cf.~item~2 above).  
+  We consider conditions~(b) and~(c) in Sections~\ref{sec:necessary-b}
+  and~\ref{sec:necessary-c}, respectively, proving appropriate results.  We
+  then present and prove our algorithm for calculating sufficient
+  remappings in Section~\ref{sec:necessary-algorithm}.
+
+\end{itemize}
+
+We fix a transition $pre \trans{} post$ and a view~$v$ for the remainder of
+this section. 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{Remappings for equivalent primary induced transitions}
+\label{sec:primary-result-defining}
 
 We start by considering when two different extensions of the same partial
 unification function produce equivalent primary induced views.  The following
@@ -15,99 +79,101 @@ examples help to illustrate.
 \begin{example}\label{example:29}
 Consider the normal-form transition
 \begin{eqnarray*}
-(fixed(N_0); Th(T_0,N_1), Nd_x(N_1,N_2)) & \trans{} &
-  (fixed'(N_0); Th'(T_0,N_1), Nd_x(N_1,N_2))
+(fixed(N_0); Th(T_0,N_1), Nd_A(N_1,N_2)) & \trans{} &
+  (fixed'(N_0); Th'(T_0,N_1), Nd_A(N_1,N_2))
 \end{eqnarray*}
 acting on 
 \[
-(fixed(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_3)).
+(fixed(N_0); Nd_B(N_1,N_2), Nd_C(N_2,N_3)).
 \]
-No unification is possible.  If we consider the mapping $\pi_1 = \set{N_0
-  \mapsto N_0, \linebreak[1] {N_1 \mapsto N_3,} \linebreak[1] N_2 \mapsto N_4,
-  N_3 \mapsto N_5}$ (mapping all parameters other than those in the fixed
-processes to fresh values), then this induces a transition to
+No unification is possible, so the only unification function is $\pi_{u} =
+\set{N_0 \mapsto N_0}$.  If we consider the mapping $\pi_1 = \set{N_0 \mapsto
+  N_0, \linebreak[1] {N_1 \mapsto N_3,} \linebreak[1] {N_2 \mapsto N_4},
+  \linebreak[1] N_3 \mapsto N_5}$ (mapping all parameters other than those in
+the fixed processes to fresh values), then this induces a transition to
 \[
-(fixed'(N_0); Nd_y(N_3,N_4), Nd_z(N_4,N_5)) \equiv 
-  (fixed'(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_3)).
+(fixed'(N_0); Nd_B(N_3,N_4), Nd_C(N_4,N_5)) \equiv 
+  (fixed'(N_0); Nd_B(N_1,N_2), Nd_C(N_2,N_3)).
 \] 
 
 Consider instead the mapping $\pi_2 = \set{N_0 \mapsto N_0, N_1 \mapsto N_3,
   N_2 \mapsto N_4,\linebreak[1] {N_3 \mapsto N_1}}$.  This mapping produces a
 linkage that would require a view equivalent to $v_\cross = (fixed(N_0);
-Nd_z(N_4,N_1), Nd_x(N_1,N_2))$.  If such a view exists, the induced transition
+Nd_C(N_4,N_1), Nd_A(N_1,N_2))$.  If such a view exists, the induced transition
 produces
 \[
-(fixed'(N_0); Nd_y(N_3,N_4), Nd_z(N_4,N_1)) \equiv 
-  (fixed'(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_3)).
+(fixed'(N_0); Nd_B(N_3,N_4), Nd_C(N_4,N_1)) \equiv 
+  (fixed'(N_0); Nd_B(N_1,N_2), Nd_C(N_2,N_3)).
 \]
 The two mappings produce equivalent views.  Thus it is enough to consider one
 of them.  We consider only the mapping~$\pi_1$, as it subsumes~$\pi_2$, and is
 simpler to deal with as it does not require the additional view equivalent
 to~$v_\cross$.
 
-The same is true of all remappings with $N_1$ and/or $N_2$ in the range (there
-are seven in total).
+The same is true of all other remappings with $N_1$ and/or $N_2$ in the range
+(there are seven in total).
 \end{example}
 
 %%%%%
 
+The following example shows how different remappings can produce
+non-equivalent views.
+% 
 \begin{example}\label{example:singleRef-remapping-post-servers}
 Consider the transition
 % 
 \begin{eqnarray*}
-(fixed(N_0); Th(T_0,N_1), Nd_x(N_1,N_2)) & \trans{} &
-  (fixed'(N_1); Th'(T_0,N_1), Nd_x(N_1,N_2))
+(fixed(N_0); Th(T_0,N_1), Nd_A(N_1,N_2)) & \trans{} &
+  (fixed'(N_1); Th'(T_0,N_1), Nd_A(N_1,N_2))
 \end{eqnarray*}
 acting on
 \[
-v = (fixed(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_3)).
+v = (fixed(N_0); Nd_B(N_1,N_2), Nd_C(N_2,N_3)).
 \]
-Again no unification is possible.  The unification function $\pi_1 = \set{N_0
-  \mapsto N_0, \linebreak[1] {N_1 \mapsto N_3}, \linebreak[1] N_2 \mapsto N_4,
-  \linebreak[1] {N_3 \mapsto N_5}}$ induces a transition to
+Again no unification is possible.  The remapping function $\pi_1 = \set{N_0
+  \mapsto N_0, \linebreak[1] {N_1 \mapsto N_3}, \linebreak[1] {N_2 \mapsto
+    N_4}, \linebreak[1] {N_3 \mapsto N_5}}$ induces a transition to
 \[
-(fixed'(N_1); Nd_y(N_3,N_4), Nd_z(N_4,N_5)) \equiv
-(fixed'(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_3)).
+(fixed'(N_1); Nd_B(N_3,N_4), Nd_C(N_4,N_5)) \equiv
+(fixed'(N_0); Nd_B(N_1,N_2), Nd_C(N_2,N_3)).
 \]
 
-Alternatively, the unification function $\pi_2 = \set{N_0 \mapsto N_0, N_1
-  \mapsto N_3, N_2 \mapsto N_4, \linebreak[1] {N_3 \mapsto N_1}}$  creates
-a linkage via~$N_1$, requiring a view equivalent to $(fixed(N_0);
-Nd_z(N_4,N_1), Nd_x(N_1,N_2))$.  If such a view does exist, the induced
-transition produces
+Alternatively, the remapping function $\pi_2 = \set{{N_0 \mapsto N_0}, {N_1
+    \mapsto N_3}, \linebreak[1] {N_2 \mapsto N_4}, \linebreak[1] {N_3 \mapsto
+    N_1}}$ creates a linkage via~$N_1$, requiring a view equivalent to
+$(fixed(N_0); Nd_C(N_4,N_1), Nd_A(N_1,N_2))$.  If such a view does exist, the
+induced transition produces
 \[
-(fixed'(N_1); Nd_y(N_3,N_4), Nd_z(N_4,N_1)) \equiv
-(fixed'(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_0)).
+(fixed'(N_1); Nd_B(N_3,N_4), Nd_C(N_4,N_1)) \equiv
+(fixed'(N_0); Nd_B(N_1,N_2), Nd_C(N_2,N_0)).
 \]
 This is not equivalent to the view produced previously.  Thus it is necessary
 to consider both unification functions.
 
-The critical point is that $\pi_2$ maps~$N_3$ to a value in $post.\fixed$.
-\end{example}
+The critical point is that $\pi_2$ maps~$N_3$ to a value in $post.\fixed$,
+which leads to a different induced view to that for $\pi_1$.
 
-%% the parameter~$N_1$ of the linkage appears twice in
-%% the induced view (prior to reduction to normal form): once in the fixed
-%% processes and once in the $Nd_z$ component taken from $\pi'(v)$.  It is
-%% necessary for the remapping function to include $N_3 \mapsto N_1$ in order to
-%% create this coincidence, and that creates the linkage. 
+Note that neither~$N_1$ nor~$N_2$ can be mapped to~$N_1$, since this would
+require a unification of components. 
+\end{example}
 
 %%%%%
 
-
+We now give sufficient conditions for two induced transitions to produce
+equivalent views, on the assumption that conditions~(b) and~(c) of
+Definition~\ref{def:induced-transition-singleRef} are satisfied. 
 We say that two remapping functions~$\pi_1$ and~$\pi_2$ \emph{range-agree}
 on~$y$ if they map the same variables to~$y$:
 \[
 \forall x \spot \pi_1(x) = y \iff \pi_2(x) = y.
 \]
-Necessarily there is at most one~$x$ that each remapping function maps
+Necessarily there is at most one~$x$ that the remapping functions map
 to~$y$.
 
-\begin{lemma}
-\label{lem:singleRef:remappings-equivalent}
+\begin{definition}
 Consider a transition $pre \trans{} post$ and a view~$v$, both in normal form.
-Consider a partial unification function~$\pi_0$, and two consistent
-extensions~$\pi_1$ and~$\pi_2$.  Let $v_1 = \pi_1(v)$ and $v_2 = \pi_2(v)$.
-Suppose that $\pi_1$ and $\pi_2$ range-agree on:
+Consider a partial unification function~$\pi_u$.  We define the
+\emph{result-relevant parameters} to be:
 %
 \begin{enumerate}
 \item\label{item:singleRef:remappings-equivalent:post-servers} All parameters
@@ -120,10 +186,20 @@ Suppose that $\pi_1$ and $\pi_2$ range-agree on:
   acquires a reference to a component~$c'$ of~$post$, then all parameters
   of~$c'$. 
 \end{enumerate}
-%
-Then for each view~$v_1'$ produced by a primary induced transition from~$v_1$,
-there is a view~$v_2'$ produced by a primary induced transition from~$v_2$,
-such that $v_1' \equiv v_2'$; and vice versa.
+\end{definition}
+
+\begin{lemma}
+\label{lem:singleRef:remappings-equivalent-primary}
+Consider a transition $pre \trans{} post$ and a view~$v$, both in normal form.
+Consider a partial unification function~$\pi_u$, and two consistent
+extensions~$\pi_1$ and~$\pi_2$, and suppose that $\pi_1$ and $\pi_2$
+range-agree on all result-relevant parameters.  Let $v_1 = \pi_1(v)$ and $v_2
+= \pi_2(v)$.  Suppose, further, that conditions~(b) and~(c) of
+Definition~\ref{def:induced-transition-singleRef} are satisfied for the
+induced transitions from~$v_1$ and~$v_2$.  Then for each view~$v_1'$ produced
+by a primary induced transition from~$v_1$, there is a view~$v_2'$ produced by
+a primary induced transition from~$v_2$, such that $v_1' \equiv v_2'$; and
+vice versa.
 \end{lemma}
 
 %%%%%
@@ -145,6 +221,9 @@ component of~$v_2'$ corresponds to the $k$th reference of~$v_2'.\princ$.
 Note that if the principals of $v_1$ and~$v_2$ are unified with a component
 of~$pre$ (necessarily the same component in each case), the principals of the
 induced views are the corresponding components of~$post$ (so equal).
+Otherwise, the principals of the induced views are the principals of~$v_1$
+and~$v_2$, respectively. 
+
 Concerning secondary components, note that one of the following holds:
 %
 \begin{itemize}
@@ -160,11 +239,11 @@ Concerning secondary components, note that one of the following holds:
 
 This implies that $v_1'$ and~$v_2'$ agree on all parameters of~$post.\fixed$,
 and all parameters of components that were taken from~$post$, by the three
-conditions of the lemma.  All other parameters are only in components of~$v_1$
-or~$v_2$, respectively, that did not unify with any component and so did not
-change state in the transition; the parameters will be $\pi_1(x)$
-and~$\pi_2(x)$, respectively, where $x$ is the corresponding parameter of~$v$.
-Thus $v_1' \equiv v_2'$.
+cases in the definition of result-relevant parameters.  All other parameters
+are only in components taken from~$v_1$ or~$v_2$, respectively, that did not
+unify with any component and so did not change state in the transition; the
+parameters will be $\pi_1(x)$ and~$\pi_2(x)$, respectively, where $x$ is the
+corresponding parameter of~$v$.  Thus $v_1' \equiv v_2'$.
 \end{proof}
 
 Optimisation: I think we don't need to agree on parameters of the secondary
@@ -175,397 +254,157 @@ issue only if both components of~$v$ change state, which is quite rare.
 
 %%%%%
 
-%% \framebox{Examples} Example~\ref{example:29} satisfies conditions of
-%% Lemma~\ref{lem:singleRef:remappings-equivalent}.  Example~\ref{example:30}
-%% doesn't, via parameter of $post.\fixed$. 
-
 \begin{definition}
-Consider a partial unification function~$\pi_u$.  We call a partial
-extension~$\pi_{rd}$ an \emph{result-defining extension} if all values in the
-range of~$\pi_{rd}$ that are not in the range of~$\pi_u$ correspond to one of the
-three cases of Lemma~\ref{lem:singleRef:remappings-equivalent}.
+Consider a partial unification function~$\pi_u$.  We call a partial consistent
+extension~$\pi_{rd}$ a \emph{minimal primary-result-defining remapping} if all
+values in the range of~$\pi_{rd}$ that are not in the range of~$\pi_u$ are
+result-relevant parameters.
+
+We say a consistent extension~$\pi$ of~$\pi_{rd}$ is a
+\emph{result-consistent} extension if it adds no new result-relevant
+parameters to the range.  We will also sometimes say that $\pi$ is a (not
+necessarily minimal) primary-result-defining remapping.
 \end{definition}
 
-For instance, in Example \ref{example:29}, the extension $\set{N_0
-  \mapsto N_0, \linebreak[1] {N_3 \mapsto N_1}}$ of $\set{N_0 \mapsto N_0}$ is
-result-defining since $N_1$ corresponds to the first case of
-Lemma~\ref{lem:singleRef:remappings-equivalent}. 
-
-Note that all extensions of a result-defining remapping produce the same
-resulting view (up to equivalence).
-
-Out approach will be as follows: (1) consider all unification
-functions~$\pi_u$; (2) for each such unification function, produce all
-result-defining extensions~$\pi_{rd}$; (3) extend each such result-defining
-extension.  However, it turns out that we might have to consider more than one
-extension of each~$\pi_{rd}$: it might be that only certain extensions satisfy
-conditions~(b) and~(c) of Definition~\ref{def:induced-transition-singleRef}.
-The following example illustrates this.
-
-%%   ,  decide which components to unify, and produce minimal unifying
-%% map; (2) decide which parameters to map to parameters under the three
-%% conditions of the above lemma; (3) where there is a linkage involving
-%% component~$c$ of~$v$ and component~$c'$ of~$pre$, consider all combinations of
-%% mapping a parameter of~$c$ to a parameter of~$v'$ (including no such); (4) map
-%% all other parameters to fresh parameters. 
-
 %%%%%
-
 
 \begin{example}
-Consider the effect of the transition
-\begin{eqnarray*}
-(fixed(N_0); Th(T_0,N_1), Nd(N_1,N_0)) & \trans{} &
- (fixed'(N_0); Th'(T_0), Nd(N_1,N_0))
-\end{eqnarray*}
-on
-\begin{eqnarray*}
-v & = & (fixed(N_0); Th''(T_0,N_0), Nd'(N_0,N_1)).
-\end{eqnarray*}
-%
-No unification of components is possible.  The only result-defining extension
-is $\pi_{rd} = \set{{N_0 \mapsto N_0}}$.  This necessarily creates a linkage
-via~$N_0$.  
-
-For an extension~$\pi$ of~$\pi_{rd}$, condition~(b) of
-Definition~\ref{def:induced-transition-singleRef}, would require the current
-set of representative views to contain
-%
-\begin{eqnarray*}
-v_\cross & = & (fixed(N_0); Nd(N_1,N_0), Nd'(N_0,\pi(N_1)))
-\end{eqnarray*}
-in order to induce a transition to
-\[
-\begin{align}
-(fixed'(N_0); Th''(T_1,N_0),  Nd'(N_0,N_2)) \equiv \\
-\qquad  (fixed'(N_0); Th''(T_0,N_0,N_1), Nd'(N_0,N_1)).
-\end{align}
-\]
-Depending upon the value of $\pi(N_1)$, values for~$v_\cross$ fall into two
-equivalence classes, with representative members
-\[
-\begin{align}
-(fixed(N_0); Nd(N_1,N_0), Nd'(N_0,N_1)), \\
-(fixed(N_0); Nd(N_1,N_0), Nd'(N_0,N_2)).
-\end{align}
-\]
-It is necessary to consider both these possibilities: it is possible that the
-current set of representative views contains only one of them.
-
-Note that the former case (with $\pi(N_1) = N_1$) creates two new linkages
-via~$N_1$, which for condition~(b) would require
-\[
-\begin{array}{c}
-(fixed(N_0); Nd'(N_0,N_1), Nd(N_1,N_0)), \\
-(fixed(N_0);Th''(T_0,N_0,N_1),Nd(N_1,N_0)).
-\end{array}
-\]
+Consider again the processes of
+Example~\ref{example:singleRef-remapping-post-servers}.  The unification
+function $\pi_u = \set{N_0 \mapsto N_0}$ has minimal primary-result-defining
+remappings $\pi_u$ itself and $\pi_u \union \set{N_2 \mapsto N_1}$.  Each
+result-consistent extension of one of these will map no other parameter
+to~$N_1$. 
 \end{example}
 
-%%%%%
 
-%% \begin{example}
-%% Consider the effect of the transition
-%% \begin{eqnarray*}
-%% (fixed(N_0); Th(T_0,N_1), Nd(N_1,N_0)) & \trans{} &
-%%  (fixed'(N_0); Th'(T_0), Nd(N_1,N_0))
-%% \end{eqnarray*}
-%% on
-%% \begin{eqnarray*}
-%% v & = & (fixed(N_0); Th''(T_0,N_0,N_1), Nd'(N_0,N_1)).
-%% \end{eqnarray*}
-%% %
-%% As in the previous example, the only result-defining extension $\set{{N_0
-%%     \mapsto N_0}}$ creates a linkage via~$N_0$.  
+%% For instance, in Example \ref{example:29}, the extension $\set{N_0
+%%   \mapsto N_0, \linebreak[1] {N_3 \mapsto N_1}}$ of $\set{N_0 \mapsto N_0}$ is
+%% result-defining since $N_1$ corresponds to the first case of
+%% Lemma~\ref{lem:singleRef:remappings-equivalent-primary}. 
 
-%% Mapping $N_1$ to~$N_1$ requires $(fixed(N_0); Nd(N_1,N_0), Nd'(N_0,N_1))$.
-%% But also creates two new linkages via~$N_1$ which requires
-%% \[
-%% (fixed(N_0); Th''(T_0,N_0,N_1), Nd(N_1,N_0))
-%% (fixed(N_0);
-%% \end{example}
+The following corollary shows that all result-consistent extensions of a
+primary-result-defining remapping produce the same resulting view (up to
+equivalence); it follows immediately from
+Lemma~\ref{lem:singleRef:remappings-equivalent-primary}.
+%
+\begin{corollary}
+Let $\pi_{rd}$ be a (not necessarily minimal) primary-result-defining
+remapping.  Let $\pi_1$ and~$\pi_2$ be two result-consistent extensions
+of~$\pi_{rd}$.  Let $v_1 = \pi_1(v)$ and $v_2 = \pi_2(v)$.  Suppose
+conditions~(b) and~(c) of Definition~\ref{def:induced-transition-singleRef}
+are satisfied for~$v_1$ and~$v_2$.  Then for each view~$v_1'$ produced by a
+primary induced transition from~$v_1$, there is a view~$v_2'$ produced by a
+primary induced transition from~$v_2$, such that $v_1' \equiv v_2'$; and vice
+versa.
+\end{corollary}
 
-
-%% However, suppose the current representative views do not contain~$v_\cross$,
-%% but do contain the two views
-%% \begin{eqnarray*}
-%% v_\cross' & = & (fixed(N_0); Nd(N_1,N_0), Nd'(N_0,N_1)) \\
-%% v_\cross'' & = & (fixed(N_0); Nd'(N_0,N_1), Nd(N_1,N_0)).
-%% \end{eqnarray*}
-%% %
-%% With the additional clause~5, we also consider the renaming $\pi'' =
-%% \set{{T_0 \mapsto T_1}, \linebreak[1] N_0 \mapsto N_0,\linebreak[1] {N_1
-%%     \mapsto N_1}}$, because the component $c = Nd(N_1,N_0)$ contains a
-%% reference to the component $Nd'(N_0,N_1)$ of~$\pi''(v)$.  Condition~(b) is now
-%% satisfied for $\pi''(v)$, because of the presence of~$v_\cross'$
-%% and~$v_\cross''$.  This then induces a transition to
-%% \[
-%% \begin{align}
-%% (fixed'(N_0); Th''(T_1,N_0), Nd'(N_0,N_1)) \equiv \\
-%% \qquad (fixed'(N_0); Th''(T_0,N_0), Nd'(N_0,N_1)),
-%% \end{align}
-%% \]
-%% as one would expect.
-
-Given a result-defining extension mapping~$\pi$, we identify the linkages
-defined by~$\pi$.  Consider a linkage involving component~$c$ of~$v$ and
-component~$c'$ of~$pre$.  We extend~$\pi$ to the remaining parameters of~$c$,
-mapping each either to a parameter of~$c'$ or to a fresh variable.  The former
-choice has the possibility of creating another linkage involving different
-components; we repeat the process with those.  Once all such linkages have
-been considered, we map the remaining parameters to distinct fresh
-parameters. 
-
-Note that the above process creates linkages only where they are, in a sense,
-required.  We will show below that any other remapping is subsumed by one of
-the remappings we do consider.  The following example illustrates the idea. 
-%%%%%%
-\begin{example}
-Consider again (from Example~\ref{example:29}) the normal-form transition
-\begin{eqnarray*}
-(fixed(N_0); Th(T_0,N_1), Nd_x(N_1,N_2)) & \trans{} &
-  (fixed'(N_0); Th'(T_0,N_1), Nd_x(N_1,N_2))
-\end{eqnarray*}
-acting on 
-\[
-(fixed(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_3)).
-\]
-This has result-defining mapping~$\pi_{rd} = \set{N_0 \mapsto N_0}$.  Consider
-the extension $\pi = \set{N_0 \mapsto N_0, N_1 \mapsto N_3, N_2 \mapsto
-  N_4,\linebreak[1] {N_3 \mapsto N_1}}$.  This creates a linkage on~$N_1$.
-However, this linkage is unnecessary: replacing $N_1$ in the range of~$\pi$
-with a fresh parameter $N_5$ creates the remapping $\pi' = \set{N_0 \mapsto
-  N_0, N_1 \mapsto N_3, N_2 \mapsto N_4,\linebreak[1] {N_3 \mapsto N_5}}$,
-which would lead to the same final induced view (up to equivalence), but
-requires a subset of the linking views.
-\end{example}
-
-%% A linkage on parameter~$x$ is \emph{necessary} for a remapping~$\pi$ if either:
-%% %
-%% \begin{itemize}
-%% \item It is defined by~$\pi$, i.e., the linking parameter~$x$ is in the range
-%%   of~$\pi$;
-
-%% \item There is a necessary linkage on some parameter~$y$, and extending the
-%%   remapping, as above, to create a remapping~$\pi'$ produces a new linkage
-
-%%  For some necessary linkage, extending the mapping as above to create
-%%   remapping~$\pi'$, then $\pi'$  creates a new
-%%   linkage.
-%% \end{itemize}
-
-\begin{lemma}
-Consider a result-defining mapping~$\pi_{rd}$, and an extension~$\pi$ defined
-over all the parameters of~$v$.  Consider some set $X$ of linkage parameters
-for~$\pi$, none of which is in the range of~$\pi_{rd}$.  Let $\pi'$ be
-obtained from $\pi$ by replacing each element of~$X$ in the range of~$\pi$ by
-a distinct fresh variable.  Then the views required to satisfy the linkages
-for $\pi'$ are a subset of those for~$\pi$, and the resulting views are
-equivalent.
-\end{lemma}
-
-%%%%%
-
-\begin{proof}
-That $\pi$ and~$\pi'$ produce the same resulting views follows from the fact
-that they are both extensions of the same result-defining mapping~$\pi_{rd}$. 
-
-Every linkage for $\pi'$ is also a linkage for~$\pi$ (excluding those on
-parameters from~$X$).  Hence the views required for~$\pi'$ are a subset of
-those required for~$\pi$. 
-\end{proof}
-
+\framebox{***} does the implementation consider only result-consistent
+extensions? 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-%%%%%
+\subsubsection{Remappings for equivalent secondary induced transitions}
+\label{sec:secondary-result-defining}
 
-More generally, if there are two renamings $\pi$ and~$\pi'$, where the two
-induced views are equivalent, and the linkages produced by $\pi$ are a subset
-of those produced by~$\pi'$, then there is no need to consider~$\pi'$.  In
-this case, we say that the additional linkages produced by~$\pi'$ are
-\emph{incidental}.  We aim to identify sufficient conditions for linkages
-being incidental.  We consider more examples.
-
-%%%%%
-
-\begin{example}\label{example:30}
-Now consider the normal-form transition
-\begin{eqnarray*}
-(fixed(N_0); Th(T_0,N_0), Nd_x(N_0,N_1)) & \trans{} &
-  (fixed'(N_0); Th'(T_0,N_0), Nd_x(N_0,N_1))
-\end{eqnarray*}
-acting on 
-\[
-(fixed(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_0)).
-\]
-Again no unification is possible.  However, any unification function~$\pi$
-necessarily contains $N_0 \mapsto N_0$, so creates a linkage via~$N_0$ that
-would require a view equivalent to $(fixed(N_0); Nd_z(\pi(N_2),N_0),
-Nd_x(N_0,N_1))$.  This linkage is not incidental because it uses the
-parameter~$N_0$ in the fixed processes.
-\end{example}
-
-%%%%%
-
-Similarly, a linkage involving a parameter that appears in $post.\fixed$ might
-not be incidental.  
-%
-
-\framebox{***} Any unification that creates a cross reference must necessarily
-be within $pre$ or~$v$.
-
-%%%%%
-
-\begin{example}
-Consider the transition
-\begin{eqnarray*}
-(fixed; Th(T_0,N_1,N_2), Nd_x(N_1,N_3)) & \trans{} &
-  (fixed; Th'(T_0,N_1), Nd_y(N_1,N_3,N_2))
-\end{eqnarray*}
-acting on
-\[
-(fixed; Nd_x(N_0,N_1), Nd_z(N_1,N_2) .
-\]
-
-Consider the mapping $\pi = \set{N_0 \mapsto N_1, N_1 \mapsto N_3, N_2 \mapsto
-  N_2}$.  This unifies the two $Nd_x$ components.  It also creates a linkage
-via $N_2$ which requires (for clause~(c) of
-Definition~\ref{def:induced-transition-singleRef}), for some component~$c$
-with identity~$N_2$, that the current set of representative views include
-views equivalent to each of $(fixed; Th(T_0,N_1,N_2), c)$ and $(fixed;
-Nd_y(N_3,N_2), c)$.  If such views do exist, this induces a transition to
-\[
-(fixed; Nd_y(N_1,N_3,N_2), Nd_z(N_3,N_2)) \equiv 
-  (fixed; Nd_y(N_0,N_1,N_2), Nd_z(N_1,N_2)).
-\]
-
-Alternatively, consider the mapping $\pi' = \set{N_0 \mapsto N_1, N_1 \mapsto
-  N_3,\linebreak[1] {N_2 \mapsto N_4}}$, which again unifies the $Nd_x$
-components, but does not create a linkage via~$N_2$.  This induces a
-transition to
-\[
-(fixed; Nd_y(N_1,N_3,N_2), Nd_z(N_3,N_4)) \equiv
-  (fixed; Nd_y(N_0,N_1,N_2), Nd_z(N_1,N_3)).
-\]
-This is not the same as the view produced using~$\pi$.  Hence the linkage
-via~$N_2$ produced by~$\pi$ is not incidental.  The reason for this is that
-$N_2$ appears in two components of the induced view: one taken from $post$;
-and one taken from~$v$.
-\end{example}
-
-%% How do we induce the transition to 
-%% \[
-%% (fixed; Nd_y(N_1,N_3,N_2), Nd_?(N_2,?)) ?
-%% \]
-
-
-%%%%%
-
-
+We now consider secondary induced transitions. 
+% 
 \begin{definition}
-\label{def:incidental-linkage}
-Consider a transition $pre \trans{} post$ and an accordant view~$v$, with
-neither necessarily in normal form.  Define a linkage using parameter~$x$
-between a component of~$v$ and a component of~$pre$ to be \emph{significant}
-if one of the following holds.
+Let $\pi_u$ be a unification function.  Suppose $x$ is a parameter of some
+secondary component~$sc$ of $post$,  of the same type as
+$v.\princ.\id$, and such that $sc$ acquires that reference~$x$ in the
+transition.  Consider $\pi_{rfd} = \pi_u \union \set{v.\princ.\id \mapsto x}$, and
+suppose this is a consistent extension: so either
+\begin{itemize}
+\item $(v.\princ.\id \mapsto x) \in \pi_u$; or
+\item $v.\princ.\id \nin \dom \pi_u$,\, $x \nin \ran \pi_u$, and $x$ is not
+  the identity of a component in~$pre$ and $post$.
+\end{itemize}
 %
-\begin{enumerate}
-\item \label{item:incidental-linkage-fixed}
-$x$ is a parameter of $pre.\fixed = v.\fixed$;
-
-\item \label{item:incidental-linkage-common-component}
-$x$ is a parameter of a component that appears in both $pre$ and $v$;
-
-\item \label{item:incidental-linkage-post-fixed} $x$ is a parameter of
-  $post.\fixed$;
-
-\item \label{item:incidental-linkage-post-common-component} $x$ is a parameter
-  of a component~$c'$ of~$post$ such that there is a component~$c$ in~$v$ with
-  the same identity as~$c'$ ($c$ is necessarily also in~$pre$);
-
-\item \label{item:incidental-linkage-acquired-reference} the principal of~$v$
-  is also a component of~$pre$ and changes state in the transition to acquire
-  a reference to a component~$c$ of~$post$, and $x$ is a component of~$c$;
-
-\item $x$ is a linkage between component~$c$ of~$v$ and component~$c'$
-  of~$pre$, and these components have a significant linkage via some other
-  parameter~$y$ (this step is applied inductively).
-\end{enumerate}
-%
-We say that a linkage is \emph{incidental} if it is not significant.
+Then we say that $\pi_{rfd}$ is a \emph{secondary-reference-defining}
+function.  Note that it creates a reference from~$sc$ to the renamed principal
+of~$v$.
 \end{definition}
 
-\framebox{Just primary below?}
+%%%%%
+%% Let $\pi_{rd}$ be a consistent extension of~$\pi_1$, adding mappings for
+%% parameters of~$v.\princ$ (if necessary).  Then we say that $\pi_{rd}$ is a
+%% \emph{secondary-result-defining function}.  This remapping corresponds to a
+%% secondary induced transition that produces $(post.\fixed; \set{sc,
+%%   \pi_{rd}(v.\princ)})$.
 
-I'm not sure about \ref{item:incidental-linkage-post-common-component} and
-\ref{item:incidental-linkage-acquired-reference}.  It might be when the
-linkage variable appears in two components of the induced view, one taken
-from~$post$ and one from~$v$.
+\begin{definition}
+Consider a transition $pre \trans{} post$ and a view~$v$, both in normal form.
+Consider a secondary-reference-defining function~$\pi_{rfd}$ corresponding to
+secondary component~$sc$ acquiring a reference to~$v.\princ$.  We define the
+\emph{result-relevant parameters} to be all parameters of $post.\fixed$
+and~$sc$.
+\end{definition}
 
 %%%%%
 
 \begin{lemma}
-Consider a transition $pre \trans{} post$ acting on a view~$v_1$ to induce a
-transition to~$v_1'$.  Let $\pi$ be a remapping that maps the parameters of
-some incidental linkages to distinct fresh parameters (not in $pre$, $post$
-or~$v_1$), but is the identity on all other parameters (including those of
-significant linkages).  Let $v_2 = \pi(v_1)$.  Then the transition acting
-on~$v_2$ induces a transition to $v_2' = \pi(v_1')$; note that $v_2' \equiv
-v_1'$.
-
-\framebox{***} I think I want to say something about the relative linkages.
+\label{lem:singleRef:remappings-equivalent-secondary}
+Consider a transition $pre \trans{} post$ and a view~$v$, both in normal form.
+Consider a secondary-reference-defining function~$\pi_{rfd}$ corresponding to
+secondary component~$sc$ acquiring a reference to~$v.\princ$.  Consider two
+consistent extensions~$\pi_1$ and~$\pi_2$ such that $\pi_1$ and~$\pi_2$
+restricted to the parameters of~$v.\princ$ range-agree on all result-relevant
+parameters.  
+Let $v_1 = \pi_1(v)$ and $v_2 =
+\pi_2(v)$. 
+%
+Suppose, further, that conditions~(b) and~(c) of
+Definition~\ref{def:induced-transition-singleRef} are satisfied for~$v_1$
+and~$v_2$.  Let $v_1'$ and $v_2'$ be the views produced for the secondary
+induced transitions (for~$sc$) from~$v_1$ and~$v_2$, respectively.  Then $v_1'
+\equiv v_2'$.
 \end{lemma}
 
-Note that the lemma implies that the transition from~$v_2$ subsumes that
-from~$v_1$, and involves fewer linkages. 
-
-%%%%%
-
 \begin{proof}
-Our proof is in two parts: we show that \emph{if} the conditions of
-Definition~\ref{def:induced-transition-singleRef} are satisfied for~$v_2$,
-then the induced transition produces $v_2' = \pi(v_1')$; and we show that those
-conditions are implied by the fact that they are satisfied for~$v_1$.
-
-By condition~\ref{item:incidental-linkage-fixed} of
-Definition~\ref{def:incidental-linkage}, there are no incidental linkages
-involving parameters of $v_1.\fixed$.  Hence $\pi$ is the identity on the
-parameters of $v_1.\fixed$, so $v_2.\fixed = v_1.\fixed = pre.\fixed$.
-
-By condition~\ref{item:incidental-linkage-common-component}, there are no
-incidental linkages involving any component~$c$ of~$v_1$ that also appears
-in~$pre$.  Hence $\pi$ is the identity on the parameters of~$c$, so $c$ also
-appears in~$v_2$.  Recall, that when $\pi$ is not the identity mapping, it
-maps parameters to fresh parameters: it cannot remap a component identity
-in~$v_1$ to match an identity in~$pre$.  Hence the common components between
-$v_1$ and $pre$ are the same as between $v_2$ and~$pre$; so $v_2$ and $pre$
-are accordant.
-
-We now show that $\pi$ is the identity on all parameters of processes
-of~$v_1'$ taken from $post$; and hence ---if the relevant side conditions are
-satisfied, and so a transition from $v_2$ is indeed induced--- that $v_2'$
-agrees with $v_1'$ on all such processes.
+The proof is similar to that of
+Lemma~\ref{lem:singleRef:remappings-equivalent-primary}.  The two induced
+views are
+\begin{eqnarray*}
+v_1' & = & (post.\fixed, \set{sc, \pi_1(v.\princ)}), \\
+v_2' & = & (post.\fixed, \set{sc, \pi_2(v.\princ)}).
+\end{eqnarray*}
 %
-\begin{itemize}
-\item This is true of the fixed processes, by
-  condition~\ref{item:incidental-linkage-post-fixed}.
-
-\item Suppose~$c'$ is a component of~$post$ for which there is a component~$c$
-  with the same identity in~$v_1$ (necessarily, the same component~$c$ is in
-  $pre$; and so it is also in~$v_2$ by the above).  Then $\pi$ is the identity
-  on the parameters of~$c'$ by
-  condition~\ref{item:incidental-linkage-post-common-component}.
-
-\item
-Suppose the principal~$p$ of~$v_1$ is also a component of~$pre$, changes state
-in the transition, and acquires a reference to a component~$c$ of~$post$; then
-this is true of~$c$, by
-condition~\ref{item:incidental-linkage-acquired-reference}.
-\end{itemize}
-
-
-
+By construction, $\pi_1(v.\princ)$ and $\pi_2(v.\princ)$ agree on all
+parameters that appear elsewhere in these views.  Elsewhere, they have
+corresponding parameters $\pi_1(x)$ and~$\pi_2(x)$ where $x$ is the
+corresponding parameter of~$v$.  Hence $v_1' \equiv v_2'$.
 \end{proof}
 
+\framebox{Example}
+
+\begin{definition}
+Consider a secondary-reference-defining function $\pi_{rfd}$ corresponding to
+secondary component $sc$ of the transition obtaining a reference
+to~$v.\princ$.  We call a partial consistent extension~$\pi_{rd}$ a
+\emph{minimal secondary-result-defining remapping} if all maplets $x \mapsto y$
+in~$\pi_{rd}$ but not in~$\pi_{rfd}$ are such that $x$ is a parameter of
+$v.\princ$, and $y$ is a result-relevant parameter.
+
+We say that a consistent extension~$\pi$ or~$\pi_{rd}$ is a
+\emph{result-consistent} extension if it adds no new result-relevant
+parameters to the range.  We will sometimes say that $\pi$ is a (not
+necessarily minimal) secondary-result-defining remapping.
+\end{definition}
+
+
+The following corollary shows that all result-consistent extensions of a
+secondary-result-defining remapping produce the same resulting view (up to
+equivalence); it follows immediately from
+Lemma~\ref{lem:singleRef:remappings-equivalent-secondary}.
+%
+\begin{corollary}
+Let $\pi_{rd}$ be a (not necessarily minimal) secondary-result-defining
+remapping (for a particular secondary component).  Let $\pi_1$ and~$\pi_2$ be
+two result-consistent extensions of~$\pi_{rd}$.  Let $v_1 = \pi_1(v)$ and $v_2
+= \pi_2(v)$.  Suppose conditions~(b) and~(c) of
+Definition~\ref{def:induced-transition-singleRef} are satisfied.  Let $v_1'$
+and $v_2'$ be the views produced for the secondary induced transitions
+from~$v_1$ and~$v_2$, respectively.  Then $v_1' \equiv v_2'$.
+\end{corollary}

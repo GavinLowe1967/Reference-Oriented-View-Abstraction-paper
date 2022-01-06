@@ -1,0 +1,266 @@
+\subsubsection{Sufficient remappings for condition~(b)}
+\label{sec:necessary-b}
+
+Out approach will be as follows: (1) consider all
+unification functions~$\pi_u$; (2) for each such unification function, produce
+all minimal consistent (primary- or secondary-)result-defining
+extensions~$\pi_{rd}$; (3) extend each such result-defining extension (in a
+result-consistent way, so as to maintain the property of being
+result-defining).  However, it turns out that we might have to consider more
+than one extension of each~$\pi_{rd}$: it might be that only certain
+extensions satisfy conditions~(b) and~(c) of
+Definition~\ref{def:induced-transition-singleRef}.  We consider a set $\Pi$ of
+extensions, such that if any extension satisfies the conditions then a member
+of~$\Pi$ does.
+
+In this section we consider specifically condition~(b), and prove results
+concerning sets of extensions that are sufficient to consider.  In particular,
+if~$\pi_{rd}$ does not itself create any linkage for condition~(b), it is not
+necessary to consider extensions that create linkages.  In
+Section~\ref{sec:necessary-c}, we do similarly for condition~(c).  In
+Section~\ref{sec:necessary-algorithm} we present our algorithm for producing
+these extensions.
+
+
+\framebox{Note} if linkage involves unified component, then this is implied by
+the views.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+Given a result-defining remapping~$\pi_{rd}$, we consider which extensions it
+is sufficient to consider in order to test whether one of them satisfies
+condition~(b).  We show that if $\pi_{rd}$ does not itself create any linkages
+for condition~(b), there is no need to consider extensions that create such
+linkages \framebox{ref}.  However, if a linkage exists in $\pi_{rd}$, then it might be
+necessary to consider extensions that produce additional linkages.
+%
+The following example illustrates the former of these points (the idea is
+formalised in Lemma~\ref{lem:necessary-renamings}).
+%% Note that the above process creates linkages only where they are, in a sense,
+%% required.  We show below (Lemma~\ref{lem:necessary-renamings}) that any other
+%% remapping is subsumed by one of the remappings we do consider.  The following
+%% example illustrates the idea.
+%%%%%%
+\begin{example}
+\label{example:singleRef:unnecessary-linkage}
+Consider again (from Example~\ref{example:29}) the normal-form transition
+\begin{eqnarray*}
+(fixed(N_0); Th(T_0,N_1), Nd_x(N_1,N_2)) & \trans{} &
+  (fixed'(N_0); Th'(T_0,N_1), Nd_x(N_1,N_2))
+\end{eqnarray*}
+acting on 
+\[
+(fixed(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_3)).
+\]
+This has result-defining mapping~$\pi_{rd} = \set{N_0 \mapsto N_0}$.  Consider
+the extension $\pi = \set{{N_0 \mapsto N_0},\linebreak[1] N_1 \mapsto N_3,
+N_2 \mapsto N_4,\linebreak[1] {N_3 \mapsto N_1}}$.  This creates a linkage
+on~$N_1$.  However, this linkage is unnecessary: replacing $N_1$ in the range
+of~$\pi$ with a fresh parameter $N_5$ creates the remapping $\pi'
+= \set{N_0 \mapsto N_0,\linebreak[1] {N_1 \mapsto N_3,} N_2 \mapsto
+N_4,\linebreak[1] {N_3 \mapsto N_5}}$, which would lead to the same final
+induced view (up to equivalence), but requires a subset of the linking views.
+\end{example}
+
+In cases such as in the above example, we consider only the extension using
+fresh parameters, since it subsumes the other (and is simpler to handle).  We
+seek sufficient conditions for one extension to subsume another. 
+
+%%%%%
+
+By contrast, the following example illustrates that if the result-defining
+mapping creates a linkage, it can be necessary to consider more than one
+extension: it might be the case that one such extension satisfies
+condition~(b) but the other doesn't.
+%
+\begin{example}
+Consider the effect of the transition
+\begin{eqnarray*}
+(fixed(N_0); Th(T_0,N_1), Nd(N_1,N_0)) & \trans{} &
+ (fixed'(N_0); Th'(T_0), Nd(N_1,N_0))
+\end{eqnarray*}
+on
+\begin{eqnarray*}
+v & = & (fixed(N_0); Th''(T_0,N_0,N_1), Nd'(N_0,N_1)).
+\end{eqnarray*}
+%
+No unification of components is possible.  The only consistent result-defining
+extension is $\pi_{rd} = \set{{N_0 \mapsto N_0}}$.  This necessarily creates a
+linkage via~$N_0$.
+
+For an extension~$\pi$ of~$\pi_{rd}$, condition~(b) of
+Definition~\ref{def:induced-transition-singleRef}, would require the current
+set of views to contain a view equivalent to
+%
+\begin{eqnarray*}
+v_\cross & = & (fixed(N_0); Nd(N_1,N_0), Nd'(N_0,\pi(N_1)))
+\end{eqnarray*}
+in order to induce a transition to
+\[
+\begin{align}
+(fixed'(N_0); Th''(T_1,N_0,N_1),  Nd'(N_0,N_2)) \equiv 
+ (fixed'(N_0); Th''(T_0,N_0,N_1), Nd'(N_0,N_1)).
+\end{align}
+\]
+Depending upon the value of $\pi(N_1)$, values for~$v_\cross$ fall into two
+equivalence classes, with representative members
+\[
+\begin{align}
+(fixed(N_0); Nd(N_1,N_0), Nd'(N_0,N_1)) \quad\mbox{and}\quad
+(fixed(N_0); Nd(N_1,N_0), Nd'(N_0,N_2)).
+\end{align}
+\]
+It is necessary to consider both these possibilities: it is possible that the
+current set of representative views contains only one of them.
+
+Note that the former case (with $\pi(N_1) = N_1$) creates two additional
+linkages via~$N_1$, which for condition~(b) would require views equivalent to
+\[
+\begin{array}{c}
+(fixed(N_0); Nd'(N_0,N_1), Nd(N_1,N_0)) \quad\mbox{and}\quad
+(fixed(N_0);Th''(T_0,N_0,N_1),Nd(N_1,N_0)).
+\end{array}
+\]
+\end{example}
+
+%%%%%
+
+Given a result-defining remapping~$\pi_{rd}$, we identify the linkages
+created by~$\pi_{rd}$.  
+%
+\begin{definition}
+We say that $\pi_{rd}$ \emph{creates a cross reference} between component~$c$
+of~$pre$ and component~$c'$ of~$v$ if:
+%
+\begin{itemize}
+\item For some parameter $x$ of~$c$ (other than its identity), $(c'.id \mapsto
+x) \in \pi_{rd}$; or
+
+%% \item $c'.\id \in \dom \pi_{rd}$ and $\pi_{rd}(c'.id)$ is a parameter of~$c$
+%% (other than its identity); or
+
+\item For some parameter $x$ of~$c'$ (other than its identity), $(x \mapsto
+c.\id) \in \pi_{rd}$.
+\end{itemize}
+\end{definition}
+%
+The two clauses correspond to a cross reference from $c$ to~$c'$ (remapped by
+each extension of~$\pi_{rd}$), and vice versa, respectively.
+
+%%%%%
+
+%% Consider a cross reference created by~$\pi_{rd}$ involving component~$c$
+%% of~$pre$ and component~$c'$ of~$v$.  We extend~$\pi_{rd}$ to the remaining
+%% parameters of~$c'$, including the possibility of mapping each either to a
+%% parameter of~$c$, or leaving is unmapped (for the moment).
+
+The following lemma gives conditions for two different extensions to require
+the same cross-reference view under condition~(b).
+%
+\begin{lemma}
+\label{lem:singleRef:cond-b-extensions}
+Consider a (primary- or secondary-)result-defining mapping~$\pi_{rd}$ (not
+necessarily minimal).  Suppose $\pi_{rd}$ creates a cross reference involving
+component~$c$ of~$pre$ and component~$c'$ of~$v$.  Let $\pi$ and~$\pi'$ be two
+result-consistent extensions, so condition~(b) requires views equivalent to
+\[
+v_\cross  =  (pre.\fixed, \set{c, \pi(c')}) \qquad\mbox{and}\qquad
+v_\cross'  =  (pre.\fixed, \set{c, \pi'(c')}),
+\]
+respectively.  Suppose $\pi$ and~$\pi'$ restricted to the parameters of~$c'$
+range-agree on all parameters of~$c$.  Then $v_\cross \equiv v_\cross'$.
+\end{lemma}
+%
+\begin{proof}
+$v_\cross$ and $v_\cross'$ are related by the mapping that is the identity on
+  all parameters of $pre.\fixed$ and~$c$, and otherwise relates $\pi(x)$
+  to~$\pi'(x)$ for parameters~$x$ of~$c'$.
+\end{proof}
+
+The above lemma shows that, as far as this linkage is concerned, it is enough
+to consider just one of~$\pi$ and~$\pi'$: they require equivalent
+cross-reference views.  This suggests the following definition.
+
+%%%%%
+
+\begin{definition}
+\label{def:cross-reference-view-defining}
+Let $\pi_{rd}$ be a result-defining mapping that creates a cross reference
+between component~$c$ of~$pre$ and component~$c'$ of~$v$.
+%
+Let $\pi$ be a result-consistent extension of~$\pi_{rd}$.  We say that $\pi$
+is a \emph{cross-reference-view-defining mapping} for~$c$ and~$c'$ if for each
+parameter~$x$ of~$c'$ with $x \nin \dom \pi_{rd}$,\, $\pi$ either maps $x$ to
+a parameter of $c$ or leaving $x$ unmapped (and adds no mappings of other
+parameters).
+%
+We define the \emph{completing extensions} of~$\pi$ to be the total (over the
+parameters of~$v$) result-consistent extensions of~$\pi$ that do not map any
+additional parameter of~$c'$ to a parameter of~$c$.
+\end{definition}
+
+%%%%%
+
+The following lemma follows directly from the definition: the
+cross-reference-view-defining extensions partition the result-consistent
+extensions. 
+%
+\begin{lemma}
+\label{lem:cross-reference-view-defining-partition}
+Consider a result-defining mapping~$\pi_{rd}$ that creates a cross reference
+between components $c$ of $pre$ and $c'$ of~$v$.  Then every (complete over
+the parameters of~$v$) result-consistent extension of $\pi_{rd}$ is a
+completing extension of some cross-reference-view-defining extension for~$c$
+and~$c'$.
+\end{lemma}
+
+%%%%%
+
+The following lemma shows that each cross-reference-view-defining remapping
+defines an equivalence class for condition~(b): either all completing
+extensions satisfy the condition, or none does.
+%
+\begin{lemma}
+\label{lem:cross-reference-view-defining}
+Consider a result-defining mapping~$\pi_{rd}$ that creates a cross reference
+between components $c$ of $pre$ and $c'$ of~$v$.  Let $\pi$ be a
+cross-reference-view-defining extension for~$c$ and~$c'$.  Suppose that some
+completing extension of~$\pi$ satisfies this instance of condition~(b).
+Then \emph{every} completing extension of~$\pi$ satisfies this instance of
+condition~(b).
+\end{lemma}
+
+%%%%%%
+
+\begin{proof}
+%
+%Suppose $\pi$ is a cross-reference-view-defining extension for~$c$ and~$c'$.
+Let $\pi_1$ and~$\pi_2$ be two completing extensions of~$\pi$.  From
+Lemma~\ref{lem:singleRef:cond-b-extensions}, the required views for this
+instance of condition~(b) for~$\pi_1$ and~$\pi_2$ are equivalent; hence either
+both or neither is satisfied.
+\end{proof}
+
+%%%%%
+
+Collectively the above two lemmas show that, for each cross reference created
+by~$\pi_{rd}$, it is sufficient to consider the cross-reference-view-defining
+extension , and to consider one completing extension of each.  However, we
+need to consider all cross references.  We sketch our treatment; we make it
+formal in Section~\ref{sec:necessary-algorithm}.  We start with a minimal
+result-defining mapping (either primary or secondary), and consider each cross
+reference in turn.  We calculate the cross-reference-view-defining extensions.
+We then iteratively extend those remappings corresponding to other cross
+references (but consistently with being a completing extension of those cross
+references already considered).  An extension that does map a particular
+parameter has the possibility of creating another cross reference involving
+different components; we repeat the process with those.  If a parameter is
+left unmapped, consideration of another cross reference might subsequently
+cause it to become mapped (again, consistently with cross references already
+considered).  Once all such cross references have been considered, we map the
+remaining parameters to distinct fresh parameters.  In particular, we consider
+only cross references created by the original result-defining mapping, or that
+are created by our treatment of other cross references; we do not create new
+cross references unless necessary.
+

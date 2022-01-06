@@ -1,11 +1,13 @@
-\documentclass[12pt,a4paper]{article}
+\documentclass[12pt]{article}
+\usepackage{bigpage}
 \usepackage{mathsx,tech,mytheorems}
 \usepackage{tikz}
 \usetikzlibrary{arrows}
 \usepackage{scalalistings}%\unScalaMid
 
 \newtheorem{lemma}{Lemma}
-\newtheorem{prop}{Proposition}
+\newtheorem{prop}[lemma]{Proposition}
+\newtheorem{corollary}[lemma]{Corollary}
 \newtheorem{conjecture}[lemma]{Conjecture}
 \newtheorem{definition}[lemma]{Definition}
 \newtheorem{example}[lemma]{Example}
@@ -43,7 +45,7 @@
 \everymath{\it}
 \sloppy
 
-\title{Improved View Abstraction: Working Paper}
+\title{Reference-Oriented View Abstraction: Working Paper}
 \author{Gavin Lowe}
 
 \begin{document}
@@ -60,8 +62,11 @@
 \input{singleRef} % Definition and start of transitions
 \input{singleRef2} % induced transitions
 \input{singleRef3} % correctness
-\input{singleRef4} % relevant cross references
-\input{effectOn2}
+\input{singleRef4} % relevant cross references -- result-defining extensions
+\input{singleRef5} % relevant cross references -- condition (b)
+\input{singleRef6} % relevant cross references
+
+\input{effectOn2} % maybe now redundant
 
 \appendix
 
