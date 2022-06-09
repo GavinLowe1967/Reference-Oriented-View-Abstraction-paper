@@ -1,0 +1,239 @@
+\subsection{Systems}
+
+Each system consists of a fixed process and some number of components.  We
+assume a \emph{single} fixed process here, for simplicity: a system with
+multiple fixed processes can be modelled by considering the parallel
+composition of those processes as a single process.
+
+\begin{definition}
+A collection of systems is defined by
+%
+\begin{itemize}
+\item A set $T$ of identities, partitioned into different subtypes;
+%%  let $\hat{T}$ be the non-distinguished values of~$T$ (i.e., real
+%% identities);
+
+\item A symmetric parameterised state machine $M_f = (Q_f, \Sigma_f,
+  \delta_f)$ for the fixed process;
+
+\item For each $id \in T$ that is not a distinguished value, a symmetric
+  parameterised state machine $M_{id} = (Q_{id}, \Sigma_{id}, \delta_{id})$
+  for the component with identity~$id$; we require that for every $q \in
+  Q_{id}$,\, $q.\id = id$ (i.e.~$id$ is the identity in all states);
+
+\item A set $Init \subseteq \S$ of initial system states, where $\S$ is the
+  set of all system states, defined below. 
+\end{itemize}
+
+We require that the state machines for components of the same family are
+symmetric to one another: for every remapping~$\pi$,\,
+\[
+\set{ (cs(\vec{x}), cs(\pi(\vec{x}))) \| 
+  cs(\vec{x}) \in \textstyle\Union_{id \in \hat{T}} Q_{id}}
+\]
+is a $\pi$-bisimulation.
+
+Let $\set{id_1,\ldots,id_n}$ be a subset of the non-distinguished
+values of~$T$.  A corresponding state of the system comprises a state~$q_f$ of
+the fixed process, and, for each~$i$, a state~$q_i$ for the component with
+identity~$id_i$, i.e.~a pair $(q_f, \set{q_1,\ldots,q_n})$.  For ease of
+notation, we often denote this state by \( (q_f; q_1,\ldots,q_n) \). We write
+$\S$ for the set of all system states.  Given a system state~$s$, we write
+$s.\fixed$ and $s.\cpt$ for the fixed processes and components, respectively.
+
+We now define the transitions of the systems.  Let $\Sigma = \Sigma_f \union
+\Union_i \Sigma_{id_i}$ be all visible events of processes (fixed or
+components).  For $a \in \Sigma$, a transition synchronises all processes that
+have $a$ in their alphabet.  Processes can perform internal transitions
+(event~$\tau$) without synchronising.  (We write subscripts on the transition
+arrows to indicate the relevant state machine.)
+\[
+\begin{array}{c}
+\begin{infrule}
+\If a \in \Sigma_f \ \THEN q_f \trans(1)[a]_f q'_f \ \ELSE q'_f = q_f \\
+\forall i \in 1 \upto n \spot 
+  \If a \in \Sigma_{id_i} \ \THEN q_{i} \trans(1)[a]_i q'_{i} 
+  \ \ELSE q'_{i} = q_{i} \\
+a \in \Sigma
+\derive
+(q_f; q_{1}, \ldots, q_{n}) \trans(1)[a] (q_f'; q_{1}', \ldots, q_{n}')
+\end{infrule} 
+%
+\bigskip \\
+%
+\begin{infrule}
+q_f \trans(1)[\tau]_f q'_{f}
+\derive
+(q_f; q_{1}, \ldots q_{n}) \trans(1)[\tau] (q_f'; q_{1}, \ldots q_{n})
+\end{infrule}
+%
+\qquad
+%
+\begin{infrule}
+q_{i} \trans(1)[\tau]_i q'_{i} 
+\derive
+(q_f; q_{1}, \ldots, q_i, \ldots q_{n}) \trans(1)[\tau]
+  (q_f; q_{1}, \ldots, q_i', \ldots q_{n})
+\end{infrule}
+\end{array}
+\]
+%% The initial state is $(q^0_{f}; q^0_{id_1}, \ldots, q^0_{id_n})$.
+\end{definition}
+
+%% Each system can be defined by the set of identities of the components.  Each
+%% component is started in the initial state for the corresponding state
+%% machine. 
+
+%% %%  We say that $s$ \emph{references} $id'$ if $id'$ is a parameter of~$s$
+%% %% other than its own identity.
+
+%% \begin{definition} 
+%% A \emph{system state} is a pair $(fixed, cpts)$ where $fixed$ is the state of
+%% the fixed process, and $cpts$ is a set of states of components.  Given a
+%% system state~$s$, we write $s.\fixed$ and $s.\cpt$ for the fixed processes or
+%% components, respectively.  We write $\S$ for the set of all system states.
+%% \end{definition}
+
+Note that each initial system state defines the identities of the components
+in the system; and these identities are preserved by transitions.  Thus by
+varying the initial state, we consider a collection of systems.  In the queue
+example, each initial state $s_0$ could be defined by a set $NodeId$ of node
+identities and a set $ThreadId$ of thread identities, so 
+\[ s_0 =
+  \begin{align}
+  ( \Lock, \Head(Null), \Last(Null), \Con_0; \\
+  \quad  \set{InitNode(n) \| n \in NodeID} \union 
+    \set{Thread(t) \| t \in ThreadId} )
+  \end{align}
+\]
+(where the first term represents the parallel composition of the
+fixed processes). 
+
+Given a collection of systems, for $S \subseteq \S$, we define 
+\[
+post(S) = \set{ s' \| 
+  \exists s \in S, a \in \Sigma \union \set{\tau} \spot s \trans[a] s'},
+\]
+i.e.~the post-image of $S$ under transitions.  Let $post^*$ be the reflexive
+transitive closure of~$post$,\, so $post^*(S) = \Union_{i \ge 0}
+post^i(S)$.  Let $\R$ be the set of all states reachable from an initial
+state by zero or more transitions, $\R = post^*(Init)$.
+
+Recall that our models use a distinguished event $error$.  Our correctness
+condition, then, is that no reachable state has a transition on~$error$.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Assumptions}
+
+We now outline some assumptions we make about the model.  These assumptions
+make the subsequent theory and implementation simpler, without notably
+reducing the range of systems that can be analysed.  
+
+We assume that components are partitioned into \emph{active} and
+\emph{passive} components.  Informally, active components control which events
+occur, and passive components react; in our examples, threads are active, and
+nodes are passive.  Likewise, we assume that fixed processes are partitioned
+into active and passive processes; in our earlier examples, the constructor is
+active, but all other fixed processes are passive.  The analyst is responsible
+for classifying processes as active or passive. 
+
+\begin{assumption}
+We assume that each transition involves either:
+%
+\begin{enumerate}
+\item[1a.] precisely one active component or active fixed process;
+\item[1b.] at most one passive component;
+\item[1c.] possibly other passive fixed processes;
+\end{enumerate}
+%
+or
+\begin{enumerate}
+\item[2.] only fixed processes, and no components.
+\end{enumerate}
+%
+More formally, each visible event~$a$ is in alphabets of processes as above. 
+\end{assumption}
+%
+These assumptions hold of our earlier examples, and of other examples we have
+considered.  They seem like reasonable assumptions, given our informal
+definition of an active process, and that in most cases, an active process
+interacts with one component at a time.  The first point helps to make the
+implementation more efficient.  The second point simplifies the theory and
+implementation.  The third point, allowing arbitrary many fixed processes to
+synchronise on an event, is more liberal: it is useful in some examples (for
+example, allowing the watchdog to see a synchronisation that also involves
+other fixed processes); and it does not add extra difficulties.  The second
+disjunct is useful for the distinguished event~$error$: this event is
+typically performed by a fixed watchdog processes, which is passive, so such
+transitions do not fit into the first disjunct.
+
+
+\begin{improve}
+check this in implementation.
+\end{improve}
+
+A component may acquire a reference to another component in a transition.  In
+the queue example, a thread acquires a reference to a node when it initialises
+that node, reads the |head| or |last| variable, or reads the |next| field of a
+node; a node acquires a reference to another node when a thread sets its
+|next| reference.  We also allow the possibility that a component~$c$
+synchronises on a transition even though the active component holds no
+reference to~$c$ either before or after the transition.  The following
+assumption places limits on these. 
+%
+\begin{assumption}
+\label{assump:2}
+We assume, in each transition
+\begin{enumerate}
+\item\label{assump:max-one-extra-component} There is at most one component to
+  which the active component doesn't initially hold a reference, and that
+  either synchronises on the transition, or to which the active component
+  gains a reference.
+
+\item\label{assump:secondary-cpts-new-refs} A passive component can gain a
+  reference only to a component to which the active process initially holds a
+  reference.
+\end{enumerate}
+\end{assumption}
+
+%%   We assume (for simplicity) that a component can acquire at
+%% most one such new reference in a transition.   
+
+%% For a transition with an active component~$princ$, assume that at most one
+%% component~$c$ to which $princ$ does not initially have a reference, and such
+%% that either $c$ synchronises on the transition or $princ$ acquires a
+%% reference.
+%% %
+%% Also assume no other process acquires a reference to a component to which
+%% $princ$ does not initially hold a reference.  
+
+%% For a transition with an active server, ?? in view transitions, take the
+%% principal to be the synchronising passive component if any, or arbitrary
+%% otherwise.  Assume that process acquires at more one reference from the
+%% transition ??? 
+%% List of assumptions:
+%
+%% \begin{assumption}\label{assump}
+%% \begin{enumerate}
+%% \item Each concrete transition involves exactly one active process (either a
+%% component or fixed process).
+
+%% \item Each transition involves at most one passive component.
+
+%% \item Each transition can involve any number of passive fixed processes.
+
+%% \item\label{assump:max-one-extra-component}
+%% For each transition there is at most one component to which the
+%% active component doesn't initially hold a reference, and that either
+%% synchronises on the transition, or to which the active component gains a
+%% reference.
+
+%% \item\label{assump:secondary-cpts-new-refs}
+%% In each transition, a passive component can gain a reference only to a
+%% component to which the active process initially holds a reference.
+%% \end{enumerate}
+%% \end{assumption}
+
+

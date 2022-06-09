@@ -1,25 +1,29 @@
 \section{Symmetry reduction}
 \label{sec:symmetry}
 
+We now present our use of symmetry reduction.  The techniques of the previous
+section produce a potentially infinite set of views, because the types of
+component identities are potentially infinite.  However, many such views are
+symmetric: one can be obtained from another by uniformly remapping the
+parameters.  Our approach is to store a single view from each symmetry
+equivalence class.   
 
-Idea of symmetry reduction.
 
-\begin{definition}
-We define a \emph{renaming} function to be a partial injective function~$\pi$
-over non-distinguished parameters, that preserves types (for example, maps
-each node identity to a node identity, and each thread identity to a thread
-identity).
-
-If $\pi$ is a renaming function defined over the parameters of a component
-state~$s$, then we write $\pi(s)$ for the effect of replacing each
-parameter~$x$ of~$s$ by~$\pi(x)$.  We extend this to sets of states, views,
+Recall that we define a \emph{remapping} to be a partial injective
+function~$\pi$ over non-distinguished parameters, that preserves types (for
+example, maps each node identity to a node identity, and each thread identity
+to a thread identity).  
+%
+If $\pi$ is a remapping function defined over the parameters of a process
+state~$q$, then we write $\pi(q)$ for the effect of replacing each
+parameter~$x$ of~$q$ by~$\pi(x)$.  We extend this to sets of states, views,
 etc., by pointwise application.  For example, given
 %
 \begin{eqnarray*}
 v & = & 
   \begin{align}
-  (\Lock'(T_1), \Head(N_0), \Last(N_1), \Con_3; \\
-  \qquad  Enq_4(T_1, N_1, N_3), \Node_y(N_1, null),\Node_x(N_3, N_1))
+  (\Lock'(T_1), \Head(N_0), \Last(N_1), \Con_3; 
+    Enq_4(T_1, N_1, N_3), \Node_y(N_1, Null),\Node_x(N_3, N_1))
   \end{align} \\
 \pi & = & 
   \set{ T_1 \mapsto T_0, N_0 \mapsto N_1, N_1 \mapsto N_2, N_3 \mapsto N_0 },
@@ -29,24 +33,30 @@ we have
 \begin{eqnarray*}
 \pi(v) & = & 
   \begin{align}
-  (\Lock'(T_0), \Head(N_1), \Last(N_2), \Con_3; \\
-  \qquad Enq_4(T_0, N_2, N_0), \Node_y(N_2, null),\Node_x(N_0, N_2)) .
+  (\Lock'(T_0), \Head(N_1), \Last(N_2), \Con_3; 
+   Enq_4(T_0, N_2, N_0), \Node_y(N_2, Null),\Node_x(N_0, N_2)) .
   \end{align}
 \end{eqnarray*}
-\end{definition}
 
 %%%%%
 
 \begin{definition}
 Given two views~$v$ and $v'$, we say that~$v$ and~$v'$ are \emph{equivalent},
-written $v \equiv v'$, if there is a renaming~$\pi$ such that $\pi(v) = v'$.
+written $v \equiv v'$, if there is a remapping~$\pi$ such that $\pi(v) = v'$.
 Note that this is an equivalence relation.
 \end{definition}
 
 %%%%%
 
 \framebox{Explain} why it's enough to store views, up to equivalence.  As in
-previous paper. 
+previous paper.  I think we want roughly Lemma 20--Lemma 23.
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Normal form for views}
 
 We represent each equivalence class of views by a single representative.  More
 precisely, we define a normal form of views, and take the representatives to
@@ -77,7 +87,7 @@ to the linear order described above).
 A transition $pre \trans{} post$ is in normal form if $pre$ is in normal form,
 the components of~$post$ are in the same order as for~$pre$ (so $post$ itself
 might not be in normal form), and the first occurrences of each parameter
-within the concatenation of $pre$ ad $post$ form an initial segment of that
+within the concatenation of $pre$ and $post$ form an initial segment of that
 type.
 \end{definition}
 
@@ -87,14 +97,14 @@ first occurrence of each parameter.
 \begin{align}
 (\Lock'(\underline{T_0}), \Head(\underline{N_0}), 
     \Last(\underline{N_1}), \Con_3; 
-  Enq_4(T_0, N_1, \underline{N_2}), \Node_y(N_1, null),\Node_x(N_2, N_1)) .
+  Enq_4(T_0, N_1, \underline{N_2}), \Node_y(N_1, Null),\Node_x(N_2, N_1)) .
 \end{align}
 \]
 
-\framebox{Example} of transition in normal form. 
+%\framebox{Example} of transition in normal form. 
 
 A view can be reduced to normal form by a simple left-to-right traversal,
-keeping track of the renaming built so far, and extending it to map the first
+keeping track of the remapping built so far, and extending it to map the first
 occurrence of each parameter to the first unused parameter of that type.
 
 %% \begin{lemma}

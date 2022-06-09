@@ -1,0 +1,191 @@
+
+%%%%%
+
+More generally, if there are two renamings $\pi$ and~$\pi'$, where the two
+induced views are equivalent, and the linkages produced by $\pi$ are a subset
+of those produced by~$\pi'$, then there is no need to consider~$\pi'$.  In
+this case, we say that the additional linkages produced by~$\pi'$ are
+\emph{incidental}.  We aim to identify sufficient conditions for linkages
+being incidental.  We consider more examples.
+
+%%%%%
+
+\begin{example}\label{example:30}
+Now consider the normal-form transition
+\begin{eqnarray*}
+(fixed(N_0); Th(T_0,N_0), Nd_x(N_0,N_1)) & \trans{} &
+  (fixed'(N_0); Th'(T_0,N_0), Nd_x(N_0,N_1))
+\end{eqnarray*}
+acting on 
+\[
+(fixed(N_0); Nd_y(N_1,N_2), Nd_z(N_2,N_0)).
+\]
+Again no unification is possible.  However, any unification function~$\pi$
+necessarily contains $N_0 \mapsto N_0$, so creates a linkage via~$N_0$ that
+would require a view equivalent to $(fixed(N_0); Nd_z(\pi(N_2),N_0),
+Nd_x(N_0,N_1))$.  This linkage is not incidental because it uses the
+parameter~$N_0$ in the fixed processes.
+\end{example}
+
+%%%%%
+
+Similarly, a linkage involving a parameter that appears in $post.\fixed$ might
+not be incidental.  
+%
+
+\framebox{***} Any unification that creates a cross reference must necessarily
+be within $pre$ or~$v$.
+
+%%%%%
+
+\begin{example}
+Consider the transition
+\begin{eqnarray*}
+(fixed; Th(T_0,N_1,N_2), Nd_x(N_1,N_3)) & \trans{} &
+  (fixed; Th'(T_0,N_1), Nd_y(N_1,N_3,N_2))
+\end{eqnarray*}
+acting on
+\[
+(fixed; Nd_x(N_0,N_1), Nd_z(N_1,N_2) .
+\]
+
+Consider the mapping $\pi = \set{N_0 \mapsto N_1, N_1 \mapsto N_3, N_2 \mapsto
+  N_2}$.  This unifies the two $Nd_x$ components.  It also creates a linkage
+via $N_2$ which requires (for clause~(c) of
+Definition~\ref{def:induced-transition-singleRef}), for some component~$c$
+with identity~$N_2$, that the current set of representative views include
+views equivalent to each of $(fixed; Th(T_0,N_1,N_2), c)$ and $(fixed;
+Nd_y(N_3,N_2), c)$.  If such views do exist, this induces a transition to
+\[
+(fixed; Nd_y(N_1,N_3,N_2), Nd_z(N_3,N_2)) \equiv 
+  (fixed; Nd_y(N_0,N_1,N_2), Nd_z(N_1,N_2)).
+\]
+
+Alternatively, consider the mapping $\pi' = \set{N_0 \mapsto N_1, N_1 \mapsto
+  N_3,\linebreak[1] {N_2 \mapsto N_4}}$, which again unifies the $Nd_x$
+components, but does not create a linkage via~$N_2$.  This induces a
+transition to
+\[
+(fixed; Nd_y(N_1,N_3,N_2), Nd_z(N_3,N_4)) \equiv
+  (fixed; Nd_y(N_0,N_1,N_2), Nd_z(N_1,N_3)).
+\]
+This is not the same as the view produced using~$\pi$.  Hence the linkage
+via~$N_2$ produced by~$\pi$ is not incidental.  The reason for this is that
+$N_2$ appears in two components of the induced view: one taken from $post$;
+and one taken from~$v$.
+\end{example}
+
+%% How do we induce the transition to 
+%% \[
+%% (fixed; Nd_y(N_1,N_3,N_2), Nd_?(N_2,?)) ?
+%% \]
+
+
+%%%%%
+
+
+\begin{definition}
+\label{def:incidental-linkage}
+Consider a transition $pre \trans{} post$ and an accordant view~$v$, with
+neither necessarily in normal form.  Define a linkage using parameter~$x$
+between a component of~$v$ and a component of~$pre$ to be \emph{significant}
+if one of the following holds.
+%
+\begin{enumerate}
+\item \label{item:incidental-linkage-fixed}
+$x$ is a parameter of $pre.\fixed = v.\fixed$;
+
+\item \label{item:incidental-linkage-common-component}
+$x$ is a parameter of a component that appears in both $pre$ and $v$;
+
+\item \label{item:incidental-linkage-post-fixed} $x$ is a parameter of
+  $post.\fixed$;
+
+\item \label{item:incidental-linkage-post-common-component} $x$ is a parameter
+  of a component~$c'$ of~$post$ such that there is a component~$c$ in~$v$ with
+  the same identity as~$c'$ ($c$ is necessarily also in~$pre$);
+
+\item \label{item:incidental-linkage-acquired-reference} the principal of~$v$
+  is also a component of~$pre$ and changes state in the transition to acquire
+  a reference to a component~$c$ of~$post$, and $x$ is a component of~$c$;
+
+\item $x$ is a linkage between component~$c$ of~$v$ and component~$c'$
+  of~$pre$, and these components have a significant linkage via some other
+  parameter~$y$ (this step is applied inductively).
+\end{enumerate}
+%
+We say that a linkage is \emph{incidental} if it is not significant.
+\end{definition}
+
+\framebox{Just primary below?}
+
+I'm not sure about \ref{item:incidental-linkage-post-common-component} and
+\ref{item:incidental-linkage-acquired-reference}.  It might be when the
+linkage variable appears in two components of the induced view, one taken
+from~$post$ and one from~$v$.
+
+%%%%%
+
+\begin{lemma}
+Consider a transition $pre \trans{} post$ acting on a view~$v_1$ to induce a
+transition to~$v_1'$.  Let $\pi$ be a remapping that maps the parameters of
+some incidental linkages to distinct fresh parameters (not in $pre$, $post$
+or~$v_1$), but is the identity on all other parameters (including those of
+significant linkages).  Let $v_2 = \pi(v_1)$.  Then the transition acting
+on~$v_2$ induces a transition to $v_2' = \pi(v_1')$; note that $v_2' \equiv
+v_1'$.
+
+\framebox{***} I think I want to say something about the relative linkages.
+\end{lemma}
+
+Note that the lemma implies that the transition from~$v_2$ subsumes that
+from~$v_1$, and involves fewer linkages. 
+
+%%%%%
+
+\begin{proof}
+Our proof is in two parts: we show that \emph{if} the conditions of
+Definition~\ref{def:induced-transition-singleRef} are satisfied for~$v_2$,
+then the induced transition produces $v_2' = \pi(v_1')$; and we show that those
+conditions are implied by the fact that they are satisfied for~$v_1$.
+
+By condition~\ref{item:incidental-linkage-fixed} of
+Definition~\ref{def:incidental-linkage}, there are no incidental linkages
+involving parameters of $v_1.\fixed$.  Hence $\pi$ is the identity on the
+parameters of $v_1.\fixed$, so $v_2.\fixed = v_1.\fixed = pre.\fixed$.
+
+By condition~\ref{item:incidental-linkage-common-component}, there are no
+incidental linkages involving any component~$c$ of~$v_1$ that also appears
+in~$pre$.  Hence $\pi$ is the identity on the parameters of~$c$, so $c$ also
+appears in~$v_2$.  Recall, that when $\pi$ is not the identity mapping, it
+maps parameters to fresh parameters: it cannot remap a component identity
+in~$v_1$ to match an identity in~$pre$.  Hence the common components between
+$v_1$ and $pre$ are the same as between $v_2$ and~$pre$; so $v_2$ and $pre$
+are accordant.
+
+We now show that $\pi$ is the identity on all parameters of processes
+of~$v_1'$ taken from $post$; and hence ---if the relevant side conditions are
+satisfied, and so a transition from $v_2$ is indeed induced--- that $v_2'$
+agrees with $v_1'$ on all such processes.
+%
+\begin{itemize}
+\item This is true of the fixed processes, by
+  condition~\ref{item:incidental-linkage-post-fixed}.
+
+\item Suppose~$c'$ is a component of~$post$ for which there is a component~$c$
+  with the same identity in~$v_1$ (necessarily, the same component~$c$ is in
+  $pre$; and so it is also in~$v_2$ by the above).  Then $\pi$ is the identity
+  on the parameters of~$c'$ by
+  condition~\ref{item:incidental-linkage-post-common-component}.
+
+\item
+Suppose the principal~$p$ of~$v_1$ is also a component of~$pre$, changes state
+in the transition, and acquires a reference to a component~$c$ of~$post$; then
+this is true of~$c$, by
+condition~\ref{item:incidental-linkage-acquired-reference}.
+\end{itemize}
+
+
+
+\end{proof}
+

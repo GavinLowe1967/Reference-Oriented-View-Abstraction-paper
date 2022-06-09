@@ -1,7 +1,11 @@
-
 \section{View abstraction}
+\label{sec:view-abstraction}
 
-Define views as substates.
+We now outline the general theory of view abstraction, following~\cite{AHH}.
+Fix a collection of systems. 
+
+We define a substate relation over system states.
+% Define views as substates.
 \begin{eqnarray*}
 (\fixed, \cpt ) \sqle (\fixed', \cpt') & iff & 
   \fixed = \fixed' \land \cpt \subseteq \cpt' .
@@ -9,25 +13,36 @@ Define views as substates.
 
 %% Assume $\S$ is downwards-closed under taking substates. 
 
-Fix a set $\V \subseteq \S$ of views.
+View abstraction is performed with respect to a particular set of subsets of
+system states, known as \emph{views}.  Fix a set $\V \subseteq \S$ of views
+for the remainder of this section.  In~\cite{AHH} (with a slightly different
+system model) views were taken to be all substates containing $k$~processes,
+for a particular choice of~$k$.  As described in the Introduction, in this
+paper we will take the views to be all substates containing the fixed process,
+a principal component, and all components to which the principal has a
+reference; we define this formally in the next section.
 
-Given a system state $s$, let
+We define an \emph{abstraction function}~$\alpha$.  Given a system state $s$,
+let $\alpha(s)$ be all views consistent with~$s$:
 %
 \begin{eqnarray*}
 \alpha(s) & = &
   \set{ v \| v \in \V \land v \sqle s}.
-% \set{view(s, cpt) | cpt \in s.\cpt} \union \set{srvView(s)}.
 \end{eqnarray*}
 %
-Lift to sets of states by pointwise application. 
-
-Given a set $V$ of views
+We lift~$\alpha$ to sets of states by pointwise application. 
+%
+We define a corresponding \emph{concretisation function}.
+Given a set $V$ of views, we define
+%
 \begin{eqnarray*}
 \gamma(V) & = &   \set{ s \| s \in \S \land \alpha(s) \subseteq V }.
 \end{eqnarray*}
+%
+Informally, $\gamma(V)$ gives all system states consistent with~$V$. 
 
-
-
+The following lemmas follows directly from the definitions, as in~\cite{AHH}.
+% 
 \begin{lemma}
 If $S, S' \subseteq \S$ and $V, V' \subseteq \V$, then
 \begin{enumerate}
@@ -52,8 +67,12 @@ If $S, S' \subseteq \S$ and $V, V' \subseteq \V$, then
 %% \end{proof}
 
 \begin{lemma}
+\label{lem:galois}
 $(\alpha, \gamma)$ forms a Galois connection: if $S \subseteq \S$ and $V
-  \subseteq \V$ then $\alpha(S) \subseteq V \iff S \subseteq \gamma(V)$.
+  \subseteq \V$ then 
+\[
+\alpha(S) \subseteq V \iff S \subseteq \gamma(V).
+\]
 \end{lemma}
 %
 %% \begin{proof}
@@ -64,12 +83,44 @@ $(\alpha, \gamma)$ forms a Galois connection: if $S \subseteq \S$ and $V
 %% \subseteq V$.
 %% \end{proof}
 
+Recall that $\R$ denotes all reachable system states.  The basic idea of view
+abstraction is to construct an upper bound~$V$ of $\alpha(\R)$.  The above
+lemma then tells us that $\R \subseteq \gamma(V)$.  By reasoning about~$V$, we
+can deduce facts about all reachable states. 
 
-Other things go through as before.  
-
+We define an abstract post-image function over sets of views.
+%
 \begin{definition}
-Two views $v$ and~$v'$ are \emph{accordant} if (1)~$v.\fixed = v'.\fixed$, and
-(2)~if $v$ and~$v'$ both contain a component with a particular identity~$id$,
-then those components are equal.  In this case we write $v \uplus v'$ for
-$(v.\fixed, v.\cpts \union v'.\cpts)$.  
+If $V \subseteq \V$ then 
+\begin{eqnarray*}
+aPost(V) & \defs & \alpha(post(\gamma(V)).
+\end{eqnarray*}
 \end{definition}
+%
+The following lemma shows that the abstract post-image function simulates the
+concrete one.  The lemma follows easily from  Lemma~\ref{lem:galois}.
+%
+\begin{lemma}
+If $V \subseteq \V$ and $S \subseteq \gamma(V)$ then 
+$post(S) \subseteq \gamma(aPost(V))$.
+\end{lemma}
+%
+The following proposition shows how we can approximate the set of reachable
+system states by iterating the abstract post-image from some set of initial
+views.  The result is proved via an easy induction, using the previous lemma.
+%
+\begin{prop}
+\label{prop:reachable}
+Suppose $AInit \subseteq \V$ is such that $\alpha(Init) \subseteq AInit$.  Then
+\begin{eqnarray*}
+\R & \subseteq & \gamma (aPost^*(AInit)).
+\end{eqnarray*}
+\end{prop}
+
+The above proposition does not immediately give us an algorithm, since the
+right-hand side is, in general, an infinte set.  For any particular definition
+of the set~$\V$ of views, we need to find a way of calculating $aPost$
+finitely.  We return to this question once we have formally defined the
+set~$\V$ we employ. 
+
+%% Other things go through as before.  

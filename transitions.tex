@@ -1,0 +1,450 @@
+
+\section{Calculating abstract transitions}
+\label{sec:transitions}
+
+In this section we describe how to calculate an upper bound to $aPost(V) =
+\alpha(post(\gamma(V)))$.  In this section, we will be dealing with
+potentially infinite sets of views.  But in Section~\ref{sec:symmetry}, we
+will perform a form of symmetry reduction, so as to consider only a single
+view from each symmetry equivalence class.  Our goal in this section,
+therefore, is to restrict the set of views we need to consider to a finite
+number of equivalence classes.
+
+In order to motivate our approach, we present example abstract transitions
+from the queue example, and how they can be extracted from
+corresponding concrete transitions of components.  We use these examples to
+define how we calculate (an over-approximation of) the abstract post-image of
+the current set of views.  We then prove that our approach is correct.
+
+\subsection{Active-process transitions}
+
+We start by considering abstract transitions triggered by an active process
+(either an active principal or an active fixed process) within the view.  We
+call these \emph{active-process transitions}.
+
+Informally, our approach will be as follows.  We will start with a view $v \in
+V$, and consider transitions involving either an active principal or active
+fixed process synchronising on the transition.
+%% ; (1)~of the principal, if it is an active component; (2)~of any active
+%% fixed process, either synchronising with the principal or no component.
+In some cases we will need to expand the view to include additional relevant
+components: either those components that synchronise on the transition, or to
+which the principal component obtains a reference.  Recall
+(clause~\ref{assump:max-one-extra-component} of Assumption~\ref{assump:2}) that
+we assume that there is at most one such new component (for simplicity).  When
+we expand a view in this way, we do so only in a way that is compatible with
+the set $V$ of views.
+
+Each such transition will be built from a \emph{view transition}, i.e.~a
+transition formed by considering a single view in isolation, as captured by
+the following definition.
+%
+\begin{definition}
+We define a \emph{view transition} of view~$v$ to be a transition $v \trans[e]
+v'$ such that
+%
+\begin{itemize}
+\item Either: (1) $v$ has an active principal with~$e$ in its alphabet; (2)~$v$
+  has an active fixed process with $e$ in its alphabet, and the principal
+  of~$v$ is a passive component with $e$ in its alphabet; or (3) only fixed
+  processes have $e$ in their alphabet.
+%% $v$ has either an active principal or an active fixed process with $e$
+%%   in its alphabet.  \framebox{OR} only fixed process.
+%, and either the
+%  principal or no component has $e$ in its alphabet.
+
+\item $v'$ is the same as~$v$ except replacing every (fixed or component)
+  process~$p$ that has $e$ in its alphabet with a process $p'$ such that \( p
+  \trans[e] p' \).  This synchronises all relevant processes on the
+  transition. (Note that $v'$ might not be a view if the principal component
+  gains or loses a reference as a result of the transition; we discuss this
+  further below.)
+\end{itemize}
+\end{definition}
+
+\begin{impNote}
+\texttt{system.transitions} generates a representation of the view
+  transitions, together with the identity of another process that synchronises
+  on the transition (where applicable).  We might be more restrictive with
+  active-fixed-process transitions. 
+\end{impNote}
+
+For example, consider a transition of the queue where a thread~$t$
+enqueueing~$x$ performs a $lock$ event.  This can be captured by view
+transitions of the form
+%
+\begin{equation}
+(fixed(\_, n_h, n_l); Enq^x_1(t))  \trans(3)[lock.t]
+  (fixed(t, n_h, n_l); Enq^x_2(t)) .
+\label{trans:lock}
+\end{equation}
+%
+%for $t \in ThreadID$.  
+%
+In this particular case, the view transition is also an abstract transition.
+Each of the pre- and post-states in this transition is a view, with $t$ as the
+principal component.  Further, the pre-view contains all components with
+$lock.t$ in their alphabet (just the principal), so in a concrete state, no
+other process would synchronise on the transition.
+
+\framebox{IMPROVE:} maybe consider the $setHead$ transition instead, here. 
+
+As an example of a transition with an active fixed process, the construction
+of the initial dummy header node is described by the following view
+transition.
+\[
+\begin{align}
+(\Lock, \Head(null), \Last(null), \Con_0; \InitNode(n)) 
+  \trans(9)[initNode.C.n.v_0] \\
+\qquad (\Lock, \Head(null), \Last(null), \Con_1(n); \Node_{v_0}(n, null)).
+\end{align}
+\]
+Here the only component that synchronises on the transition is the principal.
+This view transition is again an abstract transition.
+
+The above two abstract transitions can be found by looking just at the view
+transitions of the pre-view.  However, this isn't always the case.
+%
+%% The abstract transition in the previous paragraphs was fairly straightforward,
+%% as all the relevant component states were in the initial view.  This might not
+%% always be the case.  
+Consider a transition where a dequeueing thread reads the (non-null) $next$
+reference from the head node.  This can be partially described by the view
+transition
+\[
+\begin{align}
+(fixed(t, n_h, n_l); Deq_3(t, n_h), \Node_x(n_h, n))
+  \trans(7)[getNext.t.n_h.n] \\
+\qquad (fixed(t, n_h, n_l); Deq_4(t, n), \Node_x(n_h, n)).
+\end{align}
+\]
+%% \begin{eqnarray*}
+%% (\Lock'(t), Top(n); Push_3^x(t)) & \trans{getTop.t.n} &
+%%   (\Lock'(t), Top(n); Push_4^x(t, n)).
+%% \end{eqnarray*}
+However, the post-state is not a view, as it does not contain the node~$n$
+referenced by~$t$, and additionally it does include the node~$n_h$ which is no
+longer referenced by~$t$.  Considering just the former point (for the moment),
+we can consider the above view transition to be a transition with a ``hole'';
+we call it a \emph{transition template}, and denote it as
+\[
+\begin{align}
+(fixed(t, n_h, n_l); Deq_3(t, n_h), \Node_x(n_h, n), \bighole{n})
+  \trans(7)[getNext.t.n_h.n] \\
+\qquad (fixed(t, n_h, n_l); Deq_4(t, n), \Node_x(n_h, n), \bighole{n}).
+\end{align}
+\]
+Each ``$\hole{n}$'' represents a hole to be filled by a component with
+identity~$n$.  For example, we could fill the hole to produce a transition
+\begin{equation}
+\begin{align}
+(fixed(t, n_h, n_l); Deq_3(t, n_h), \Node_x(n_h, n), \Node_y(n, n'))
+  \trans(7)[getNext.t.n_h.n] \\
+\qquad (fixed(t, n_h, n_l);   Deq_4(t, n), \Node_x(n_h, n), \Node_y(n, n')).
+\label{trans:getNext}
+\end{align}
+\end{equation}
+%
+We call the above an \emph{extended transition}: we have extended the pre-view
+by adding the component for~$n$.  (Recall that we assume that it is necessary
+to add at most one such node, i.e.~the principal component obtains at most one
+new reference in each transition.)  The above transition also illustrates that
+the post-state might be strictly larger than the corresponding view of the
+principal component: the thread loses the reference to~$n_h$ in the
+transition.  It is straightforward to remove components that are no longer
+referenced in order to obtain the relevant view.
+
+We can generate an extended transition by considering a transition template;
+then extending the pre-state to add a consistent state of a component to which
+the principal component acquires a reference; and adding the corresponding
+state of each such component to the post state (here the added component does
+not synchronise on the transition so remains in the same state).  We write $v
+\uplus c$ for the result of extending view~$v$ with component state~$c$:
+\begin{eqnarray*}
+v \uplus c & \defs & (v.\fixed, v.\cpts \union \set{c}).
+\end{eqnarray*}
+%
+We denote a generic transition template as $pre \uplus \hole{id} \trans[e]
+post \uplus \hole{id}$. 
+
+\begin{impNote}
+The implementation represents a transition that requires an
+  additional component by a \texttt{TransitionTemplate}.
+\end{impNote}
+
+The following definitions describe what we mean by \emph{consistent}: that the
+combined view is included in some system state in~$\gamma(V)$.
+%
+\begin{definition}
+Let $V$ be a set of views.  A component state~$c$ is \emph{consistent} with a
+view~$v \in V$ (with $c.\id$ disjoint from the identities in~$v$) if there
+exists a state $s \in \gamma(V)$ such that $v \uplus c \sqle s$.
+\end{definition}
+%
+The above condition is rather expensive to check, so we weaken it slightly. 
+%
+\begin{definition}
+Two views $v$ and~$v'$ are \emph{accordant} if (1)~$v.\fixed = v'.\fixed$, and
+(2)~if $v$ and~$v'$ both contain a component with a particular identity~$id$,
+then those components are equal.  In this case we write $v \uplus v'$ for
+$(v.\fixed, v.\cpts \union v'.\cpts)$.  
+\end{definition}
+
+\begin{definition}
+\label{def:compatible}
+Let $V$ be a set of views.  A component state~$c$ is \emph{compatible} with a
+view $v \in V$ if:
+%
+\begin{enumerate}
+\item\label{item:compatible-1} $V$ contains a view $v_c$ such that $v_c.\princ
+  = c$, and $v$ and~$v_c$ are accordant.
+
+%% (a)~$v_c.\fixed = v.\fixed$, (b)~$v_c.\princ = c$, and (c)~if $c$ has a
+%% reference to a component of~$v$, then $v$ and~$v_c$ agree on that
+%% component.
+
+\item\label{item:compatible-2} If any component $c'$ of~$v$ has a reference
+  to~$c$ then $V$ contains a view $v'$ such that (a)~$v'.\fixed = v.\fixed$,
+  (b)~$v'.\princ = c'$, and (c)~$v'$ contains $c$.
+\end{enumerate}
+\end{definition}
+%
+Informally, the condition says that we can find individual views that
+correspond to references within $v \uplus c$. 
+
+We prove as
+Lemma~\ref{lem:consistent-implies-compatible} that consistency implies
+compatibility.  The implementation creates extended transitions by extending a
+view transition with a compatible state, thus (slightly) over-approximating
+the transitions.  Our experience is that this approximation
+does not lead to false positives.
+
+\begin{improve}
+In clause~(2), we could require accordance, requiring $v$ and $v'$ to agree on
+any other components.  It's not clear if this is best. 
+\end{improve}
+
+In transition~(\ref{trans:getNext}), the state $\Node_y(n, n')$ is compatible
+with the pre-view, assuming the set~$V$ of views contains: (1)~a view of the
+form $v_c = (fixed(t, n_h, n_l);\linebreak[1] \Node_y(n, n'), \linebreak[1]
+\Node_z(n', n''))$ for some~$z$ and~$n''$, to satisfy
+clause~\ref{item:compatible-1}; and (2) a view of the form $v' = (fixed(t,
+n_h, n_l); \Node_x(n_h, n), \linebreak[1] \Node_y(n, n'))$ to satisfy
+clause~\ref{item:compatible-2}, i.e.~showing that the states of the two nodes
+are compatible with one another.
+
+\begin{impNote}
+This is checked in
+  \texttt{Extendability.\linebreak[1]compatible\-With}, with
+  \texttt{Extendability.isExtendable} checking the latter clause.
+\end{impNote}
+
+
+%% We show in Section~\ref{sec:views-correctness} that consistency
+%% implies compatibility.  Our implementation uses the weaker definition of
+%% compatibility; this means that we over-estimate the abstract transition
+%% relation, so preserve correctness.  Our experience is that this approximation
+%% does not lead to false positives.
+
+In the transitions we have considered so far, the pre-view contains every
+component that synchronises on the transition.  This won't always be true.  In
+such a case, we extend the pre-view to add each compatible state of such a
+component that can perform the relevant state.  For example, $initNode$
+transitions correspond to transition templates such as
+\[
+\begin{alignc}
+(fixed(t, n_h, n_l);   Enq_3^x(t, n_l), \Node_y(n_l, n'), \bighole{n})
+    \trans(7)[initNode_x.t.n.null] \\
+\qquad (fixed(t, n_h, n_l);
+   Enq_4^x(t, n_l, n), \Node_y(n_l, n'), \bighole{n}).
+\end{alignc}
+\]
+Here the hole needs to be instantiated with a component with identity~$n$
+which synchronises on the transition; this must necessarily be a transition
+from the $\InitNode$ state:
+%% \[ (fixed(t, n_h, n_l); Enq_3^x(t, n_l), \Node_y(n_l, n') \] adding the
+%% node being initialised (which must necessarily be in the $\InitNode$
+%% state).
+\begin{equation}
+\begin{alignc}
+(fixed(t, n_h, n_l);   Enq_3^x(t, n_l), \Node_y(n_l, n'), \InitNode(n))
+    \trans(7)[initNode_x.t.n.null] \\
+\qquad (fixed(t, n_h, n_l);
+   Enq_4^x(t, n_l, n), \Node_y(n_l, n'), \Node_x(n, null)).
+\end{alignc}
+\label{trans:initNode}
+\end{equation}
+%% The above transition also illustrates that the post-state might be strictly
+%% larger than the corresponding view of the principal component: the thread
+%% loses the reference to~$n$ in the transition.  It is straightforward to remove
+%% components that are no longer referenced in order to obtain the relevant view.
+
+%% The transition~(\ref{trans:initNode}) produces a new view for
+%% another component involved in the transition, here the view $(\Lock'(t),
+%% Top(n); Node_x(n'', n), Node_y(n, n'))$ of~$n''$.  In this case, the node $n$
+%% to which $n''$ acquires a reference was included in the transition, because
+%% the thread~$t$ had a reference to it in the pre-state.  In all realistic
+%% examples we are aware of, a similar fact is true: a secondary component
+%% obtains a reference only to other components to which the primary component
+%% previously had a reference.  Thus our implementation assumes this
+%% condition.
+
+
+The following definition summarises the construction of this subsection.
+%
+\begin{definition}
+\label{def:active-process-transition}
+Given a set $V$ of views, we build the active-process transitions as follows.
+For each $v \in V$, we consider each view transition $v \trans[e] v'$ of~$v$.
+%
+We consider each identity~$id$, not matching the identity of a component
+of~$v$ and such that
+%
+\begin{itemize}
+\item $e$ is in the alphabet of~$id$; or
+
+\item $v.princ$ acquires a reference to~$id$ in the transition
+\end{itemize}
+%
+By assumption, there is at most one such~$id$.
+
+If there is no such $id$, then the view transition contains all relevant
+components. We extract from $v'$ the view~$v''$ of the principal component,
+to create an abstract transition $v \trans[e] v''$.
+
+If there is such an id, we build the transition template
+$v \uplus \hole{id} \trans[e] v' \uplus \hole{id}$.  We then  find all
+component states~$c$ with identity~$id$ that are compatible with~$v$.
+%% (Definition~\ref{def:compatible}).  
+We form all pre-states $pre = v \uplus c$ by extending $v$ with each such
+component state~$c$.  We form corresponding post-states $post$ by extending
+$v'$ with the corresponding post-states: if $e$ is in the alphabet of~$id$
+then we build $post = v' \uplus c'$ for each state~$c'$ such that $c \trans[e]
+c'$; or otherwise $post = v' \uplus c$.  Thus we form extended transitions
+$pre \trans[e] post$ including all the relevant component states.  Finally, we
+extract from $post$ the view~$v''$ of the principal component, to create an
+abstract transition $v \trans[e] v''$.
+\end{definition}
+
+%%%%%%%%%%
+
+In order to prove a result about such transitions, we first compare the
+properties of compatibility and consistency.
+%
+\begin{lemma}
+\label{lem:consistent-implies-compatible}
+Let $V$ be a set of views.
+If a component state~$c$ is consistent with a view~$v \in V$, then
+$c$ is compatible with~$v$. 
+\end{lemma}
+%
+\begin{proof}
+Suppose $c$ is consistent with~$v$.  Then there exists $s \in \gamma(V)$ such
+that $v \uplus c \sqle s$.  Taking $v_c = view(s, c)$ satisfies
+clause~\ref{item:compatible-1} of Definition~\ref{def:compatible}: note that
+$v_c \in \V$ and $v_c \sqle s \in \gamma(V)$ so $v_c \in V$.  For each
+component $c'$ of~$v$ that has a reference to~$c$, taking $v' = view(s,c')$
+satisfies clause~\ref{item:compatible-2}: again $v' \in V$.
+\end{proof}
+
+%%%%%%%%%%
+
+\begin{lemma}
+\label{lem:active-process-transitions}
+Let $V$ be a set of views.  Consider an abstract transition
+\[
+\gamma(V) \ni s \trans[e] s' \sqge_{\V} v'
+\]
+such that one of the following holds for the concrete transition $s \trans[e]
+s'$:
+\begin{enumerate}
+\item The principal of~$v'$ is the active component of the transition;
+
+\item The transition has an active fixed process, and involves one passive
+  component which is the principal of~$v'$;
+
+\item The transition involves only the fixed processes.
+\end{enumerate}
+%
+Then $v'$ is generated by an active-process transition.
+\end{lemma}
+
+%%%%%
+
+\begin{proof}
+Let $pId = v'.\princ.\id$ be the identity of the principal of~$v'$, and
+suppose that component has states $princ$ and $princ'$ in~$s$ and~$s'$,
+respectively (so $v' = view(s', princ')$). Let $v = view(s, princ)$.  Note
+that $v \in \V$ and $v \sqle s \in \gamma(V)$, so $v \in V$.  We consider the
+three cases of the lemma in order.
+%
+\begin{enumerate}
+\item
+Suppose another component is necessary for the transition, as in
+Definition~\ref{def:active-process-transition}, i.e.~either another component
+synchronises on the transition, or the principal gains a reference; and
+suppose that component has state~$c$ in~$s$.  Then $c$ is consistent
+with~$v$, since $v \uplus c \sqle s \in \gamma(V)$.  Hence $c$ is compatible
+with~$v$, by Lemma~\ref{lem:consistent-implies-compatible}. 
+%
+Let $pre = v \uplus c$, or let $pre = v$ if no additional component is
+necessary; and let $post$ be the corresponding states in~$s'$.  Then the
+technique of Definition~\ref{def:active-process-transition} builds the
+transition \( pre \trans[e] post \).  Finally, the principal's view of $post$
+is extracted; this equals~$v'$ by construction, as required. 
+
+\item Then no additional component is necessary, and the technique of
+  Definition~\ref{def:active-process-transition} builds the transition $v
+  \trans[a] v'$.
+
+\item This is identical to the previous case.
+\end{enumerate}
+\end{proof}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+As an aside, the converse of Lemma~\ref{lem:consistent-implies-compatible}
+doesn't hold, informally because the views required for the different
+constraints of Definition~\ref{def:compatible} might come from different
+system states.  More concretely, consider a system containing just the
+following system states.
+%
+\begin{eqnarray*}
+s_0 & = &
+   (fixed; Th(t,n_1,n_2), N_A(n_1,n_3), N_B(n_2), N_X(n_3), N_D(n_4,n_3)), \\
+s_1 & = &
+  (fixed; Th(t,n_1,n_2), N_X(n_1), N_B(n_2), N_C(n_3,n_2), N_D(n_4,n_1)),\\
+s_2 & = & 
+  (fixed; Th(t,n_1,n_2), N_A(n_1,n_3), N_X(n_2), N_C(n_3,n_2), N_D(n_4,n_2)).
+\end{eqnarray*}
+%
+Let $V = \alpha(\set{s_0,s_1,s_2})$ be all views of these states.  Let
+\[
+v = (fixed; Th(t,n_1,n_2), N_A(n_1, n_3), N_B(n_2)).
+\]
+This is a view of the system, resulting from~$s_0$.  Let 
+\[
+c = N_C(n_3,n_2).
+\]  
+Then  $c$ is compatible with~$v$:
+%
+clause~\ref{item:compatible-1} of Definition~\ref{def:compatible} is satisfied
+by $(fixed; N_C(n_3,n_2), N_B(n_2))$, which is a view resulting
+from~$s_1$;
+%
+and clause~\ref{item:compatible-2} is satisfied for $c' = N_A(n_1,n_3)$ by
+$(fixed; N_A(n_1, n_3), N_C(n_3,n_2))$, which is a view resulting
+from~$s_2$. 
+
+However $c$ is not consistent with~$v$.  Suppose we have \( v \uplus
+c \sqle s \) for some $s \in \gamma(V)$.  Then $s$ is necessarily of the form
+\[
+\begin{align}
+(fixed; Th(t,n_1,n_2), N_A(n_1, n_3), N_B(n_2), N_C(n_3,n_2), c_4) \\
+\qquad \mbox{where $c_4 = N_D(n_4,x)$ for some $x$.}
+\end{align}
+\]
+But no value of~$x$ works: in each case, we have that $view(s, c_4) \nin
+\gamma(V)$, since in no system state does $n_4$ have a reference to a
+component in state~$N_A$, $N_B$ or~$N_C$.

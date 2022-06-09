@@ -1,0 +1,241 @@
+
+\subsection{Induced transitions}
+
+So far, we have considered only transitions that involved an active process
+(either the principal or a fixed process). However, such a transition can
+induce other abstract transitions.  For example the
+transition~(\ref{trans:lock}) changes the state of a fixed process, and so
+induces corresponding changes in other views; for instance, it induces abstract
+transitions concerning another thread or a node in its initial state:
+%
+\[
+\begin{align}
+(fixed(\_, n_h, n_l); Thread(t'))  \trans(3)[lock.t] 
+  (fixed(t, n_h, n_l); Thread(t')), \\
+(fixed(\_, n_h, n_l); \InitNode(n))  \trans(3)[lock.t] 
+  (fixed(t, n_h, n_l); \InitNode(n)),
+\end{align}
+\]
+%
+for $t' \in ThreadID$ with $t' \ne t$, and for $n \in NodeID$.
+
+\begin{definition}
+\label{def:induced-transition}
+Consider an extended transition~$pre \trans[e] post$, and a view $v \in V$
+such that $v$ and $pre$ are accordant.  Then the transition \emph{induces} a
+new transition $v \trans v'$ where:
+\begin{enumerate}
+\item $v'.\fixed = post.\fixed$.
+
+\item If $v.\princ$ is in $pre$ then $v'.\princ$ is the corresponding
+  component in~$post$; otherwise $v'.princ = v.princ$.
+
+\item The secondary components of~$v'$ are the components referenced by
+  $v'.princ$, either from $post$ if the component is part of the transition,
+  or otherwise from~$v$.  (Note that all such components are included in
+  either $post$ or~$v$, by clause~\ref{assump:secondary-cpts-new-refs} of
+  Assumption~\ref{assump:2}.)
+\end{enumerate}
+\end{definition}
+
+%%%%%
+
+For example, the  transition~(\ref{trans:initNode}) induces a transition
+\[
+\begin{align}
+(fixed(t, n_h, n_l); \InitNode(n)) \trans[]
+  (fixed(t, n_h, n_l); \Node_x(n, Null)),
+\end{align}
+\]
+where $n$ evolves as in (\ref{trans:initNode}).
+%
+As another example, consider the extended transition where an enqueueing
+thread sets the next reference of the last node:
+\[
+\begin{align}
+(fixed(t, n_h, n_l);  Enq_4(t, n_l, n), \Node_y(n_l, Null), \Node_x(n, Null)) 
+ \trans(6)[setNext.t.n_l.n] \\
+\qquad (fixed(t, n_h, n_l);  Enq_5(t, n), \Node_y(n_l, n), \Node_x(n, Null)).
+\end{align}
+\]
+This induces the following transition on the view of~$n_l$:
+\[
+\begin{align}
+(fixed(t, n_h, n_l);  \Node_y(n_l, Null)) \trans{}  % setNext.t.n_l.n} \\
+  (fixed(t, n_h, n_l);  \Node_y(n_l, n), \Node_x(n, Null)).
+\end{align}
+\]
+
+%%%%%
+
+We note some optimisations concerning the use of
+Definition~\ref{def:induced-transition}.  
+%
+\begin{opt}
+\label{opt:avoid-induced}
+A straightforward use of Definition~\ref{def:induced-transition} would
+consider many different extended transitions $pre \trans[e] post$ and
+views~$v$ to create new post-views.  However, it turns out that many of these
+induced transitions create identical post-views.
+%
+\begin{enumerate}
+\item\label{case:avoid-induced-1} If $pre.\princ = v.\princ$ then the induced
+  transition is identical to the original transition. 
+
+\item\label{case:avoid-induced-2} Suppose $pre.\fixed = post.\fixed$ and $v$
+  contains no component that changes state in the transition.  Then the new
+  view~$v'$ is identical to~$v$.
+
+\item\label{case:avoid-induced-3} Now suppose $pre.\fixed \ne post.\fixed$,
+  but $v$ again contains no component that changes state in the transition.
+  Then the new view~$v'$ will be different from~$v$.  However, suppose we
+  subsequently consider another extended transition $pre' \trans{} post'$ with
+  $post'.\fixed = post.\fixed$, and consider its effect on the same~$v$
+  (necessarily $pre'.\fixed = pre.\fixed = v.\fixed$), and $v$ again contains
+  no component that changes state in the transition.  Then this will induce a
+  transition to the same post-view~$v'$.
+\end{enumerate}
+%
+We identify such cases early, and avoid producing the duplicate post-views.
+We discuss this further in Section~\ref{ssec:effectOn-full}. 
+\end{opt}
+
+\begin{impNote}
+The above optimisation is implemented in
+\texttt{Unification.isSufficientUnif}.  Not any more...
+\end{impNote}
+
+\begin{improve}
+Can it be done earlier?  
+
+Also, suppose a single component~$c$ of~$v$ changes state and either (1) is
+the principal of~$V$, but doesn't gain any reference; or (2) is a secondary
+component.  Then it is enough to consider one such case for each view~$v$ and
+for each transition of the fixed processes and the component~$c$.  If there
+are two such transitions $pre \trans{} post$ and $pre' \trans{} post'$ with
+$post.\fixed = post'.\fixed$, and the same post-state~$c'$ for~$c$, then the
+new view in each case will use $post.\fixed$ and with $c$ replaced by~$c'$
+in~$v$, and maybe some components removed in case~(1).
+
+This suggests storing tuples containing $v$, the index of~$c$ within~$v$, the
+new state~$c'$, and $post.\fixed$ (at this level of abstraction).  When we
+also consider symmetry reduction, I think we should be storing
+$\pi\inverse(c')$. 
+
+\framebox{Consider this}  
+\end{improve}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Correctness}
+\label{sec:views-correctness}
+
+
+The following definition summarises how we calculate the abstract transitions.
+
+\begin{definition}
+\label{def:abstract-transition}
+Given a set $V$ of views, we build each active-process extended transition
+$pre \trans[e] post$, and the corresponding abstract transitions $v \trans[e]
+v'$, as in Definition~\ref{def:active-process-transition}.
+%
+We then also create every transition that $pre \trans[e] post$ induces on a
+view in~$V$, as in Definition~\ref{def:induced-transition}. 
+\end{definition}
+%
+%% Our goal in this section is to show that the views produced by such
+%% transitions include all of~$aPost(V)$. 
+%
+
+The following proposition shows the correctness of this approach. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{prop}
+\label{lem:abstract-transitions-sound}
+Let $V$ be a set of views.  Then abstract transition from~$V$ is generated by
+the procedure in Definition~\ref{def:abstract-transition}.
+\end{prop}
+
+\begin{proof} 
+Consider an abstract transition
+\[
+\gamma(V) \ni s \trans[e] s' \sqge_{\V} v'.
+\]
+We need to show that we generate $v'$ as part of the process described above.
+%
+Let $pId = v'.\princ.id$.
+%%  be the identity of the principal of~$v'$, and suppose
+%% that component has states $princ$ and $princ'$ in~$s$ and~$s'$, respectively
+%% (so $v' = view(s', princ')$).
+%
+Lemma~\ref{lem:active-process-transitions} shows that, in several cases, an
+active-process transition generates~$v'$. 
+%
+We perform a case analysis on the remaining cases.
+%
+\begin{enumerate}
+%% \item
+%% First suppose $pId$ is the active component in the concrete transition
+%% \( {s \trans[e] s'} \).
+%% Let $v = view(princ, s)$.  
+%% %
+%% Suppose another component is necessary for the transition, as in
+%% Definition~\ref{def:active-process-transition}, i.e.~either another component
+%% synchronises on the transition, or the principal gains a reference, and
+%% suppose that component has state~$c$ in~$s$.  Then $c$ is consistent
+%% with~$v$, since $v \uplus c \sqle s \in \gamma(V)$.  Hence $c$ is compatible
+%% with~$v$, by Lemma~\ref{lem:consistent-implies-compatible}.
+%% %
+%% Let $pre = v \uplus c$, or let $pre = v$ if no additional component is
+%% necessary; and let $post$ be the corresponding states in~$s'$.  Then the
+%% technique of Definition~\ref{def:active-process-transition} builds the
+%% transition \( pre \trans[e] post \).  Finally, the principal's view of $post$
+%% is extracted; this equals~$v'$ by construction, as required. 
+
+\item
+Suppose the transition $s \trans[e] s'$ has an active component other
+than~$pId$.  Let $pre \trans[e] post$ be the corresponding extended
+transition, built as in Definition~\ref{def:active-process-transition}.  Let
+$pId$ have state $princ$ in~$s$, and let
+$v = view(princ, s)$.  Then necessarily $v$ and $pre$ are accordant, since
+they are both substates of~$s$.  Then the transition $v \trans{} v'$ is
+induced, as in Definition~\ref{def:induced-transition}.
+
+\item\label{step:abs-trans-correct-3}
+Finally suppose the transition $s \trans[e] s'$ has an active fixed process,
+and involves a passive component other than~$pId$.  This case is identical to
+the previous.
+%% Consider an arbitrary corresponding view transition (i.e.~with an arbitrary
+%% principal), and consider the corresponding extended transition $pre \trans[e]
+%% post$.  This case is then identical to the previous case.
+\end{enumerate}
+\end{proof}
+
+%%%%%
+
+%% \begin{impNote}
+%% The fact that point~3 covers all transitions with active fixed
+%%   processes suggests that we could be more restrictive about generating such
+%%   transitions in Definition~\ref{def:active-process-transition}.
+%% \end{impNote}
+
+
+\begin{opt}
+Case~\ref{step:abs-trans-correct-3} above considered an \emph{arbitrary}
+corresponding view transition.  All such view transitions will generate the
+same abstract transition, so clearly, it would be enough to consider fewer, as
+long as we include at least one.  In the case that the active fixed process
+synchronises with a passive component~$c$, we consider just the view
+transition with~$c$ as principal.  (In the case that the active fixed process
+synchronises with no component, we consider all such view transitions; there
+is potential for further optimisation here, but these cases seem rare.)
+\end{opt}
+
+
+%% If $s$ is a system state and $cpts$ is a set of component states with
+%% identities disjoint from the identities of $s.\cpt$, we write $s \uplus cpts$
+%% for $(s.\fixed, s.\cpt \union cpts)$.  Similarly, if $c$ is a component with
+%% identities disjoint from those of $s.\cpts$, we write $s \uplus c$ for
+%% $(s.\fixed, s.\cpt \union \set{c})$.

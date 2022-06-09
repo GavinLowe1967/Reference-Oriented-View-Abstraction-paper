@@ -1,6 +1,6 @@
 \documentclass[12pt]{article}
 \usepackage{bigpage}
-\usepackage{mathsx,tech,mytheorems}
+\usepackage{mathsx,tech,mytheorems,trans}
 \usepackage{tikz}
 \usetikzlibrary{arrows}
 \usepackage{scalalistings}%\unScalaMid
@@ -17,24 +17,44 @@
 \newtheorem{impNote}{Implementation note}
 \newtheorem{opt}{Optimisation}
 
-\def\vec#1{\mathsf{#1}}
-\def\trans#1{\stackrel{#1}\rightarrow}
+\newenvironment{infrule}{\begin{array}{c}}{\end{array}}
+\def\derive{\\ \hline}
+
+\def\vec#1{\overline{#1}}
 \def\sqge{\sqsupseteq}
 \def\sqle{\sqsubseteq}
 \def\rangeRes{\rhd}
 \def\domRes{\lhd}
 
+% Extractors from process states, views, etc.
+
 \def\id{\mathrm{id}}
 \def\params{\mathrm{params}}
+\def\cs{\mathrm{cs}}
 %\def\srv{\vec{srvs}}
 \def\fixed{\mathrm{fixed}}
 \def\cpt{\mathrm{cpts}}
 \def\cpts{\cpt}
 \def\princ{\mathrm{princ}}
+
+\def\hole#1{\mbox{--}_{#1}}
+\def\bighole#1{\mbox{---}_{#1}}
+
+% Sets
+
 \def\S{\mathcal{S}}
 \def\V{\mathcal{V}}
+\def\R{\mathcal{R}}
 
 \def\mit{\it}
+
+%% Algorithm syntax
+
+\def\For{\mathop{\mathsf{for}}}
+\def\Foreach{\mathop{\mathsf{for\ each}}}
+\def\Def{\mathop{\mathsf{def}}}
+\def\Let{\mathop{\mathsf{let}}}
+
 
 %\def\improve#1{IMPROVE: \emph{#1}}
 %\def\impNote#1{\textbf{Implementation note:} #1}
@@ -51,11 +71,15 @@
 \begin{document}
 \maketitle
 
-
-\input{setting}
-\input{va}
-\input{views}
-\input{symmetry}
+\input{intro}
+\input{setting}  % Defining the setting
+\input{setting2}
+\input{va}       % View abstraction in general
+\input{views}    % Defining the views we use here.
+\input{transitions} % Calculating abstract transitions.
+\input{transitions2} % Induced transitions
+\input{symmetry}   % Introduction to symmetry reduction
+\input{algorithm} 
 \input{effectOn}
 %%% singleRef
 

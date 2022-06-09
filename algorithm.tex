@@ -1,0 +1,161 @@
+\section{The algorithm}
+
+We now present our algorithm, and prove its correctness.  The algorithm is in
+Figure~\ref{fig:algorithm}.  It takes as inputs a system (which defines the
+set~$\V$ of views, and the abstraction and concretisation functions, $\alpha$
+and~$\gamma$), and a set $AInit$ of initial views such that $\alpha(Init)
+\subseteq \overline{AInit}$.  It maintains a set $V \subseteq \V$ of views
+encountered so far, up to equivalence; in other words, $V$ represents its
+closure $\overline{V}$.  On each iteration \framebox{\ldots}.  This continues
+until either a transition on $error$ is found, or a fixed point is reached. 
+
+\begin{figure}[t]
+\[
+\begin{align}
+V := AInit \\
+while(true)\{ \\
+\quad \mbox{if there is an extended transition $pre \trans(3)[error] post$
+  from~$\overline{V}$ then return $failure$} \\
+\quad \mbox{calculate $X$ such that $\overline{X} = aPost(\overline{V})$} \\
+\quad \mbox{for $(v' \in X)$ if $v' \nin \overline{V}$ then 
+  $V := V \union \set{v'}$} \\
+\quad \mbox{if no new view was added then return $success$} \\ 
+\}
+\end{align}
+\]
+\caption{The initial algorithm}
+\label{fig:algorithm}
+\end{figure}
+
+%%%%%
+
+\begin{lemma}
+\label{lem:alg-fixed-point}
+If the algorithm does not return $failure$ then $V$ reaches a fixed
+point~$V_{fix}$ such that 
+%% \begin{eqnarray*}
+%% \overline{V}_{fix} & \supseteq & aPost^*(\overline{AInit}),
+%% \end{eqnarray*}
+%% and hence
+$\R \subseteq \gamma( \overline{V_{fix}} )$.
+\end{lemma}
+%
+\begin{proof}
+We show that after $n$ iterations,
+\begin{eqnarray*}
+\overline{V} & \supseteq & \textstyle\Union_{i = 0}^n aPost^i(\overline{AInit}),
+\end{eqnarray*}
+%
+by induction on~$n$.  The base case is trivial.  Suppose the result holds
+for~$V$ at the start of an iteration.  Let $V'$ be the next value of~$V$, so
+\[
+\begin{array}{rcl}
+\overline{V'} & = & \overline{V} \union \overline{X} \\ 
+& = & \overline{V} \union aPost(\overline{V}) \\
+& \supseteq & \Union_{i = 0}^n aPost^i(\overline{AInit}) \union
+      aPost(\Union_{i = 0}^n aPost^i(\overline{AInit})) \\
+& \supseteq & \Union_{i = 0}^n aPost^i(\overline{AInit}) \union 
+  aPost(aPost^n(\overline{AInit})) \\
+& = & \Union_{i = 0}^{n+1} aPost^i(\overline{AInit})
+\end{array}
+\] 
+using the inductive hypothesis and monotonicity of $aPost$. 
+
+The set~$\V$ contains a finite number of equivalence classes.  Hence the
+iteration must reach a fixed point $V_{fix}$ such that
+\[
+\overline{V_{fix}} = \textstyle\Union_{i = 0}^\infty aPost^i(\overline{AInit}) = 
+  aPost^*(\overline{AInit}).
+\]
+The result then follows from Proposition~\ref{prop:reachable}.
+\end{proof}
+
+%%%%%
+
+\begin{prop}
+If the algorithm returns $success$, then the system is error-free, for all
+systems starting in a state in $Init$.
+\end{prop}
+%
+\begin{proof}
+We prove the contra-positive: suppose some reachable state $s \in \R$ has a
+transition on $error$; we show that the algorithm returns $failure$.  
+%
+Lemma~\ref{lem:alg-fixed-point} implies that $s \in
+\gamma(\overline{V_{fix}})$, so $s \in \gamma(\overline{V})$ at some iteration
+of the algorithm.  Then there is an extended transition on $error$
+from~$\overline{V}$ (as in Lemma~\ref{lem:active-process-transitions}), so the
+algorithm returns $failure$.
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The algorithm maintains several sets:
+%
+\begin{itemize}
+\item $V$, which contains all views found on previous plies;
+\item $trans$, which contains all transitions found on previous plies;
+\item $transTemplates$, which contains all transition templates found on
+  previous plies.
+\end{itemize}
+%
+It also maintains several sets corresponding to the current ply of the search:
+\begin{itemize}
+\item $thisPly$, which contains views found on the previous ply, and that are
+  expanded on the current ply;
+\item $nextPly$, which contains views found on the current ply, and that will
+  be expanded on the following ply;
+\item $newTrans$, which contains new transitions found on this ply;
+\item $newTransTemplates$, which contains new transition templates found on
+  this ply.
+\end{itemize}
+
+We assume functions $transitionsOf$ and $transitiontemplatesOf$ that give the
+active-process transitions and transition templates of a view.  
+
+\begin{figure}
+\[
+\begin{align}
+V := AInit; thisPly := AInit \\
+while(thisPly \ne \set{})\{ \\
+\quad newTrans := \set{}; newTranTemplates := \set{} \\
+\quad \For(v \in thisPly)\ process(v) \\
+\quad  thisPly := nextPly; trans := trans \union newTrans \\
+\quad  transTemplates := transTemplates \union newTransTemplates \\
+\quad for((pre,e,post) \in newTrans)\{ \\
+\qquad \Let v = viewOf(post); 
+  \If(v \nin V)\{ V := V \union \set{v}; thisPly := thisPly \union \set{v} \}\\
+\quad \}\\
+\} \\
+\mbox{return $success$}
+\\[2ex]
+\Def process(v) = \{ \\ % process(v) 
+%% Transitions
+\quad \For ((pre \trans[e] post) \in transitionsOf(v)) \{ \\
+\qquad  \If (e = error)\ \mbox{return $failure$} \\
+\qquad  addTransition(pre, e, post) \\
+\quad \} \\
+%% Transition templates
+\quad \For ((pre \trans[e] post, id) \in transTemplatesOf(v) \{ \\
+\qquad  newTransTemplates := newTransTemplates \union \set{(pre,e,post,id)} \\
+\qquad \Foreach \mbox{compatible component states~$c, c'$ with identity~$id$} \\
+\qquad\quad           addTransition(pre \uplus c, e, post \uplus c') \\
+\quad \} \\
+% effectOfPreviousTransitions(v) \\
+\quad \For ((pre,e,post) \in trans)\ makeInducedTrans(pre,e,post,v) \\
+\quad effectOfPreviousTransitionTemplates(v) *** \\
+\} % end of process
+\\[2ex]
+\Def addTransition(pre, e, post) = \{ \\
+\quad \If ((pre,e,post) \nin trans)\ 
+        newTrans := newTrans \union \set{(pre,e,post)} \\
+     % effectOnOthers
+\quad \For (v \in V)\ makeInducedTrans(pre,e,post,v) \\
+\} 
+\\ [2ex]
+\Def makeInducedTrans(pre,e,post,v) = \\
+\quad \Let v' \mbox{ be the view induced by $pre \trans[e] post$ on $v$} \\
+\quad \If (v' \nin V)\ nextPly := nextPly \union \set{v'} 
+\end{align}
+\]
+\end{figure}

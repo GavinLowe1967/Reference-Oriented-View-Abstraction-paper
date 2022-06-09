@@ -1,0 +1,103 @@
+\begin{abstract}
+The \emph{parameterised verification problem} seeks to verify all members of
+some collection of systems.  We consider the parameterised verification
+problem applied to systems that are composed of an arbitrary number of
+\emph{component processes}, together with some \emph{fixed processes}.
+Processes synchronise together corresponding to steps of the system.  
+Each component process has an \emph{identity} which may be passed to another
+process and stored, and possibly subsequently passed to other processes.
+Hence each process may store some references to other processes. 
+
+We apply a variant of \emph{view abstraction} to this problem.  We define a
+\emph{view} to record the state of the fixed processes, a particular component
+called the principal, and all the components to which the principal holds a
+reference.  Our approach calculates an upper bound on all views of all states
+of systems with an arbitrary number of components.  In particular, we use
+techniques based on symmetry reduction to form this bound.  
+
+%% We apply the techniques to a number of examples.  We can model both active
+%% components, such as threads, and passive components, such as nodes in a linked
+%% list: thus our approach allows the verification of unbounded concurrent
+%% datatypes operated on by an unbounded number of threads.  We show how to
+%% combine view abstraction with additional techniques in order to deal with
+%% other potentially infinite aspects of the analysis: for example, we deal with
+%% potentially infinite specifications, such as a datatype being a queue; and we
+%% deal with unbounded types of data stored in a datatype.
+\end{abstract}
+
+%%%%%
+
+\section{Introduction}
+
+The \emph{parameterised verification problem} considers a collection of
+systems $P(x)$ where the parameter~$x$ ranges over a potentially infinite set,
+and asks whether such systems are correct for all values of~$x$.  In this
+paper we consider the following instance of the parameterised verification
+problem.  Each system is built from some number of \emph{component processes},
+together with some \emph{fixed processes}.  The components may be taken from
+one or more families; for instance, we will consider examples representing a
+concurrent datatype based on a linked list: one family of components will
+represent threads operating on the datatype; and another family will represent
+nodes in the linked list.  All components from a particular family will be
+symmetric to one another.  Thus these systems are parameterised by the number
+of components from each family.  The fixed processes are independent
+of the number of components; we use them to model shared resources such as
+shared variables or locks; we also normally include a \emph{watchdog} as a
+fixed process, which monitors the execution and signals an error if the
+desired specification is not met.
+
+The components and fixed processes synchronise together corresponding to a
+system step.  For example, a system step where a thread reads or writes a
+field of a node will correspond to a synchronisation between the thread and
+the node; likewise, a system step where a thread reads or writes a shared
+variable will correspond to a synchronisation between the thread and the fixed
+process for the variable.  We call each synchronisation an \emph{event}: they
+are analogous to CSP events.
+
+Each component has an \emph{identity}, drawn from some potentially infinite
+set.  These identities can be passed in events; thus a process can obtain the
+identity of a component process, and possibly pass it on to a third process.
+This means that each process has a potentially infinite state space (a finite
+control state combined with identities from a potentially infinite set).  When
+process~$p$ holds the identity of a component~$c$, we say that $p$ has a
+\emph{reference} to~$c$.  We describe the setting for our work more formally
+in the next section.
+
+The problem (of showing that a system with $n$ components is correct, for
+all~$n$) is undecidable in general~\cite{apt-kozen,tomasz-gavin-CA}; however,
+verification techniques prove effective on a number of specific instances.
+
+We apply the technique of \emph{view abstraction} to this problem; the general
+technique was originally developed by Abdulla et al.~\cite{AHH}, and
+subsequently adapted to this setting by us~\cite{gavin:view-abs}.
+The idea of view abstraction is that we abstract each system
+state by its \emph{views}, where each view records the states of the fixed
+processes, but just some subset of the components.  
+
+For each analysis, we fix a set of views of interest; for example, we might
+consider all views containing precisely two component states (plus the fixed
+processes).  We then calculate an upper bound on the set of such views of all
+reachable states of all systems of arbitrary size.  By reasoning about this
+set of views, we can show that all such systems are correct.
+
+In the earlier papers, each view contained some fixed number~$k$ of components
+(in~\cite{gavin:view-abs} we allowed the number of components from particular
+families to also be restricted).  This suffers from a state-space explosion:
+many views contain components that are uncorrelated; these do not help to
+capture useful properties of the system; but they do add a lot of states to
+the analysis.  
+
+In this paper we propose a variant of view abstraction that aims to overcome
+this state-space explosion, by restricting the set of views we consider.  Each
+view is based on a particular component, which we call the \emph{principal}.
+The view contains the state of the principal~$p$, the state of each component
+to which $p$ has a reference, and the fixed processes. 
+
+\framebox{More overview of rest of paper}
+
+Invariants captured
+
+Contributions
+
+\framebox{Related work}
+
