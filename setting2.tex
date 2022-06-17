@@ -6,6 +6,7 @@ multiple fixed processes can be modelled by considering the parallel
 composition of those processes as a single process.
 
 \begin{definition}
+\label{def:system}
 A collection of systems is defined by
 %
 \begin{itemize}
@@ -192,11 +193,18 @@ We assume, in each transition
   either synchronises on the transition, or to which the active component
   gains a reference.
 
-\item\label{assump:secondary-cpts-new-refs} A passive component can gain a
+\item\label{assump:extra-event-field} In the case that there is an additional
+  component as in the previous item, then every identity in the event is
+  either a reference initially held by the active component, or the identity
+  of that additional component.
+
+\item\label{assump:secondary-cpts-new-refs} A passive process can gain a
   reference only to a component to which the active process initially holds a
   reference.
 \end{enumerate}
 \end{assumption}
+
+\framebox{Explain} \ref{assump:extra-event-field}
 
 %%   We assume (for simplicity) that a component can acquire at
 %% most one such new reference in a transition.   

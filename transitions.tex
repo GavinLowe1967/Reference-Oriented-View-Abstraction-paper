@@ -148,11 +148,13 @@ identity~$n$.  For example, we could fill the hole to produce a transition
 We call the above an \emph{extended transition}: we have extended the pre-view
 by adding the component for~$n$.  (Recall that we assume that it is necessary
 to add at most one such node, i.e.~the principal component obtains at most one
-new reference in each transition.)  The above transition also illustrates that
-the post-state might be strictly larger than the corresponding view of the
-principal component: the thread loses the reference to~$n_h$ in the
-transition.  It is straightforward to remove components that are no longer
-referenced in order to obtain the relevant view.
+new reference in each transition.)  
+
+The above transition also illustrates that the post-state might be strictly
+larger than the corresponding view of the principal component: the thread
+loses the reference to~$n_h$ in the transition.  It is straightforward to
+remove components that are no longer referenced in order to obtain the
+relevant view.  We write $viewOf(v)$ for the view extracted from~$v$. 
 
 We can generate an extended transition by considering a transition template;
 then extending the pre-state to add a consistent state of a component to which
@@ -181,7 +183,10 @@ view~$v \in V$ (with $c.\id$ disjoint from the identities in~$v$) if there
 exists a state $s \in \gamma(V)$ such that $v \uplus c \sqle s$.
 \end{definition}
 %
-The above condition is rather expensive to check, so we weaken it slightly. 
+The above condition is rather expensive to check, so we weaken it slightly.
+We first introduce a property, \emph{accordance}, which is a necessary
+condition for two views to correspond to the same system state: they agree on
+all common processes.
 %
 \begin{definition}
 Two views $v$ and~$v'$ are \emph{accordant} if (1)~$v.\fixed = v'.\fixed$, and
@@ -190,21 +195,26 @@ then those components are equal.  In this case we write $v \uplus v'$ for
 $(v.\fixed, v.\cpts \union v'.\cpts)$.  
 \end{definition}
 
+
 \begin{definition}
 \label{def:compatible}
 Let $V$ be a set of views.  A component state~$c$ is \emph{compatible} with a
 view $v \in V$ if:
 %
 \begin{enumerate}
-\item\label{item:compatible-1} $V$ contains a view $v_c$ such that $v_c.\princ
-  = c$, and $v$ and~$v_c$ are accordant.
+\item\label{item:compatible-1} $V$ contains a view $v_c$ such that
+$v_c.\princ = c$,
+%$c$ is a component of~$v_c$, 
+and $v$ and~$v_c$ are accordant.
 
 %% (a)~$v_c.\fixed = v.\fixed$, (b)~$v_c.\princ = c$, and (c)~if $c$ has a
 %% reference to a component of~$v$, then $v$ and~$v_c$ agree on that
 %% component.
 
 \item\label{item:compatible-2} If any component $c'$ of~$v$ has a reference
-  to~$c$ then $V$ contains a view $v'$ such that (a)~$v'.\fixed = v.\fixed$,
+  to~$c$ then $V$ contains a view $v'$ such that (a)~$v'$ and~$v$ are
+  accordant,
+% $v'.\fixed = v.\fixed$,
   (b)~$v'.\princ = c'$, and (c)~$v'$ contains $c$.
 \end{enumerate}
 \end{definition}
@@ -260,7 +270,8 @@ transitions correspond to transition templates such as
 \end{alignc}
 \]
 Here the hole needs to be instantiated with a component with identity~$n$
-which synchronises on the transition; this must necessarily be a transition
+(different from any component in the view, so $n \ne n_l$),
+which synchronises on the transition.  This must necessarily be a transition
 from the $\InitNode$ state:
 %% \[ (fixed(t, n_h, n_l); Enq_3^x(t, n_l), \Node_y(n_l, n') \] adding the
 %% node being initialised (which must necessarily be in the $\InitNode$
@@ -309,12 +320,14 @@ of~$v$ and such that
 By assumption, there is at most one such~$id$.
 
 If there is no such $id$, then the view transition contains all relevant
-components. We extract from $v'$ the view~$v''$ of the principal component,
-to create an abstract transition $v \trans[e] v''$.
+components.  Note that in this case, every parameter in $v'$ is also in~$v$,
+by Assumption~\ref{assump:2}.  We extract from $v'$ the view~$v'' =
+viewOf(v')$ of the principal component, to create an abstract transition $v
+\trans[e] v''$.
 
-If there is such an id, we build the transition template
-$v \uplus \hole{id} \trans[e] v' \uplus \hole{id}$.  We then  find all
-component states~$c$ with identity~$id$ that are compatible with~$v$.
+If there is such an id, we build the transition template $v \uplus \hole{id}
+\trans[e] v' \uplus \hole{id}$.  We then find each component state~$c$ from a
+view of~$V$ such that $c$ has identity~$id$ and is compatible with~$v$.
 %% (Definition~\ref{def:compatible}).  
 We form all pre-states $pre = v \uplus c$ by extending $v$ with each such
 component state~$c$.  We form corresponding post-states $post$ by extending
@@ -322,8 +335,8 @@ $v'$ with the corresponding post-states: if $e$ is in the alphabet of~$id$
 then we build $post = v' \uplus c'$ for each state~$c'$ such that $c \trans[e]
 c'$; or otherwise $post = v' \uplus c$.  Thus we form extended transitions
 $pre \trans[e] post$ including all the relevant component states.  Finally, we
-extract from $post$ the view~$v''$ of the principal component, to create an
-abstract transition $v \trans[e] v''$.
+extract from $post$ the view~$v'' = viewOf(post)$ of the principal component,
+to create an abstract transition $v \trans[e] v''$.
 \end{definition}
 
 %%%%%%%%%%

@@ -25,6 +25,7 @@
 \def\sqle{\sqsubseteq}
 \def\rangeRes{\rhd}
 \def\domRes{\lhd}
+\def\equiv{\approx}
 
 % Extractors from process states, views, etc.
 
@@ -50,11 +51,11 @@
 
 %% Algorithm syntax
 
-\def\For{\mathop{\mathsf{for}}}
+\def\For{\mathop{\mathsf{for\ }}}
 \def\Foreach{\mathop{\mathsf{for\ each}}}
 \def\Def{\mathop{\mathsf{def}}}
 \def\Let{\mathop{\mathsf{let}}}
-
+\def\comment#1{\mbox{$//$ #1}}
 
 %\def\improve#1{IMPROVE: \emph{#1}}
 %\def\impNote#1{\textbf{Implementation note:} #1}
@@ -78,8 +79,9 @@
 \input{views}    % Defining the views we use here.
 \input{transitions} % Calculating abstract transitions.
 \input{transitions2} % Induced transitions
-\input{symmetry}   % Introduction to symmetry reduction
 \input{algorithm} 
+\input{symmetry}   % Introduction to symmetry reduction
+\input{symmetry2}
 \input{effectOn}
 %%% singleRef
 

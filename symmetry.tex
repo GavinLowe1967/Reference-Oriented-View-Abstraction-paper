@@ -1,18 +1,17 @@
 \section{Symmetry reduction}
 \label{sec:symmetry}
 
-We now present our use of symmetry reduction.  The techniques of the previous
-section produce a potentially infinite set of views, because the types of
+We now present our use of symmetry reduction.  The technique of the previous
+section produces a potentially infinite set of views, because the types of
 component identities are potentially infinite.  However, many such views are
 symmetric: one can be obtained from another by uniformly remapping the
 parameters.  Our approach is to store a single view from each symmetry
 equivalence class.   
 
-
 Recall that we define a \emph{remapping} to be a partial injective
-function~$\pi$ over non-distinguished parameters, that preserves types (for
-example, maps each node identity to a node identity, and each thread identity
-to a thread identity).  
+function~$\pi$, defined over non-distinguished identities, and that preserves
+types (for example, maps each node identity to a node identity, and each
+thread identity to a thread identity).
 %
 If $\pi$ is a remapping function defined over the parameters of a process
 state~$q$, then we write $\pi(q)$ for the effect of replacing each
@@ -40,18 +39,63 @@ we have
 
 %%%%%
 
+Recall that in Definition~\ref{def:system} we assumed that the fixed process
+and components are symmetric.  In~\cite{gavin:view-abs} we proved the
+following result, which shows that the system as a whole is symmetric.
+%
+\begin{lemma}
+\label{lem:system-pi-bisimilar}
+The state machine defined by a system is symmetric: if $s \in \S$ and
+$\pi$ is a remapping then $s \sim_\pi \pi(s)$.
+\end{lemma}
+%
+Thus the transitions of a state can be deduced from the transitions of a
+symmetric state. 
+
+%%%%%
+
 \begin{definition}
-Given two views~$v$ and $v'$, we say that~$v$ and~$v'$ are \emph{equivalent},
-written $v \equiv v'$, if there is a remapping~$\pi$ such that $\pi(v) = v'$.
-Note that this is an equivalence relation.
+We say that views~$v$ and $v'$ are \emph{equivalent}, written $v \equiv v'$,
+if there is a remapping~$\pi$ such that $\pi(v) = v'$. 
+
+We say that transitions $v_1 \trans[e_1] v_1'$ and $v_2 \trans[e_2] v_2'$ are
+\emph{equivalent} if there is a remapping~$\pi$ such that $\pi(v_1) = v_2$,\,
+$\pi(e_1) = e_2$ and $\pi(v_1') = v_2'$.
+
+We say that transition templates $v_1 \uplus \hole{id_1} \trans[e_1] v_1'
+\uplus \hole{id_1}$ and $v_2 \uplus \hole{id_2} \trans[e_2] v_2' \uplus
+\hole{id_2}$ are \emph{equivalent} if there is a remapping~$\pi$ such that
+$\pi(v_1) = v_2$,\, $\pi(e_1) = e_2$,\, $\pi(v_1') = v_2'$ and $\pi(id_1) = id_2$.
+
+Note that each of these is an equivalence relation.
+
+Given a set~$V$ of views, we write $\overline{V}$ to represent its closure
+under~$\equiv$:
+%
+\begin{eqnarray*}
+\overline{V} & \defs & \set{v \in \V \| \exists v' \in V \spot v \equiv v'}.
+\end{eqnarray*}
+%
+We use similar notation for sets of transitions and transition templates.
 \end{definition}
 
 %%%%%
 
-\framebox{Explain} why it's enough to store views, up to equivalence.  As in
-previous paper.  I think we want roughly Lemma 20--Lemma 23.
 
+Our approach, then, is to store a single representative of each view
+encountered so far: we store a set~$V$ that represents its
+closure~$\overline{V}$.  We treat transitions and transition templates
+similarly, storing sets $trans$ and $transTemplates$ of representatives, which
+represent $\overline{trans}$ and $\overline{transTemplates}$, respectively.
+%
+Below we explain how to simulate the various steps in
+Figures~\ref{fig:algorithm-2} and~\ref{fig:algorithm-3} using this
+representation. 
+%
+But first we describe more precisely how we represent the sets. 
 
+%% \framebox{Explain} why it's enough to store views, up to equivalence.  As in
+%% previous paper.  I think we want roughly Lemma 20--Lemma 23.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -79,16 +123,10 @@ first, followed by secondary components in the order corresponding to the
 references from the principal (without repetitions).  For extended views, any
 additional component is added at the end.  
 
-Given this ordering or processes, we say that a view or extended view is in
+Given this ordering of processes, we say that a view or extended view is in
 \emph{normal form}, if for each type, the first occurrences of each parameter,
 when read from left to right, form an initial segment of that type (according
-to the linear order described above).
-
-A transition $pre \trans{} post$ is in normal form if $pre$ is in normal form,
-the components of~$post$ are in the same order as for~$pre$ (so $post$ itself
-might not be in normal form), and the first occurrences of each parameter
-within the concatenation of $pre$ and $post$ form an initial segment of that
-type.
+to the linear order described above).   
 \end{definition}
 
 For example, the following view is in normal form; we have underlined the
@@ -101,14 +139,121 @@ first occurrence of each parameter.
 \end{align}
 \]
 
-%\framebox{Example} of transition in normal form. 
+Note that for each equivalence class, there is a unique view in normal form.
+We take this to be the representative of that equivalence class.  We write
+$rep(v)$ for the representative of view~$v$. 
 
 A view can be reduced to normal form by a simple left-to-right traversal,
 keeping track of the remapping built so far, and extending it to map the first
 occurrence of each parameter to the first unused parameter of that type.
+
+%%%%%%%%%%
+
+\begin{definition}
+An active-process or extended transition $pre \trans{} post$ is in normal form
+if $pre$ is in normal form, and the components of~$post$ are in the same order
+as for~$pre$.  (Note that every parameter in $post$ is also in~$pre$, by
+Assumption~\ref{assump:2}, so this defines the order of parameters in $post$.
+Note also that $post$ itself might not be in normal form.)
+
+ %% and the first occurrences of each parameter within the concatenation of $pre$
+ %% and $post$ form an initial segment of that type.
+
+A transition template $pre \uplus \hole{id} \trans[e] post \uplus \hole{id}$
+is in normal form if $pre$ is in normal form, the components of~$post$ are in
+the same order as for~$pre$, and $id$ is either a parameter of~$pre$ or is the
+next parameter of its type.
+\end{definition}
+
+For example, consider transition templates of the form
+\begin{equation}
+\begin{alignc}
+(fixed(T_0, N_0, N_1);   Enq_3^x(T_0, N_1), \Node_y(N_1, Null)) \uplus \hole{n}
+    \trans(7)[initNode_x.T_0.n.Null] \\
+\qquad (fixed(T_0, N_0, N_1);
+   Enq_4^x(T_0, N_1, n), \Node_y(N_1, Null)) \uplus \hole{n}.
+\end{alignc}
+\label{trans-template:initNode}
+\end{equation}
+Necessarily $n \ne N_1$ (since the missing component's identity cannot match
+that of a component in the view).  This would be in normal form for $n = N_0$
+or~$N_2$ (it turns out that the former would have no instantiation in the
+running example of a queue: the $\Head$ process can never reference a node in
+the $\InitNode$ state).
+
+%\framebox{Example} of transition in normal form. 
 
 %% \begin{lemma}
 %% \label{lem:normal-form-fixed}
 %% If $s$ and~$s'$ are both in normal form, and $\pi(s)$ and~$\pi'(s')$ are
 %% substates of the same system state, then $s.\fixed = s'.\fixed$.
 %% \end{lemma}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Producing active-process transitions and transition templates}
+
+Recall that we store a set~$V$ of representative views found so far, which
+represents its closure~$\overline{V}$.  Given a view~$v \in V$, we can
+directly calculate its active-process transitions and transition templates, by
+considering the transitions of the individual processes: if there is a missing
+component that has the relevant event in its alphabet, then a transition
+template is formed, otherwise, a transition.
+
+By Lemma~\ref{lem:system-pi-bisimilar}, if $v \trans[e] v'$ then $\pi(v)
+\trans[\pi(e)] \pi(v')$, and vice versa.  Adding $rep(viewOf(v'))$ to the
+set~$V$ of representative views also adds $viewOf(\pi(v')) = \pi(viewOf(v'))$
+to its closure~$\overline{V}$, so captures the active-process transitions
+from~$\pi(v)$.  Thus it is enough to explicitly consider transitions from just
+the representatives.
+
+
+Note that for an active-process transition, every parameter in the post-state
+is also in the pre-state.  Hence every active-process transition from a view
+in normal form will itself be in normal form.  Also, two transitions $v
+\trans[e] v'$ and $\pi(v) \trans[\pi(e)] \pi(v')$ have the same normal form.
+This means that adding the active-process transitions from a representative
+view~$v$ to the set $trans$ of representative transitions also adds the
+active-process transitions from $\pi(v)$ to the closure~$\overline{trans}$.
+
+We can treat transition templates in a similar way, calculating them from the
+view transitions of a view~$v \in V$.  We calculate all view transitions,
+which generates all transition templates with all possible values for the
+identity of the missing component.  (In the implementation, each type of
+identities is finite, but needs to be large enough to be able to produce all
+representative transitions and transition templates, in a sense that we make
+precise \framebox{later}).  For example, this procedure would generate
+transition templates of the form of~(\ref{trans-template:initNode}) for every
+$n \ne N_1$.  But for $n > N_2$, the template is equivalent to that for $n =
+N_2$.  Filtering out the templates not in normal form leaves suitable
+representatives.
+
+
+%% Consider, first, the case where the
+%% identity of the extra component is in the pre-state of the transition, as a
+%% parameter of either a fixed process or a secondary component (e.g., as in
+%% transition~(\ref{trans:getNext})).  Such transition templates can be
+%% calculated directly, as for active-process transitions.  And, as for
+%% active-process transitions, transition templates from views $v$ and~$\pi(v)$
+%% are themselves equivalent, so it is enough to consider just one.
+
+%% Now suppose the identity of the extra component is not in the pre-state of the
+%% transition (as in transition~(\ref{trans:initNode})).  From $v \in V$, we
+%% calculate normal-form transition templates $v \uplus \hole{id} \trans[e] v'
+%% \uplus \hole{id}$.  There are two possibilities.
+%% %
+%% \begin{itemize}
+%% \item The identity $id$ may match a parameter in~$v$, but not the identity of
+%%   a component; this case is very similar to as in the previous paragraph.
+
+%% \item The identity $id$ might be the next unused parameter of that type.
+%%   Consider some other identity~$id'$ distinct from all parameters in the
+%%   transition (so $id' > id$).  Let $\pi$ be a remapping such that $\pi(id) =
+%%   id'$ and otherwise $\pi$~is the identity function over parameters of the
+%%   transition.  Then the corresponding transition template using~$id'$ would be
+%%   $v \uplus \hole{id'} \trans[\pi(e)] \pi(v') \uplus \hole{id'}$.  This is an
+%%   equivalent transition template; hence there is no need to add it to the set
+%%   of representative templates. 
+%% \end{itemize}
+
+

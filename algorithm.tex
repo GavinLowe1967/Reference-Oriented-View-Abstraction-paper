@@ -1,13 +1,18 @@
 \section{The algorithm}
 
-We now present our algorithm, and prove its correctness.  The algorithm is in
-Figure~\ref{fig:algorithm}.  It takes as inputs a system (which defines the
-set~$\V$ of views, and the abstraction and concretisation functions, $\alpha$
+We now present our algorithm, and prove its correctness.  We start with an
+abstract algorithm, in Figure~\ref{fig:algorithm}.  We give a more
+implementation-oriented version, closer to the implementation, in
+Section~\ref{ssec:algorithm-2}.
+
+The abstract algorithm takes as inputs a system (which defines the set~$\V$ of
+views, and the abstraction and concretisation functions, $\alpha$
 and~$\gamma$), and a set $AInit$ of initial views such that $\alpha(Init)
-\subseteq \overline{AInit}$.  It maintains a set $V \subseteq \V$ of views
-encountered so far, up to equivalence; in other words, $V$ represents its
-closure $\overline{V}$.  On each iteration \framebox{\ldots}.  This continues
-until either a transition on $error$ is found, or a fixed point is reached. 
+\subseteq {AInit}$.  It maintains a set $V \subseteq \V$ of views encountered
+so far, and performs a breadth-first search.  On each iteration it calculates
+all abstract transitions $X = aPost(V)$ from the current views, and adds the
+new views to~$V$.  This continues until either a transition on $error$ is
+found, or a fixed point is reached.
 
 \begin{figure}[t]
 \[
@@ -15,9 +20,9 @@ until either a transition on $error$ is found, or a fixed point is reached.
 V := AInit \\
 while(true)\{ \\
 \quad \mbox{if there is an extended transition $pre \trans(3)[error] post$
-  from~$\overline{V}$ then return $failure$} \\
-\quad \mbox{calculate $X$ such that $\overline{X} = aPost(\overline{V})$} \\
-\quad \mbox{for $(v' \in X)$ if $v' \nin \overline{V}$ then 
+  from~${V}$ then return $failure$} \\
+\quad \Let  X = aPost({V}) \\
+\quad \mbox{for $(v' \in X)$ if $v' \nin {V}$ then 
   $V := V \union \set{v'}$} \\
 \quad \mbox{if no new view was added then return $success$} \\ 
 \}
@@ -29,43 +34,51 @@ while(true)\{ \\
 
 %%%%%
 
+In Section~\ref{sec:symmetry}, we use symmetry reduction to represent the
+set~$V$.  This will allow us to prove that the algorithm reaches a fixed point
+after a finite number of iterations.  We prove here that this fixed point will
+be enough to deduce correctness of the systems under consideration. 
+
+%%%%%
+
 \begin{lemma}
 \label{lem:alg-fixed-point}
-If the algorithm does not return $failure$ then $V$ reaches a fixed
-point~$V_{fix}$ such that 
+If the algorithm does not return $failure$, and $V$ reaches a fixed
+point~$V_{fix}$, then
 %% \begin{eqnarray*}
 %% \overline{V}_{fix} & \supseteq & aPost^*(\overline{AInit}),
 %% \end{eqnarray*}
 %% and hence
-$\R \subseteq \gamma( \overline{V_{fix}} )$.
+$\R \subseteq \gamma( {V_{fix}} )$.
 \end{lemma}
 %
 \begin{proof}
 We show that after $n$ iterations,
 \begin{eqnarray*}
-\overline{V} & \supseteq & \textstyle\Union_{i = 0}^n aPost^i(\overline{AInit}),
+{V} & \supseteq & \textstyle\Union_{i = 0}^n aPost^i({AInit}),
 \end{eqnarray*}
 %
 by induction on~$n$.  The base case is trivial.  Suppose the result holds
 for~$V$ at the start of an iteration.  Let $V'$ be the next value of~$V$, so
 \[
 \begin{array}{rcl}
-\overline{V'} & = & \overline{V} \union \overline{X} \\ 
-& = & \overline{V} \union aPost(\overline{V}) \\
-& \supseteq & \Union_{i = 0}^n aPost^i(\overline{AInit}) \union
-      aPost(\Union_{i = 0}^n aPost^i(\overline{AInit})) \\
-& \supseteq & \Union_{i = 0}^n aPost^i(\overline{AInit}) \union 
-  aPost(aPost^n(\overline{AInit})) \\
-& = & \Union_{i = 0}^{n+1} aPost^i(\overline{AInit})
+{V'} & = & {V} \union {X} \\ 
+& = & {V} \union aPost({V}) \\
+& \supseteq & \Union_{i = 0}^n aPost^i({AInit}) \union
+      aPost(\Union_{i = 0}^n aPost^i({AInit})) \\
+& \supseteq & \Union_{i = 0}^n aPost^i({AInit}) \union 
+  aPost(aPost^n({AInit})) \\
+& = & \Union_{i = 0}^{n+1} aPost^i({AInit})
 \end{array}
 \] 
 using the inductive hypothesis and monotonicity of $aPost$. 
 
-The set~$\V$ contains a finite number of equivalence classes.  Hence the
-iteration must reach a fixed point $V_{fix}$ such that
+%% The set~$\V$ contains a finite number of equivalence classes.  Hence the
+%% iteration must reach a fixed point $V_{fix}$ such that
+Hence the presumed fixed point must satisfy
 \[
-\overline{V_{fix}} = \textstyle\Union_{i = 0}^\infty aPost^i(\overline{AInit}) = 
-  aPost^*(\overline{AInit}).
+{V_{fix}} \supseteq  \textstyle\Union_{i = 0}^\infty aPost^i({AInit}) = 
+  aPost^*({AInit}).
 \]
 The result then follows from Proposition~\ref{prop:reachable}.
 \end{proof}
@@ -78,84 +91,241 @@ systems starting in a state in $Init$.
 \end{prop}
 %
 \begin{proof}
-We prove the contra-positive: suppose some reachable state $s \in \R$ has a
-transition on $error$; we show that the algorithm returns $failure$.  
-%
-Lemma~\ref{lem:alg-fixed-point} implies that $s \in
-\gamma(\overline{V_{fix}})$, so $s \in \gamma(\overline{V})$ at some iteration
-of the algorithm.  Then there is an extended transition on $error$
-from~$\overline{V}$ (as in Lemma~\ref{lem:active-process-transitions}), so the
-algorithm returns $failure$.
+If the algorithm returns $success$ then necessarily it has reached a
+fixed point~$V_{fix}$.  Suppose, for a contradiction, that some reachable
+state $s \in \R$ has a transition on $error$.  Then
+Lemma~\ref{lem:alg-fixed-point} implies that $s \in \gamma({V_{fix}})$, so $s
+\in \gamma({V})$ at some iteration of the algorithm.  Then there is an
+extended transition on $error$ from~${V}$ (as in
+Lemma~\ref{lem:active-process-transitions}), so the algorithm returns
+$failure$, giving a contradiction. 
+%% We prove the contra-positive: suppose some reachable state $s \in \R$ has a
+%% transition on $error$; we show that the algorithm returns $failure$.  
+%% %
+%% Lemma~\ref{lem:alg-fixed-point} implies that $s \in \gamma({V_{fix}})$, so $s
+%% \in \gamma({V})$ at some iteration of the algorithm.  Then there is an
+%% extended transition on $error$ from~${V}$ (as in
+%% Lemma~\ref{lem:active-process-transitions}), so the algorithm returns
+%% $failure$.
 \end{proof}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-The algorithm maintains several sets:
-%
-\begin{itemize}
-\item $V$, which contains all views found on previous plies;
-\item $trans$, which contains all transitions found on previous plies;
-\item $transTemplates$, which contains all transition templates found on
-  previous plies.
-\end{itemize}
-%
-It also maintains several sets corresponding to the current ply of the search:
-\begin{itemize}
-\item $thisPly$, which contains views found on the previous ply, and that are
-  expanded on the current ply;
-\item $nextPly$, which contains views found on the current ply, and that will
-  be expanded on the following ply;
-\item $newTrans$, which contains new transitions found on this ply;
-\item $newTransTemplates$, which contains new transition templates found on
-  this ply.
-\end{itemize}
+\subsection{A refined algorithm}
+\label{ssec:algorithm-2}
 
-We assume functions $transitionsOf$ and $transitiontemplatesOf$ that give the
-active-process transitions and transition templates of a view.  
+We now give a more implementation-oriented algorithm.  The algorithm in
+Figure~\ref{fig:algorithm} implicitly considered \emph{all} views in
+$aPost(V)$ on each ply of the search.  Instead, on each ply we want to expand
+only those views found on the previous ply, as is standard for a breadth-first
+search.  
+
+This is complicated by the fact that a new view may be the result of
+\emph{several} previous views, not just one, since $aPost$ is a
+function over a \emph{set} of views.  For example, a transition from an
+earlier ply might induce a transition on a newly found view; or a transition
+template from an earlier ply might now produce a new concrete transition based
+on a newly found view.  
+
+
+%%%%%%%%%%
 
 \begin{figure}
 \[
 \begin{align}
 V := AInit; thisPly := AInit \\
 while(thisPly \ne \set{})\{ \\
-\quad newTrans := \set{}; newTranTemplates := \set{} \\
+\quad newTrans := \set{}; newTransTemplates := \set{}; nextPly := \set{} \\
 \quad \For(v \in thisPly)\ process(v) \\
-\quad  thisPly := nextPly; trans := trans \union newTrans \\
+\quad \comment{update for next round} \\
+\quad V := V \union nextPly; thisPly := nextPly; trans := trans \union newTrans \\
 \quad  transTemplates := transTemplates \union newTransTemplates \\
-\quad for((pre,e,post) \in newTrans)\{ \\
+\quad \comment{extract views from new transitions} \\
+\quad \For ((pre \trans[a] post) \in newTrans)\{ \\
 \qquad \Let v = viewOf(post); 
   \If(v \nin V)\{ V := V \union \set{v}; thisPly := thisPly \union \set{v} \}\\
 \quad \}\\
 \} \\
 \mbox{return $success$}
 \\[2ex]
+%%%%%%
+\comment{Produce abstract transitions from $v$.} \\
 \Def process(v) = \{ \\ % process(v) 
 %% Transitions
-\quad \For ((pre \trans[e] post) \in transitionsOf(v)) \{ \\
-\qquad  \If (e = error)\ \mbox{return $failure$} \\
-\qquad  addTransition(pre, e, post) \\
-\quad \} \\
+\quad \comment{active-process transitions from~$v$} \\
+\quad \For ((pre \trans[e] post) \in transitionsOf(v)) \
+   addTransition(pre \trans[e] post) \\
 %% Transition templates
-\quad \For ((pre \trans[e] post, id) \in transTemplatesOf(v) \{ \\
-\qquad  newTransTemplates := newTransTemplates \union \set{(pre,e,post,id)} \\
+\quad \comment{transition templates from $v$} \\
+\quad \For ((v \uplus \hole{id}  \trans[e] v' \uplus \hole{id}) 
+  \in transTemplatesOf(v) \{ \\
+\qquad  newTransTemplates := newTransTemplates \union
+   \set{v \uplus \hole{id}  \trans[e] v' \uplus \hole{id}} \\
 \qquad \Foreach \mbox{compatible component states~$c, c'$ with identity~$id$} \\
-\qquad\quad           addTransition(pre \uplus c, e, post \uplus c') \\
+\qquad\quad           addTransition(v \uplus c \trans[e] v' \uplus c') \\
 \quad \} \\
-% effectOfPreviousTransitions(v) \\
-\quad \For ((pre,e,post) \in trans)\ makeInducedTrans(pre,e,post,v) \\
-\quad effectOfPreviousTransitionTemplates(v) *** \\
+% effectOfPreviousTransitions(v) 
+\quad \comment{induced transitions on~$v$} \\
+\quad \For ((pre \trans[e] post) \in trans)\ 
+  makeInduced(pre \trans[e] post,v) \\
+% effectOfPreviousTransitionTemplates
+\quad \comment{instantiate transition templates using $v$} \\
+\quad \For ((pre \uplus \hole{id} \trans[e] post \uplus \hole{id})
+   \in transTemplates) \\
+\qquad  \Foreach \mbox{compatible component $c$ of $v$ and post-state~$c'$} \\
+\qquad\quad addTransition(pre \uplus c \trans[e] post \uplus c') \\
 \} % end of process
-\\[2ex]
-\Def addTransition(pre, e, post) = \{ \\
-\quad \If ((pre,e,post) \nin trans)\ 
-        newTrans := newTrans \union \set{(pre,e,post)} \\
-     % effectOnOthers
-\quad \For (v \in V)\ makeInducedTrans(pre,e,post,v) \\
-\} 
-\\ [2ex]
-\Def makeInducedTrans(pre,e,post,v) = \\
-\quad \Let v' \mbox{ be the view induced by $pre \trans[e] post$ on $v$} \\
-\quad \If (v' \nin V)\ nextPly := nextPly \union \set{v'} 
 \end{align}
 \]
+\caption{The refined algorithm.}
+\label{fig:algorithm-2}
 \end{figure}
+
+%%%%%%%%%%
+
+\begin{figure}
+\[
+\begin{align}
+\comment{Store and process the transition $pre \trans[e] post$.} \\
+\Def addTransition(pre \trans[e] post) = \{ \\
+\quad  \If (e = error)\ \mbox{return $failure$} \\
+\quad \If ((pre \trans[e] post) \nin trans)\ 
+        newTrans := newTrans \union \set{pre \trans[e] post} \\
+     % effectOnOthers
+\quad \For (v' \in V)\ makeInduced(pre \trans[e] post, v') \\
+\} 
+\\ [2ex]
+%%%%%
+\comment{Produce transitions induced by $pre \trans[e] post$ on~$v$.} \\
+\Def makeInduced(pre \trans[e] post, v) = \{ \\
+\quad \Let v' \mbox{ be the view induced by $pre \trans[e] post$ on $v$} \\
+\quad \If (v' \nin V)\ nextPly := nextPly \union \set{v'} \\
+\} 
+\end{align}
+\]
+\caption{The refined algorithm (continued).}
+\label{fig:algorithm-3}
+\end{figure}
+
+%%%%%%%%%%
+
+The algorithm is in Figures~\ref{fig:algorithm-2} and~\ref{fig:algorithm-3}.
+It maintains several sets:
+%
+\begin{itemize}
+\item $V$, which contains all views found on previous plies;
+
+\item $trans$, which contains all active-process transitions found on previous
+  plies;
+
+\item $transTemplates$, which contains all transition templates found on
+  previous plies.
+\end{itemize}
+%
+It also maintains several sets corresponding to the current ply of the search:
+%
+\begin{itemize}
+\item $thisPly$, which contains views found on the previous ply, and that are
+  expanded on the current ply;
+
+\item $nextPly$, which contains views found on the current ply, and that will
+  be expanded on the following ply;
+
+\item $newTrans$, which contains new active-process transitions found on this
+  ply;
+
+\item $newTransTemplates$, which contains new transition templates found on
+  this ply.
+\end{itemize}
+
+The main loop calls $process(v)$ for each view~$v$ of the current ply.  At the
+end of each ply, it updates the sets for the following ply; this includes
+extracting the principal's view of the post-state of each new transition. 
+
+The function $process(v)$ considers all abstract transitions that require~$v$,
+possibly combined with other views from~$V$.  There are several aspects of
+this. 
+
+It builds each active-process transition $pre \trans[a] post$ from~$v$, as in
+Definition~\ref{def:active-process-transition}; we assume a function
+$transitionsOf$ that does this.  For each such transition, it calls
+$addTransition$ (Figure~\ref{fig:algorithm-3}).  If the transition involves
+the distinguished event $error$, the main algorithm returns $failure$.
+Otherwise the transition is stored.  Further, the function $makeInduced$ is
+called for each view~$v'$ found on earlier plies, to produce transitions
+induced by $pre \trans[a] post$ on~$v'$, as in
+Definition~\ref{def:induced-transition}.
+
+The function $process(v)$ also builds each transition template $v \uplus
+\hole{id} \trans[e] v' \uplus \hole{id}$ from~$v$, as in
+Definition~\ref{def:active-process-transition}; we assume a function
+$transitionTemplatesOf$ that does this.  It stores each transition template.
+It also tries to instantiate the template.  If finds each component state~$c$
+such that $c$ has identity~$id$ and is compatible with $v$ (with respect
+to~$V$), and corresponding post-state~$c'$, as in
+Definition~\ref{def:active-process-transition} \framebox{improve}, and builds
+the transition $v \uplus c \trans[e] v' \uplus c'$.  It then calls
+$addTransition$ on each such transition.
+
+Further, $process(v)$ considers each transition $pre \trans[e] post$ found on
+a previous ply, and builds all transitions that this induces on~$v$.
+
+Finally, $process(v)$ tries to use~$v$ to instantiate each transition template
+$pre \uplus \hole{id} \trans[a] post \uplus \hole{id}$ found on a previous
+ply.  It considers a compatible component state~$c$ of~$v$ with identity~$id$
+(if any), and corresponding post-state~$c'$, as in
+Definition~\ref{def:active-process-transition}, and builds the transition $pre
+\uplus c \trans[e] pre' \uplus c'$.  It then calls $addTransition$ on each
+such transition.
+
+
+\begin{lemma}
+On each iteration, the procedure in Figures~\ref{fig:algorithm-2}
+and~\ref{fig:algorithm-3} produces every view in $aPost(V)$ that is not
+already in~$V$.
+\end{lemma}
+
+%%%%%
+
+\begin{proof}
+We consider the different forms of abstract transition from
+Definition~\ref{def:abstract-transition}, and use
+Lemma~\ref{lem:abstract-transitions-sound}. 
+
+First consider an active-process transition $v \trans[e] v'$ that requires no
+additional component; and let $v'' = viewOf(v')$.  Then this transition will
+be considered within $process(v)$ on the ply after $v$ is first encountered.
+
+Now consider a view built from a transition template $v_1 \uplus \hole{id}
+\trans[e] v_1' \uplus \hole{id}$, instantiating the hole with a compatible
+component state~$c$ with identity~$id$.  Suppose the view $v_1$ is produced
+on ply~$n-1$, so the transition template is built on ply~$n$.  Consider the
+views required for compatibility of~$c$ and~$v_1$
+(Definition~\ref{def:compatible}); suppose the last of these to be produced
+is~$v_2$, on ply~$k$.
+%% Consider a transition template $v \uplus \hole{id} \trans[e] v' \uplus
+%% \hole{id}$ produced on ply~$n$.  Consider a compatible component state~$c$
+%% with identity~$id$, and consider the views required for compatibility of~$c$
+%% and~$v$ (Definition~\ref{def:compatible}); suppose the last of these to be
+%% produced is~$v_1$, on ply~$k$. 
+If $n \le k$, then the template is instantiated with~$c$ within $process(v_1)$
+on ply~$k+1$.  If $k < n$ then the template is instantiated within $process(v)$
+on ply~$n$.  In each case, the new view is generated on the first ply that it
+appears in $aPost(V)$. 
+
+Finally consider a transition $pre \trans[e] post$ produced on ply~$n$, a
+view~$v$ produced on ply~$k$, and an induced transition producing view~$v'$.
+If $n \le k$, the induced transition will be produced within $process(v)$ on
+ply~$k+1$.  If $k < n$ then the induced transition will be produced within
+$addTransition(pre \trans[e] post)$ on ply~$n$.  In each case, $v'$~is
+generated on the first ply that it appears in $aPost(V)$.
+\end{proof}
+
+Note that when instantiating a transition template, we need to
+consider \emph{every} component~$c$ of the relevant view, not just the
+principal.  It might be that the relevant $c$ is not the principal of the
+\emph{last} relevant view to be found.
+\begin{improve}
+However, in the case of instantiating a new template with prior views, I think
+it would be enough to consider just the principal.  Try this.
+\end{improve}
