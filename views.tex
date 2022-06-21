@@ -29,10 +29,10 @@ terms of all such views.
 %
 \begin{eqnarray*}
 \alpha(s) & = & \set{ view(s, p) \| p \in s.\cpts } \\
-\V & = & \Union_{s \in \S} \alpha(s)
+\V & = & \textstyle\Union_{s \in \S} \alpha(s)
 \end{eqnarray*}
 
-In examples, we will write views by listing their fixed components in some
+In examples, we will write views by listing their fixed processes in some
 standard order, then listing the components with the principal first, and then
 following the order of the references in the principal's parameters.  (Our
 implementation uses the same order.)  For instance, in the example of
@@ -40,23 +40,23 @@ Figure~\ref{fig:lock-based-queue}, the views will include,
 \[
 \begin{align}
 (\Lock'(t), \Head(n_h), \Last(n_l), \Con_3; 
-  Enq_4(t, n_l, n), \Node_y(n_l, null),\Node_x(n, n_l)),
+  Enq_4(t, n_l, n), \Node_y(n_l, Null),\Node_x(n, n_l)),
 \end{align}
 \]
 for $t \in ThreadID$, $n_h, n_l, n \in NodeID$, and~$x, y \in D$.  Here the
 principal~$t$ has references to~$n_l$ and~$n$, so the two corresponding nodes
-are included as secondary components.
-Likewise, the following would be a view of the node~$n_1$:
-\[
-(\Lock'(t), \Head(n_h), \Last(n_l), \Con_3; \Node_x(n_1, n_2), \Node(n_2, n_3)).
+are included as secondary components.  Likewise, the following would be the
+corresponding view of the node~$n$:
+\[ \mit
+(\Lock'(t), \Head(n_h), \Last(n_l), \Con_3; \Node_x(n, n_l), \Node_y(n_l, Null)).
 \]
 
 The initial views $AInit$ are of the form
 \[
 \begin{array}{ll}
-(\Lock, \Head(null), \Last(null), \Con_0; Thread(t)), &
+(\Lock, \Head(Null), \Last(Null), \Con_0; Thread(t)), &
    \mbox{for $t \in ThreadID$}, \\
-(\Lock, \Head(null), \Last(null), \Con_0; \InitNode(n)), & 
+(\Lock, \Head(Null), \Last(Null), \Con_0; \InitNode(n)), & 
    \mbox{for $n \in NodeID$}.
 \end{array}
 \]
@@ -71,17 +71,17 @@ fixed(t, n_h, n_l) & = & (\Lock'(t), \Head(n_h), \Last(n_l), \Con_3), \\
 fixed(\_, n_h, n_l) & = & (\Lock, \Head(n_h), \Last(n_l), \Con_3).
 \end{eqnarray*}
 %
-These are fixed processes where: the head and last nodes are $n_h$ and~$n_l$;
-the lock is held by~$t$ or not held (respectively); and the constructor has
-completed.
+These are fixed processes where: the lock is held by~$t$ or not held
+(respectively); the head and last nodes are $n_h$ and~$n_l$; and the
+constructor has completed.
 
 Note that if one of the principal's parameters is a distinguished value, then
 there is no corresponding component in the view.  For example, the following
 would be a valid view of node~$n$, whose |next| reference is the distinguished
-value~|Null|: 
+value~$Null$: 
 %% , where the thread's second reference is the distinguished value~$Null$ (in
 %% fact, no such state is reachable in the lock-based queue example).
-\[
+\[ \mit
 (fixed(t, n_h, n_l);  \Node_x(n, Null)).
 \]
 
@@ -101,10 +101,9 @@ value~|Null|:
 
 % \subsection{Calculating abstract transitions}
 
-{prop:reachable}
 
-The critical thing. in order to apply Proposition~\ref{prop:reachable}, is
-that given $V \subseteq \V$, we need to calculate a representation of
+In order to apply Proposition~\ref{prop:reachable}, given $V \subseteq \V$, we
+need to calculate a representation of
 %
 \begin{eqnarray*}
 aPost(V) & = & \alpha(post(\gamma(V)))
@@ -127,7 +126,8 @@ need to deal with the following difficulties.
 
 \item Even if $V$ is finite, the set $\gamma(V)$ can become very large.  We
   want to calculate an upper bound to $aPost(V)$ without calculating all of
-  $\gamma(V)$.  We describe how to do this in Section~\ref{sec:transitions}. 
+  $\gamma(V)$.  We describe how to do this in Sections~\ref{sec:transitions}
+  and~\ref{sec:algorithm}.
 \end{itemize}
 
 %% We are seeking to identify views~$v$ such that

@@ -17,19 +17,21 @@ We give two small examples to introduce some of the ideas.  We start with a
 toy mutual exclusion example.  A resource is shared by a number of threads; a
 lock is used to ensure mutual exclusion.
 
-Each thread, with identity $me$, is modelled by a state machine as in the
-top-left of Figure~\ref{fig:mutual-exclusion}.  Likewise, the lock is modelled
-by the state machine in the top-right of the figure. 
+Each thread, with identity $me$, is modelled by a state machine, illustrated
+in the top-left of Figure~\ref{fig:mutual-exclusion}.  The thread repeatedly
+locks the lock, starts using the resource, ends using the resource, and
+unlocks the lock.  Likewise, the lock is modelled by the state machine in the
+top-right of the figure.
 %
 Each state comprises a \emph{control state} and zero or
 more \emph{parameters}; in the case of the lock, there are two control states,
 which have zero and one parameters, respectively.  Each transition is labelled
-by an \emph{event}. (We use CSP-style notation; the notation $lock?t$
-indicates that the process is willing to perform any event of the form
-$lock.id$, and binds the name~$t$ to the corresponding value~$id$.)  Different
-processes synchronise on common events; for example, the thread with
+by an \emph{event}. (We use CSP-style notation in the figure; the notation
+$lock?t$ indicates that the process is willing to perform any event of the
+form $lock.id$, and binds the name~$t$ to the corresponding value~$id$.)
+Different processes synchronise on common events; for example, the thread with
 identity~$me$ will synchronise with the lock on the events $lock.me$ and
-$unlock.me$.   
+$unlock.me$.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -92,11 +94,12 @@ threads are using the resource simultaneously.  The correctness condition,
 then, is that $error$ does not occur.
 
 A system will consist of an arbitrary collection of threads, but a single lock
-and a single watchdog.  Therefore we model the threads as replicated
-components (each with its own identity), but the lock and watchdog as fixed
-processes.  Formally, each system is parameterised by its set of thread
-identities.  We want to verify all such systems, i.e.~for an arbitrary number
-of threads.
+and a single watchdog.  Therefore we model the threads as components (each
+with its own identity), but the lock and watchdog as fixed processes.
+Formally, each system is parameterised by a set $ThreadID$ of thread
+identities.  Each system state comprises a state for each thread $t \in
+ThreadID$, and a state for each fixed process.  We want to verify all such
+systems, i.e.~for an arbitrary collection of threads.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -132,9 +135,9 @@ def enqueue(x: D) = {
 Each node hold a piece of data~$x$, of some type~$D$, and a reference~$next$
 to the next node in the linked list, which might be a special value~|null|.
 In the state machine (top of Figure~\ref{fig:lock-based-queue}), each node has
-an identity~$me$, and (once initialised) an additional reference~$next$.  The
+an identity~$me$, and (once initialised) an additional parameter~$next$.  The
 data value $x$~is treated as part of the control state: we use parameters only
-for value from the type of a family of components.
+for values from the type of a family of components.
 
 %% corresponding to types and of the initialising channel, since it does not
 %% correspond to the identity of a component.  We assume that the type~$D$ of
@@ -160,7 +163,7 @@ for value from the type of a family of components.
 \path[draw,->] (node) .. controls +(-1.4,1) and +(1.4,1) .. 
 % self-loops
   node[above] {\scriptsize
-   $\begin{array}{c} getNext?t.me.next\\ getDatum_x?t.me \end{array}$} (node);
+   $\begin{array}{c} getNext?t.me.next\\ getDatum?t.me.x \end{array}$} (node);
 \path[draw,->] (node) .. controls +(-1.4,-1) and +(1.4,-1) .. 
   node[below] {\scriptsize
    $\begin{array}{c} setNext?t.me?next' \\ {[next := next']} \end{array}$}
@@ -182,7 +185,7 @@ for value from the type of a family of components.
 \path[draw, ->] (enq2) -- node[above]{\scriptsize $getLast.me?l$} (enq3);
 %% Enq_4
 \draw (enq3)++(0,1.7) node (enq4) {$Enq_4^x(me,l,n)$};
-\path[draw, ->] (enq3) -- node[right]{\scriptsize $initNode.me?n$} (enq4);
+\path[draw, ->] (enq3) -- node[right]{\scriptsize $initNode.me?n.x$} (enq4);
 %% Enq_5
 \draw (thread)++(0,-3.4) node (enq5) {$Enq_5^x(me,n)$};
 \path[draw, ->] (enq4) -- node[above]{\scriptsize $setNext.me.l.n$} (enq5);
@@ -280,52 +283,69 @@ model that, on each iteration, a thread chooses nondeterministically whether
 to perform an enqueue or a dequeue; in the state machine, these transitions
 are labelled with the internal event~$\tau$.
 
-We want to verify systems using an arbitrary number of threads and an
-arbitrary number of nodes.  We therefore consider systems with two families of
-replicated components (with distinct types of identities). 
-
 The lock, and shared |head| and |last| variables are each modelled as a fixed
 process.  In addition, we model a \emph{constructor thread} (at the bottom of
 the figure), which initialises the dummy header node and the two variables;
 note that we model this as a fixed process, although it has an implicit
 identity~$C$, of the same type as threads.
 
+We want to verify systems using an arbitrary number of threads and an
+arbitrary number of nodes.  We therefore consider systems with two families of
+components (with distinct types of identities). 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 \subsection{Processes}
 
-We now formalise the representation of processes.  In the next subsection, we
-lift this to systems.
+We now formalise the representation of processes: they can be thought of as a
+restricted form of CSP process.  In the next subsection, we lift this to
+systems.
+
+We assume disjoint types $\T_1, \ldots, \T_n$ that represent identities of
+different families of components (e.g.~thread identities and node
+identities), and let $\T = \T_1 \union \ldots \union \T_n$.  Each particular
+system we consider will have components with identities from some subset
+of~$\T$. 
+%% The identities of components may be taken from disjoint types, such as thread
+%% identities and node identities.  
+Further, we allow these types to contain certain values that do not correspond
+to a component; we call these values \emph{distinguished}.  In the queue
+example we used two distinguished values: the identity $C$ of the constructor
+(remember the constructor was a fixed process, not a component); and the
+value~$Null$ representing the |null| node reference.  Given a set
+$T \subseteq \T$, we write $\hat{T}$ for the non-distinguished elements
+(i.e.~real component identities) in~$T$. 
 
 Each process state is a pair $(cs, \vec p)$ where $cs$~is a control state and
-$\vec p$ is a vector of parameters.  The first parameter of a component is
-always its own identity.  Other parameters are references to other components.
-For the fixed process, all parameters are references to components.  We will
-often denote the pair $(cs, \seq{x_1,\ldots,x_k})$ as $cs(x_1,\ldots,x_k)$ (as
-in the examples).
+$\vec p$ is a vector of identities, which we call \emph{parameters}.  The
+first parameter of a component is always its own identity.  Other parameters
+are references to other components.  For the fixed processes, all parameters
+are references to components.  We will often denote the pair
+$(cs, \seq{x_1,\ldots,x_k})$ as $cs(x_1,\ldots,x_k)$ (as in the examples).
 
 We write $q.\cs$ and $q.\params$ for the control state and parameters of
 process state~$q$.  If $q$ is a component state, we write $q.\id$ for its
 identity.  For a vector of parameters~$\vec p$, we write $\vec p(i)$ for the
-$i$th entry (counting from~1), so for a component~$q$,\, $q.\params(1) =
-q.\id$.
+$i$th entry (counting from~1) \framebox{needed?}, so for a component~$q$,\,
+$q.\params(1) = q.\id$.
 
 Similarly, an event is a pair $(ch, \vec p)$ where $ch$ is a channel and
-$\vec{p}$ is a vector of parameters, corresponding to identities of
-components.  We will often denote the pair $(ch, \seq{x_1,x_2,\ldots,x_k})$ as
-$ch.x_1.x_2.\cdots.x_k$.  Formally, any field of an event that does not
-correspond to a component identity, like a data value in the queue example, is
-considered to be part of the channel name; but in examples we use simpler
-notation.
+$\vec{p}$ is a vector of identities.  We will often denote the pair
+$(ch, \seq{x_1,x_2,\ldots,x_k})$ as $ch.x_1.x_2.\cdots.x_k$.  Formally, any
+field of an event that does not correspond to a component identity, like a
+data value in the queue example, is considered to be part of the channel name;
+but in examples we use simpler notation.  The distinguished event~$\tau$
+represents an internal event (with no parameters).
 
+Each process is defined by a state machine.
+%
 \begin{definition}
 \label{def:state-machine}
-A \emph{state machine} is a tuple $(Q, \Sigma, \delta)$, where: $Q$ is a set
-of \emph{states}; $\Sigma$ is a set of \emph{visible events} with
-$\tau \nin \Sigma$ ($\tau$ represents an internal event);
-% $q_0 \in Q$ is an initial state; 
-and
+A \emph{state machine} is a tuple $(Q, \Sigma, q_0, \delta)$, where: $Q$ is a
+set of \emph{states} (as above); $\Sigma$ is a set of \emph{visible events}
+(again as above) with $\tau \nin \Sigma$; $q_0 \in Q$ is an initial state; and
 \( \delta \subseteq Q \cross (\Sigma \union \set{\tau}) \cross Q \) is a
 transition relation.
 We write $q \trans(1)[a] q'$ if $(q,a,q') \in \delta$.
@@ -343,20 +363,13 @@ We write $q \trans(1)[a] q'$ if $(q,a,q') \in \delta$.
 %% finite set~$Chan$ of \emph{channels}.
 %% \end{itemize}
 
-We assume a finite set of control states.  In examples like the lock-based
+We assume a finite set of control states.  However, the parameters vary over a
+potentially infinite set.  In examples like the lock-based
 queue, where data values can be part of a control state, this requires the
 type of data values to also be finite; in Section~\ref{sec:examples} we deduce
 results about system that use an infinite data type from results about models
-that uses a finite type, using techniques from data independence.  We also
-assume a finite set of channels.
-
-The identities of components may be taken from disjoint types, such as thread
-identities and node identities.  Further, we allow these types to contain
-certain values that do not correspond to a component; we call these
-values \emph{distinguished}.  In the queue example we used two distinguished
-values: the identity $C$ of the constructor (remember the constructor was a
-fixed process, not a component); and the value~$Null$ representing the |null|
-node reference in the queue example.
+that uses a finite type, using techniques from data independence.  We
+similarly assume a finite set of channels.
 
 %Assume a state machine for each individual process.  
 We assume that the states of a state machine are well typed in the sense that
@@ -365,13 +378,13 @@ parameters: if $cs(x_1,\ldots,x_n), cs(x_1',\ldots,x_{n'}') \in Q$, then $n =
 n'$, and $x_i$ and~$x_i'$ are from the same type, for each~$i$.  Likewise,
 we assume that the set of visible events is well typed.
 
-The processes in the above examples are symmetric in the references they held.
+The processes in the above examples are symmetric in the references they hold.
 We make this notion of symmetry formal now.
 %
-Suppose the types of component identities are $T_1$, \ldots, $T_n$, assumed
-disjoint.  Let $\pi$ be a bijection on each type, i.e.~it is a function over
-$T_1 \union \ldots \union T_n$ such that if $x \in T_i$ then $\pi(x) \in T_i$,
-and such that the restriction of~$\pi$ to~$T_i$ is a bijection.  We call each
+Recall that the type of identities is partitioned, $\T
+= \T_1 \union \ldots \T_n$.  Let $\pi$ be a bijection on each type, i.e.~it is
+a function over $\T$ such that if $x \in \T_i$ then $\pi(x) \in \T_i$, and
+such that the restriction of~$\pi$ to~$\T_i$ is a bijection.  We call each
 such function~$\pi$ a \emph{remapping}.
 
 We lift remapping~$\pi$ to vectors of identities by point-wise application; we
@@ -388,7 +401,7 @@ $\pi$-bisimilar~\cite{moffat-symmetry}.
 %
 \begin{definition}
 \label{def:pi-bisimilar}
-Let $M = (Q, \Sigma, \delta)$ be a state machine, and let $\pi$ be a
+Let $M = (Q, \Sigma, q_0, \delta)$ be a state machine, and let $\pi$ be a
 remapping.  We say that $\mathord{\sim} \subseteq Q \times Q$ is
 a \emph{$\pi$-bisimulation} iff $\pi(\Sigma) = \Sigma$, and whenever $(q_1,
 q_2) \in \mathord{\sim}$ and $a \in \Sigma \union \set{\tau}$:
@@ -405,21 +418,21 @@ $\exists q_1' \in Q \cdot q_1 \trans(3)[\pi^{-1}(a)] q_1' \land q_1' \sim q_2'$.
 
 \begin{definition}
 \label{def:symmetric-state-machine}
-A parameterised state machine $(Q, \Sigma, \delta)$ is \emph{symmetric} if for
+A state machine $(Q, \Sigma, q_0, \delta)$ is \emph{symmetric} if for
 every remapping~$\pi$,\, 
 $\set{ (cs(\vec{x}), cs(\pi(\vec{x}))) \| cs(\vec{x}) \in Q}$ is a
 $\pi$-bisimulation.
 \end{definition}
 
 The node and thread state machines in Figure~\ref{fig:lock-based-queue} are
-symmetric.  For example, the states $Node_A(N_0, N_1)$ and $Node_A(N_1,N_4)$
+symmetric.  For example, the states $\Node_A(N_0, N_1)$ and $\Node_A(N_1,N_4)$
 are $\pi$-bisimilar for each $\pi$ with $\pi(N_0) = N_1$ and $\pi(N_1) = N_4$.
 
 This notion of symmetry is a natural condition.  In~\cite{gavin-tom-symmetry},
 we proved that an \emph{arbitrary} process defined using machine-readable CSP
-will be symmetric in this sense under rather mild syntactic conditions,
-principally  that the definition of the process contains no
-non-distinguished constant from the types of identities.
+is symmetric under rather mild syntactic conditions, principally that the
+definition of the process contains no non-distinguished constant from the
+types of identities.
 
 %%%%%
 

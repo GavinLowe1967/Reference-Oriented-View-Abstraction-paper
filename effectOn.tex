@@ -1,8 +1,8 @@
-\section{Calculating induced transitions with symmetry reduction}
+\subsection{Calculating induced transitions}
 \label{sec:induced-symmetry}
 
-In this section, we consider consider how to calculate the transition induced
-by a transition $pre \trans{e} post$ on a view~$v$, given that both are in
+We now consider how to calculate the transition induced
+by a transition $pre \trans[e] post$ on a view~$v$, given that both are in
 normal form and represent all members of their equivalence classes.  
 %
 Following Definition~\ref{def:induced-transition}, in principle, we need to
@@ -18,13 +18,6 @@ Below, we restrict the range of such renamings further, while ensuring we
 produce a representative of each equivalence class of resulting post-views.
 
 
-%% We start by considering full views; in Section~\ref{sec:effectOn-restricted}
-%% we consider restricted views.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%\subsection{Full views} 
-%\label{ssec:effectOn-full}
 
 Recall that in order to be accordant, if $\pi(v)$ and $pre$ each have a
 component with the same identity, then those components must be equal.  We say
@@ -43,18 +36,18 @@ Of course, it is possible to unify two components only if they have the same
 control state. 
 
 Recall that if $\pi(v)$ and~$pre$ are accordant, then their fixed processes
-are equal.  The following lemma follows from the way we have defined normal
-forms. 
-%% But $v$ and $pre$ are stored in normal form, so this will be the
-%% case only if the fixed processes of $v$ and~$pre$ are equal, and
-%% $\pi$ is be the identity function on all parameters of those fixed
-%% processes.  
-%
-\begin{lemma}
-If $v$ and~$pre$ are both in normal form, and $\pi(v)$ and~$pre$ are
-accordant, then $v.\fixed = pre.\fixed$ and $\pi$ is the identity over the
-parameters of~$v.\fixed$.
-\end{lemma}
+are equal.  Lemma~\ref{lem:remapping-id-on-fixed-params} then implies that
+$v.\fixed = pre.\fixed$ and $\pi$ is the identity over the parameters
+of~$v.\fixed$.
+
+%% The following lemma follows from the way we have defined normal
+%% forms. 
+%% %
+%% \begin{lemma}
+%% If $v$ and~$pre$ are both in normal form, and $\pi(v)$ and~$pre$ are
+%% accordant, then $v.\fixed = pre.\fixed$ and $\pi$ is the identity over the
+%% parameters of~$v.\fixed$.
+%% \end{lemma}
 
 %%%%%
 
@@ -75,12 +68,11 @@ $pre$ and~$v$ have fixed processes in the same states, so there is the
 potential to produce a renaming~$\pi(v)$ accordant with~$pre$.  We start with
 the partial renaming function $\pi = \set{N_0 \mapsto N_0}$, the identity over
 the parameters of the fixed processes.
-
-It is worth noting that the identifiers $N_1$, $N_2$ and~$N_3$ that appear in
-both~$pre$ and~$v$ might represent different parameters, since each substate
-is just a representative of its equivalence class.  The fact that the same
-identifiers appear in each substate is just an artefact of the way we produce
-normal forms.
+%% It is worth noting that the identifiers $N_1$, $N_2$ and~$N_3$ that appear in
+%% both~$pre$ and~$v$ might represent different parameters, since each substate
+%% is just a representative of its equivalence class.  The fact that the same
+%% identifiers appear in each substate is just an artefact of the way we produce
+%% normal forms.
 \end{example}
 
 %%%%%
@@ -133,7 +125,7 @@ following definition describes what that means.
 %
 \begin{definition}
 \label{def:consistent-extension}
-Let $pre \trans{e} post$ be an extended transition, and $v$ be a view, both in
+Let $pre \trans[e] post$ be an extended transition, and $v$ be a view, both in
 normal form, with $v.\fixed = pre.\fixed$.
 %
 Consider a partial unification function~$\pi$.  We define an extension~$\pi'$
@@ -149,7 +141,7 @@ would require unifying~$c$ and~$c'$).
 The following lemma follows directly from the definitions.
 %
 \begin{lemma}
-Let $pre \trans{e} post$ be an extended transition, and $v$ be a view, both in
+Let $pre \trans[e] post$ be an extended transition, and $v$ be a view, both in
 normal form, with $v.\fixed = pre.\fixed$.  Then every unification
 function~$\pi$ is a consistent extension of a partial unification function,
 and vice versa.
@@ -173,7 +165,7 @@ verify this fact as Proposition~\ref{prop:unifying-renaming}.
 
 \begin{definition}
 \label{def:representative-consistent-extension}
-Consider an extended transition~$pre \trans{e} post$, a view~$v$, and a
+Consider an extended transition~$pre \trans[e] post$, a view~$v$, and a
 partial unification function~$\pi$.  We define a consistent extension~$\pi'$
 of~$\pi$ to be a \emph{representative consistent extension} if for every
 parameter~$x$ in~$v$ but not in the domain of~$\pi$,\, $\pi'(x)$ is one of the
@@ -252,18 +244,18 @@ extensions is enough to produce all induced transitions, up to equivalence.
 %
 \begin{prop}
 \label{prop:unifying-renaming}
-Consider an extended transition $pre \trans{e} post$ and a view~$v$, both in
+Consider an extended transition $pre \trans[e] post$ and a view~$v$, both in
 normal form, with $v.\fixed = pre.\fixed$.  Consider also a partial
 unification function~$\pi$.
 %
 Let $\pi'$ be a consistent extension of~$\pi$, and
 let $v'$ be the view produced by Definition~\ref{def:induced-transition}
-considering the effect of $pre \trans{e} post$ on~$\pi'(v)$.  
+considering the effect of $pre \trans[e] post$ on~$\pi'(v)$.  
 %
 Then there is a representative consistent extension~$\pi''$ of~$\pi$, such
 that, letting $v''$ be the view produced by
 Definition~\ref{def:induced-transition} considering the effect of $pre
-\trans{e} post$ on~$\pi''(v)$, we have $v'' \equiv v'$.
+\trans[e] post$ on~$\pi''(v)$, we have $v'' \equiv v'$.
 \end{prop}
 
 %%%%%%
@@ -354,7 +346,7 @@ all choices of unification and corresponding renaming function~$\pi$.  Then
 
 %%%%%
 
-\subsection{Optimisations} 
+\subsubsection{Optimisations} 
 
 
 %%%%%
@@ -371,7 +363,7 @@ Recall Optimisation~\ref{opt:avoid-induced}.
 
 \item For case~\ref{case:avoid-induced-3}, we store a record of pairs
   $(v, post.\fixed)$ for which we have considered the effect of a transition
-  $pre \trans{e} post$ on~$v$ for which $pre.\fixed \ne post.\fixed$,\,
+  $pre \trans[e] post$ on~$v$ for which $pre.\fixed \ne post.\fixed$,\,
   %% $unifs$ describes which components of~$v$ unify with which components
   %% of~$pre$ (
   and $v$

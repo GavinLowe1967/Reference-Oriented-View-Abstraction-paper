@@ -24,20 +24,11 @@ call these \emph{active-process transitions}.
 
 Informally, our approach will be as follows.  We will start with a view $v \in
 V$, and consider transitions involving either an active principal or active
-fixed process synchronising on the transition.
-%% ; (1)~of the principal, if it is an active component; (2)~of any active
-%% fixed process, either synchronising with the principal or no component.
-In some cases we will need to expand the view to include additional relevant
-components: either those components that synchronise on the transition, or to
-which the principal component obtains a reference.  Recall
-(clause~\ref{assump:max-one-extra-component} of Assumption~\ref{assump:2}) that
-we assume that there is at most one such new component (for simplicity).  When
-we expand a view in this way, we do so only in a way that is compatible with
-the set $V$ of views.
-
-Each such transition will be built from a \emph{view transition}, i.e.~a
-transition formed by considering a single view in isolation, as captured by
-the following definition.
+fixed process synchronising on the transition.  Often, other fixed processes
+or secondary components in~$v$ will synchronise on the transition (i.e.~have
+the relevant event in their alphabet).  We call such a transition a \emph{view
+  transition}, i.e.~a transition formed by considering a single view in
+isolation.
 %
 \begin{definition}
 We define a \emph{view transition} of view~$v$ to be a transition $v \trans[e]
@@ -87,27 +78,30 @@ principal component.  Further, the pre-view contains all components with
 $lock.t$ in their alphabet (just the principal), so in a concrete state, no
 other process would synchronise on the transition.
 
-\framebox{IMPROVE:} maybe consider the $setHead$ transition instead, here. 
+% \framebox{IMPROVE:} maybe consider the $setHead$ transition instead, here. 
 
 As an example of a transition with an active fixed process, the construction
 of the initial dummy header node is described by the following view
 transition.
 \[
 \begin{align}
-(\Lock, \Head(null), \Last(null), \Con_0; \InitNode(n)) 
+(\Lock, \Head(Null), \Last(Null), \Con_0; \InitNode(n)) 
   \trans(9)[initNode.C.n.v_0] \\
-\qquad (\Lock, \Head(null), \Last(null), \Con_1(n); \Node_{v_0}(n, null)).
+\qquad (\Lock, \Head(Null), \Last(Null), \Con_1(n); \Node_{v_0}(n, Null)).
 \end{align}
 \]
 Here the only component that synchronises on the transition is the principal.
 This view transition is again an abstract transition.
 
-The above two abstract transitions can be found by looking just at the view
-transitions of the pre-view.  However, this isn't always the case.
-%
-%% The abstract transition in the previous paragraphs was fairly straightforward,
-%% as all the relevant component states were in the initial view.  This might not
-%% always be the case.  
+In some cases, we will need to expand the view to include additional relevant
+components: either other components that synchronise on the transition, or to
+which the principal component obtains a reference.  Recall
+(clause~\ref{assump:max-one-extra-component} of Assumption~\ref{assump:2})
+that we assume that there is at most one such new component (for simplicity).
+%% When we expand a view in this way, we do so only in a way that is compatible
+%% with the set $V$ of views (in a sense that we define below).
+%% The above two abstract transitions can be found by looking just at the view
+%% transitions of the pre-view.  However, this isn't always the case.
 Consider a transition where a dequeueing thread reads the (non-null) $next$
 reference from the head node.  This can be partially described by the view
 transition
@@ -146,9 +140,10 @@ identity~$n$.  For example, we could fill the hole to produce a transition
 \end{equation}
 %
 We call the above an \emph{extended transition}: we have extended the pre-view
-by adding the component for~$n$.  (Recall that we assume that it is necessary
-to add at most one such node, i.e.~the principal component obtains at most one
-new reference in each transition.)  
+by adding the component for~$n$.  
+%% (Recall that we assume that it is necessary to add at most one such node,
+%% i.e.~the principal component obtains at most one new reference in each
+%% transition.)
 
 The above transition also illustrates that the post-state might be strictly
 larger than the corresponding view of the principal component: the thread
@@ -175,7 +170,7 @@ The implementation represents a transition that requires an
 \end{impNote}
 
 The following definitions describe what we mean by \emph{consistent}: that the
-combined view is included in some system state in~$\gamma(V)$.
+extended view is included in some system state in~$\gamma(V)$.
 %
 \begin{definition}
 Let $V$ be a set of views.  A component state~$c$ is \emph{consistent} with a
@@ -222,11 +217,10 @@ and $v$ and~$v_c$ are accordant.
 Informally, the condition says that we can find individual views that
 correspond to references within $v \uplus c$. 
 
-We prove as
-Lemma~\ref{lem:consistent-implies-compatible} that consistency implies
-compatibility.  The implementation creates extended transitions by extending a
-view transition with a compatible state, thus (slightly) over-approximating
-the transitions.  Our experience is that this approximation
+We prove as Lemma~\ref{lem:consistent-implies-compatible} that consistency
+implies compatibility.  The implementation creates extended transitions by
+extending a view transition with a compatible state, thus (slightly)
+over-approximating the transitions.  Our experience is that this approximation
 does not lead to false positives.
 
 \begin{improve}
@@ -249,22 +243,14 @@ This is checked in
   \texttt{Extendability.isExtendable} checking the latter clause.
 \end{impNote}
 
-
-%% We show in Section~\ref{sec:views-correctness} that consistency
-%% implies compatibility.  Our implementation uses the weaker definition of
-%% compatibility; this means that we over-estimate the abstract transition
-%% relation, so preserve correctness.  Our experience is that this approximation
-%% does not lead to false positives.
-
 In the transitions we have considered so far, the pre-view contains every
-component that synchronises on the transition.  This won't always be true.  In
-such a case, we extend the pre-view to add each compatible state of such a
-component that can perform the relevant state.  For example, $initNode$
-transitions correspond to transition templates such as
+component that synchronises on the transition.  When this isn't the case, we
+need to extend the pre-view to add each compatible state of such a component.
+For example, $initNode$ transitions correspond to transition templates such as
 \[
 \begin{alignc}
 (fixed(t, n_h, n_l);   Enq_3^x(t, n_l), \Node_y(n_l, n'), \bighole{n})
-    \trans(7)[initNode_x.t.n.null] \\
+    \trans(7)[initNode_x.t.n.Null] \\
 \qquad (fixed(t, n_h, n_l);
    Enq_4^x(t, n_l, n), \Node_y(n_l, n'), \bighole{n}).
 \end{alignc}
@@ -273,40 +259,23 @@ Here the hole needs to be instantiated with a component with identity~$n$
 (different from any component in the view, so $n \ne n_l$),
 which synchronises on the transition.  This must necessarily be a transition
 from the $\InitNode$ state:
-%% \[ (fixed(t, n_h, n_l); Enq_3^x(t, n_l), \Node_y(n_l, n') \] adding the
-%% node being initialised (which must necessarily be in the $\InitNode$
-%% state).
+%
 \begin{equation}
 \begin{alignc}
 (fixed(t, n_h, n_l);   Enq_3^x(t, n_l), \Node_y(n_l, n'), \InitNode(n))
-    \trans(7)[initNode_x.t.n.null] \\
+    \trans(7)[initNode_x.t.n.Null] \\
 \qquad (fixed(t, n_h, n_l);
-   Enq_4^x(t, n_l, n), \Node_y(n_l, n'), \Node_x(n, null)).
+   Enq_4^x(t, n_l, n), \Node_y(n_l, n'), \Node_x(n, Null)).
 \end{alignc}
 \label{trans:initNode}
 \end{equation}
-%% The above transition also illustrates that the post-state might be strictly
-%% larger than the corresponding view of the principal component: the thread
-%% loses the reference to~$n$ in the transition.  It is straightforward to remove
-%% components that are no longer referenced in order to obtain the relevant view.
-
-%% The transition~(\ref{trans:initNode}) produces a new view for
-%% another component involved in the transition, here the view $(\Lock'(t),
-%% Top(n); Node_x(n'', n), Node_y(n, n'))$ of~$n''$.  In this case, the node $n$
-%% to which $n''$ acquires a reference was included in the transition, because
-%% the thread~$t$ had a reference to it in the pre-state.  In all realistic
-%% examples we are aware of, a similar fact is true: a secondary component
-%% obtains a reference only to other components to which the primary component
-%% previously had a reference.  Thus our implementation assumes this
-%% condition.
-
 
 The following definition summarises the construction of this subsection.
 %
 \begin{definition}
 \label{def:active-process-transition}
-Given a set $V$ of views, we build the active-process transitions as follows.
-For each $v \in V$, we consider each view transition $v \trans[e] v'$ of~$v$.
+Given a set $V$ of views, for each $v \in V$, we consider each view transition
+$v \trans[e] v'$ of~$v$.
 %
 We consider each identity~$id$, not matching the identity of a component
 of~$v$ and such that
@@ -319,17 +288,16 @@ of~$v$ and such that
 %
 By assumption, there is at most one such~$id$.
 
-If there is no such $id$, then the view transition contains all relevant
-components.  Note that in this case, every parameter in $v'$ is also in~$v$,
-by Assumption~\ref{assump:2}.  We extract from $v'$ the view~$v'' =
-viewOf(v')$ of the principal component, to create an abstract transition $v
-\trans[e] v''$.
+If there is no such $id$, then the view transition $v \trans[e] v'$ contains
+all relevant components; we say that it is \emph{closed}.  Note that in this
+case, every parameter in $v'$ is also in~$v$, by Assumption~\ref{assump:2}.
+We extract from~$v'$ the view~$v'' = viewOf(v')$ of the principal component,
+to create an abstract transition $v \trans[e] v''$.
 
 If there is such an id, we build the transition template $v \uplus \hole{id}
 \trans[e] v' \uplus \hole{id}$.  We then find each component state~$c$ from a
-view of~$V$ such that $c$ has identity~$id$ and is compatible with~$v$.
-%% (Definition~\ref{def:compatible}).  
-We form all pre-states $pre = v \uplus c$ by extending $v$ with each such
+view of~$V$ such that $c$ has identity~$id$ and is compatible with~$v$.  We
+form all pre-states $pre = v \uplus c$ by extending $v$ with each such
 component state~$c$.  We form corresponding post-states $post$ by extending
 $v'$ with the corresponding post-states: if $e$ is in the alphabet of~$id$
 then we build $post = v' \uplus c'$ for each state~$c'$ such that $c \trans[e]
@@ -337,6 +305,9 @@ c'$; or otherwise $post = v' \uplus c$.  Thus we form extended transitions
 $pre \trans[e] post$ including all the relevant component states.  Finally, we
 extract from $post$ the view~$v'' = viewOf(post)$ of the principal component,
 to create an abstract transition $v \trans[e] v''$.
+
+We define an \emph{active-process transition} to be an abstract transition
+built in either of these two ways.
 \end{definition}
 
 %%%%%%%%%%
