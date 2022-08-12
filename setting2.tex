@@ -35,7 +35,7 @@ We require that the state machines for components of the same family are
 symmetric to one another: for every remapping~$\pi$, the relation
 \[
 \set{ (cs(\vec{x}), cs(\pi(\vec{x}))) \| 
-  cs(\vec{x}) \in \textstyle\Union_{id \in \hat{T}} Q_{id}}
+  cs(\vec{x}) \in \textstyle\Union_{id \in \hat{\T}} Q_{id}}
 \]
 is a $\pi$-bisimulation; and also this relation includes $(q^0_{id},
 q^0_{id'})$ whenever $id$ and~$id'$ are from the same family (so components
@@ -80,19 +80,19 @@ the set of all initial states, as $T$ ranges over subsets of~$\T$.
 
 We now define the transitions of the systems.  Fix a set $\hat{T} =
 \set{id_1,\ldots,id_n} \subseteq \hat\T$ of component identities.  We build
-transitions with events from the set
+transitions with events from the set $\Sigma \union \set\tau$, where
 \begin{eqnarray*}
 \Sigma & = & 
  (\Sigma_f \union \textstyle\Union_{id \in \hat{T}} \Sigma_{id}) -
-  (\textstyle\Union_{i \in \hat{\T} - \hat{T}} \Sigma_{id}) .
+  (\textstyle\Union_{id \in \hat{\T} - \hat{T}} \Sigma_{id}) .
 \end{eqnarray*}
-Note that we exclude events of components that are not in the system.  For $a
+Note that we exclude events using identities outside $\hat{T}$, since these
+represent components that are not in the system under consideration.  For $a
 \in \Sigma$, a transition labelled with~$a$ synchronises all processes that
-have $a$ in their alphabet.  Processes can perform internal transitions
-(event~$\tau$) without synchronising.  (We write subscripts on the transition
-arrows to indicate the relevant state machine.)
+have $a$ in their alphabet, as captured by the following rule (we write
+subscripts on the transition arrows to indicate the relevant state machine):
 \[
-\begin{array}{c}
+% \begin{array}{c}
 \begin{infrule}
 \If a \in \Sigma_f \ \THEN q_f \trans(1)[a]_f q'_f \ \ELSE q'_f = q_f \\
 \forall i \in 1 \upto n \spot 
@@ -102,9 +102,11 @@ a \in \Sigma
 \derive
 (q_f; q_{1}, \ldots, q_{n}) \trans(1)[a] (q_f'; q_{1}', \ldots, q_{n}')
 \end{infrule} 
-%
-\bigskip \\
-%
+\]
+Processes can perform internal transitions (event~$\tau$) without
+synchronising:
+\[
+%\bigskip \\
 \begin{infrule}
 q_f \trans(1)[\tau]_f q'_{f}
 \derive
@@ -119,7 +121,7 @@ q_{i} \trans(1)[\tau]_i q'_{i}
 (q_f; q_{1}, \ldots, q_i, \ldots q_{n}) \trans(1)[\tau]
   (q_f; q_{1}, \ldots, q_i', \ldots q_{n})
 \end{infrule}
-\end{array}
+%\end{array}
 \]
 %% The initial state is $(q^0_{f}; q^0_{id_1}, \ldots, q^0_{id_n})$.
 \end{definition}
@@ -137,32 +139,32 @@ state by zero or more transitions, $\R = post^*(Init)$.
 Recall that our models use a distinguished event $error$.  Our correctness
 condition, then, is that no reachable state has a transition on~$error$.
 
-\framebox{Do we need the following?}
+%% \framebox{Do we need the following?} -- I think not
 
-Consider the system defined by a particular set $\hat T$ of identities.  We now
-make some assumptions that ensure that these are the only non-distinguished
-identities that appear in reachable states or transitions.  Informally, these
-say that new identities do not appear from nowhere.
-%
-\begin{enumerate}
-\item The initial state $q_f^0$ of the fixed processes contains no identity.
-  For each $id \in \hat{T}$,  the initial state $q_{id}^0$ for the component
-  with identity~$id$ contains a single parameter, namely~$id$.
+%% Consider the system defined by a particular set $\hat T$ of identities.  We now
+%% make some assumptions that ensure that these are the only non-distinguished
+%% identities that appear in reachable states or transitions.  Informally, these
+%% say that new identities do not appear from nowhere.
+%% %
+%% \begin{enumerate}
+%% \item The initial state $q_f^0$ of the fixed processes contains no identity.
+%%   For each $id \in \hat{T}$,  the initial state $q_{id}^0$ for the component
+%%   with identity~$id$ contains a single parameter, namely~$id$.
 
-\item For every system transition, every identity in either the event or the
-  post-state of one of the synchronising processes is also in the pre-state of
-  one of the synchronising processes.
-\end{enumerate}
-%
-For instance, consider a transition with event $getNext.t.n.n'$ from the queue
-example, which is a synchronisation between thread~$t$ and node~$n$.  The
-identity~$t$ is in the pre-state of~$t$; the identity~$n$ is in the pre-state
-of both components; the identity~$n'$ is in the pre-state of~$t$.  The
-post-state of~$t$ acquires a reference to~$n'$, but this is in the pre-state
-of~$n$.
+%% \item For every system transition, every identity in either the event or the
+%%   post-state of one of the synchronising processes is also in the pre-state of
+%%   one of the synchronising processes.
+%% \end{enumerate}
+%% %
+%% For instance, consider a transition with event $getNext.t.n.n'$ from the queue
+%% example, which is a synchronisation between thread~$t$ and node~$n$.  The
+%% identity~$t$ is in the pre-state of~$t$; the identity~$n$ is in the pre-state
+%% of both components; the identity~$n'$ is in the pre-state of~$t$.  The
+%% post-state of~$t$ acquires a reference to~$n'$, but this is in the pre-state
+%% of~$n$.
 
-Given this assumption, an easy induction shows that every identity in every
-reachable state is from~$\hat{T}$. 
+%% Given this assumption, an easy induction shows that every identity in every
+%% reachable state is from~$\hat{T}$. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -181,28 +183,34 @@ active, but all other fixed processes are passive.  The analyst is responsible
 for classifying processes as active or passive. 
 
 \begin{assumption}
-We assume that each transition involves either:
-%
+We assume that each transition on a visible event~$a$ involves either:
 \begin{enumerate}
-\item[1a.] precisely one active component or active fixed process;
-\item[1b.] at most one passive component;
-\item[1c.] possibly other passive fixed processes;
+\item (a)~precisely one active component or active fixed process; (b)~at most
+  one passive component; and (c)~possibly other passive fixed processes; or
+
+\item only fixed processes, and no components.
 \end{enumerate}
+%% %
+%% \begin{enumerate}
+%% \item[1a.] precisely one active component or active fixed process;
+%% \item[1b.] at most one passive component;
+%% \item[1c.] possibly other passive fixed processes;
+%% \end{enumerate}
+%% %
+%% or
+%% \begin{enumerate}
+%% \item[2.] only fixed processes, and no components.
+%% \end{enumerate}
 %
-or
-\begin{enumerate}
-\item[2.] only fixed processes, and no components.
-\end{enumerate}
-%
-More formally, each visible event~$a$ is in alphabets of processes as above. 
+More formally, the event~$a$ is in alphabets of processes as above. 
 \end{assumption}
 %
 These assumptions hold of our earlier examples, and of other examples we have
 considered.  They seem like reasonable assumptions, given our informal
 definition of an active process, and that in most cases, an active process
-interacts with one component at a time.  Item~1a helps to make the
-implementation more efficient.  Item~1b simplifies the theory and
-implementation.  Item~1c, allowing arbitrary many fixed processes to
+interacts with one component at a time.  Item~1(a) helps to make the
+implementation more efficient.  Item~1(b) simplifies the theory and
+implementation.  Item~1(c), allowing arbitrary many fixed processes to
 synchronise on an event, is more liberal: it is useful in some examples (for
 example, allowing the watchdog to see a synchronisation that also involves
 other fixed processes); and it does not add extra difficulties.  Item~2 is

@@ -13,9 +13,11 @@ function~$\pi$, defined over non-distinguished identities, and that preserves
 types (for example, maps each node identity to a node identity, and each
 thread identity to a thread identity).
 %
-If $\pi$ is a remapping function defined over the parameters of a process
-state~$q$, then we write $\pi(q)$ for the effect of replacing each
-parameter~$x$ of~$q$ by~$\pi(x)$.  We extend this to sets of states, views,
+If $\pi$ is a remapping function then it is lifted to states, sets of states,
+views,
+%%  defined over the parameters of a process
+%% state~$q$, then we write $\pi(q)$ for the effect of replacing each
+%% parameter~$x$ of~$q$ by~$\pi(x)$.  We extend this to sets of states, views,
 etc., by pointwise application.  For example, given
 %
 \begin{eqnarray*}
@@ -54,6 +56,9 @@ a symmetric state.
 
 %%%%%
 
+We define symmetry equivalence over views, transitions and transition
+templates. 
+%
 \begin{definition}
 We say that views~$v$ and $v'$ are \emph{equivalent}, written $v \equiv v'$,
 if there is a remapping~$\pi$ such that $\pi(v) = v'$. 
@@ -81,21 +86,19 @@ We use similar notation for sets of transitions and transition templates.
 
 %%%%%
 
-
 Our approach, then, is to store a single representative of each view
 encountered so far: we store a set~$V$ that represents its
 closure~$\overline{V}$.  We treat transitions and transition templates
 similarly, storing sets $trans$ and $transTemplates$ of representatives, which
 represent $\overline{trans}$ and $\overline{transTemplates}$, respectively.
 %
-\framebox{Below} we explain how to simulate the various steps in
-Figures~\ref{fig:algorithm-2} and~\ref{fig:algorithm-3} using this
-representation. 
+In Sections~\ref{ssec:symmetry-transitions}--\ref{ssec:induced-symmetry} we
+explain how to simulate the various steps in Figures~\ref{fig:algorithm-2}
+and~\ref{fig:algorithm-3} using this representation; doing this efficiently
+presents several challenges.
 %
-But first we describe more precisely how we represent the sets. 
-
-%% \framebox{Explain} why it's enough to store views, up to equivalence.  As in
-%% previous paper.  I think we want roughly Lemma 20--Lemma 23.
+But first, in the next subsection, we define the representatives of each view,
+transition and transition template.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -104,8 +107,7 @@ But first we describe more precisely how we represent the sets.
 
 We represent each equivalence class of views by a single representative.  More
 precisely, we define a normal form of views, and take the representatives to
-be the views in normal form: there will be one per equivalence class.  We
-describe the normal form below. 
+be the views in normal form: there will be one per equivalence class. 
 
 For each type of identities, we assume a linear order over the type.  In
 examples below, for node identities we will assume an order $N_0 < N_1 <
@@ -151,11 +153,11 @@ type.
 %%%%%%%%%%
 
 \begin{definition}
-A transition $pre \trans{e} post$ is in normal form if $pre$ is in normal form,
-and the components of~$post$ are in the same order as for~$pre$.  (Note that
-every parameter in $post$ is also in~$pre$, by Assumption~\ref{assump:2}, so
-this defines the order of parameters in $post$.  Note also that $post$ itself
-might not be in normal form.)
+A closed view transition $pre \trans[e] post$ is in normal form if $pre$ is in
+normal form, and the components of~$post$ are in the same order as for~$pre$.
+(Note that every parameter in $post$ is also in~$pre$, by
+Assumption~\ref{assump:2}, so this defines the order of parameters in $post$.
+Note also that $post$ itself might not be in normal form.)
 
 A transition template $pre \uplus \hole{id} \trans[e] post \uplus \hole{id}$
 is in normal form if $pre$ is in normal form, the components of~$post$ are in
@@ -173,16 +175,21 @@ For example, consider transition templates of the form
 \end{alignc}
 \label{trans-template:initNode}
 \end{equation}
+%
 Necessarily $n \ne N_1$ (since the missing component's identity cannot match
-that of a component in the view).  This would be in normal form for $n = N_0$
-or~$N_2$ (it turns out that the former would have no instantiation in the
-running example of a queue: the $\Head$ process can never reference a node in
-the $\InitNode$ state).
+that of a component in the view).  The template is in normal form for $n
+= N_0$ (a parameter of the pre-state) or~$n = N_2$ (the next parameter of the
+type).
+
+%%  (it turns out that the former would have no instantiation in the
+%% running example of a queue: the $\Head$ process can never reference a node in
+%% the $\InitNode$ state).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Producing closed view transitions and transition templates}
+\label{ssec:symmetry-transitions}
 
 Recall that we store a set~$V$ of representative views found so far, which
 represents its closure~$\overline{V}$.  Given a view~$v \in V$, we can
@@ -196,22 +203,22 @@ to equivalence: for each state~$q$, the transitions from~$q$ are from a finite
 number of equivalence classes.  For example, in
 Figure~\ref{fig:lock-based-queue} the state $Deq_2(t)$ has transitions
 $Deq_2(t) \trans(4)[getHead.t.n] Deq_3(t,n)$ for every $n \in NodeID$, so
-potentially infinitely many such; but all of these transitions are
+potentially infinitely many transitions; but all of these transitions are
 equivalent.  Hence each view is also finitely branching up to equivalence. 
 
-Suppose $v \in V$; we show that considering closed view transitions from~$v$
-also captures transitions from equivalent views.
+Suppose $v \in V$, so $v$ is in normal form.  We show that considering closed
+view transitions from~$v$ also captures transitions from equivalent views.
 %
 \begin{itemize}
 \item By Lemma~\ref{lem:system-pi-bisimilar}, if $v \trans[e] v'$ then $\pi(v)
   \trans[\pi(e)] \pi(v')$, and vice versa.  Adding $rep(viewOf(v'))$ to the
   set~$V$ of representative views also adds $viewOf(\pi(v')) =
-  \pi(viewOf(v'))$ to its closure~$\overline{V}$, so captures the
-  active-process transitions from~$\pi(v)$.
+  \pi(viewOf(v'))$ to its closure~$\overline{V}$, so captures the transitions
+  from~$\pi(v)$.
 
 \item For a closed view transition $v \trans[e] v'$, every parameter in~$v'$
   is also in~$v$, so the transition is in normal form; and hence there are
-  finitely many  transitions from~$v$.  The transitions $v \trans[e] v'$
+  finitely many such transitions from~$v$.  The transitions $v \trans[e] v'$
   and $\pi(v) \trans[\pi(e)] \pi(v')$ are equivalent transitions.  Hence
   adding the former to the set $trans$ of representative transitions also adds
   the latter to the closure~$\overline{trans}$.

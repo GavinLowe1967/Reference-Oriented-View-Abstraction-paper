@@ -319,17 +319,16 @@ $T \subseteq \T$, we write $\hat{T}$ for the non-distinguished elements
 (i.e.~real component identities) in~$T$. 
 
 Each process state is a pair $(cs, \vec p)$ where $cs$~is a control state and
-$\vec p$ is a vector of identities, which we call \emph{parameters}.  The
-first parameter of a component is always its own identity.  Other parameters
-are references to other components.  For the fixed processes, all parameters
-are references to components.  We will often denote the pair
-$(cs, \seq{x_1,\ldots,x_k})$ as $cs(x_1,\ldots,x_k)$ (as in the examples).
-
-We write $q.\cs$ and $q.\params$ for the control state and parameters of
-process state~$q$.  If $q$ is a component state, we write $q.\id$ for its
-identity.  For a vector of parameters~$\vec p$, we write $\vec p(i)$ for the
-$i$th entry (counting from~1) \framebox{needed?}, so for a component~$q$,\,
-$q.\params(1) = q.\id$.
+$\vec p$ is a vector of identities, which we call \emph{parameters}. We will
+often denote the pair $(cs, \seq{x_1,\ldots,x_k})$ as $cs(x_1,\ldots,x_k)$ (as
+in the examples).  We write $q.\cs$ and $q.\params$ for the control state and
+parameters of process state~$q$.  The first parameter of a component is always
+its own identity.  Other parameters are references to other components.  For
+the fixed processes, all parameters are references to components.  If $q$ is a
+component state, we write $q.\id$ for its identity.
+%% For a vector of parameters~$\vec p$, we write $\vec p(i)$ for the $i$th
+%% entry (counting from~1) \framebox{needed?}, so for a component~$q$,\,
+%% $q.\params(1) = q.\id$.
 
 Similarly, an event is a pair $(ch, \vec p)$ where $ch$ is a channel and
 $\vec{p}$ is a vector of identities.  We will often denote the pair
@@ -382,15 +381,16 @@ The processes in the above examples are symmetric in the references they hold.
 We make this notion of symmetry formal now.
 %
 Recall that the type of identities is partitioned, $\T
-= \T_1 \union \ldots \T_n$.  Let $\pi$ be a bijection on each type, i.e.~it is
-a function over $\T$ such that if $x \in \T_i$ then $\pi(x) \in \T_i$, and
-such that the restriction of~$\pi$ to~$\T_i$ is a bijection.  We call each
-such function~$\pi$ a \emph{remapping}.
+= \T_1 \union \ldots \T_n$.  Let $\pi$ be a bijection on the non-distinguished
+values of each type, i.e.~it is a function over $\hat\T$ such that if
+$x \in \hat\T_i$ then $\pi(x) \in \hat\T_i$, and such that the restriction
+of~$\pi$ to~$\hat\T_i$ is a bijection.  Note that $\pi$ is undefined over
+distinguished values.  We call each such function~$\pi$ a \emph{remapping}.
 
-We lift remapping~$\pi$ to vectors of identities by point-wise application; we
-then lift it to states and events by $\pi(cs(\vec{x})) = cs(\pi(\vec{x}))$ and
-$\pi(c.\vec{x}) = c.\pi(\vec{x})$; we lift it to sets, etc., by point-wise
-application.
+We lift remapping~$\pi$ to vectors of identities by point-wise application
+(note that this leaves distinguished values unchanged).  We then lift it to
+states and events by $\pi(cs(\vec{x})) = cs(\pi(\vec{x}))$ and $\pi(c.\vec{x})
+= c.\pi(\vec{x})$; we lift it to sets, etc., by point-wise application.
 %% to process states and events by point-wise application,
 %% i.e.~$\pi(cs(x_1,\ldots,x_k)) = cs(\pi(x_1),\ldots,\pi(x_k))$ and
 %% $\pi(ch.x_1.\ldots.x_k) = ch.\pi(x_1).\ldots.\pi(x_k)$. 
@@ -424,9 +424,9 @@ $\set{ (cs(\vec{x}), cs(\pi(\vec{x}))) \| cs(\vec{x}) \in Q}$ is a
 $\pi$-bisimulation.
 \end{definition}
 
-The node and thread state machines in Figure~\ref{fig:lock-based-queue} are
-symmetric.  For example, the states $\Node_A(N_0, N_1)$ and $\Node_A(N_1,N_4)$
-are $\pi$-bisimilar for each $\pi$ with $\pi(N_0) = N_1$ and $\pi(N_1) = N_4$.
+The state machines in Figure~\ref{fig:lock-based-queue} are symmetric.  For
+example, the states $\Node_A(N_0, N_1)$ and $\Node_A(N_1,N_4)$ are
+$\pi$-bisimilar for each $\pi$ with $\pi(N_0) = N_1$ and $\pi(N_1) = N_4$.
 
 This notion of symmetry is a natural condition.  In~\cite{gavin-tom-symmetry},
 we proved that an \emph{arbitrary} process defined using machine-readable CSP

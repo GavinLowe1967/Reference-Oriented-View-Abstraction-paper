@@ -12,17 +12,13 @@ Consider a transition template
 \[
 v \uplus \hole{id} \trans[e] v' \uplus \hole{id} \,.
 \]
-%% where $id$ is distinct from any parameter in~$v$.  Let $id'$ be another
-%% identity distinct from any parameter in~$v$.  Let $\pi$ be the remapping such
-%% that $\pi(id) = id'$,\, $\pi(id') = id$, and otherwise $\pi$~is the identity
-%% function.  
-Let $\pi$ be a remapping, and let $id' = \pi(id)$.
-Consider the transition template
+Let $\pi$ be a remapping, and let $id' = \pi(id)$.  Consider the transition
+template
 \[
 \pi(v) \uplus \hole{id'} \trans[\pi(e)] \pi(v') \uplus \hole{id'} \,.
 \]
-Then the two transition templates have instantiations that produce equivalent
-views. 
+Then the two transition templates have equivalent instantiations and produce
+equivalent views.
 \end{lemma}
 
 %%%%%
@@ -57,8 +53,19 @@ view~$v_n$, for every template $temp$ equivalent to~$temp_n$, and for every
 view~$v_c$ equivalent to~$v_n$, produce a transition equivalent to the
 instantiation of~$temp$ with a component~$c$ of~$v_c$.  However,
 Lemma~\ref{lem:equiv-transition-templates} tells us that each instantiation of
-$temp$ is equivalent to an instantiation of~$temp_n$; so it is enough to
-consider instantiations of~$temp_n$. 
+$temp$ using component~$c$ is equivalent to an instantiation of~$temp_n$ using
+a component $c'$ that is equivalent to $c$; and $c'$ is a component of some
+view~$v_c'$ equivalent to~$v_c$ and~$v_n$.  Hence it is enough to consider
+instantiations of~$temp_n$; but we much consider all views equivalent to~$v_n$.
+
+At various places below, we will consider a remapping of a normal-form
+view~$v_1$ to create a view that is accordant with the pre-state of the
+template.  Suppose we use remapping~$\pi$ such that the identity of some
+component $c_1$ of~$v_1$ gets mapped to the identity as some component~$c_2$
+of~$v_2$, i.e.~$\pi(c_1).\id = c_2.\id$.  Then for accordance we require that
+$\pi(c_1) = c_2$.  In this case we say that $c_1$ and~$c_2$ are
+\emph{unified}.  Of course, it is possible to unify two components only if
+they have the same control state.
 
 So consider a normal-form transition template
 \begin{eqnarray*}
@@ -88,7 +95,7 @@ parameters of~$v_1.\fixed$.
 Hence we require that $v.\fixed = v_n.\fixed$ and that $\pi$ is the identity
 over the parameters of those fixed processes.  Further, we require $c.\id =
 \pi(c_n.\id) = id$.  (These constraints may be inconsistent, in which case no
-renaming of this~$c_n$ will work.)
+remapping of this~$c_n$ will work.)
 
 However, other parameters of~$c$ can be mapped by~$\pi$ in several
 ways: they might be mapped to other identities appearing in the transition
@@ -136,11 +143,10 @@ template.
 Note that $\pi_1(c_n)$ and~$\pi_2(c_n)$ are components of the same state
 machine (since they have the same identity~$id$).  Hence if $e$ is in the
 alphabet of this state machine, so $\pi_1(c_n) \trans[e] c'$, then \(
-\pi_2(c_n) = \pi'(\pi_1(c_n)) \trans[\pi'(e)] \pi'(c') \).  However,
-clause~\ref{assump:extra-event-field} of Assumption~\ref{assump:2} implies in
-this case that every identity in~$e$ is from the template; hence $\pi'(e) =
-e$.  If $e$ is not in the alphabet, then $\pi_2(c_n) = \pi'(\pi_1(c_n)) =
-\pi'(c')$.
+\pi_2(c_n) = \pi'(\pi_1(c_n)) \trans[\pi'(e)] \pi'(c') \).  If $e$ is not in
+the alphabet, then $\pi_2(c_n) = \pi'(\pi_1(c_n)) = \pi'(c')$.  However,
+clause~\ref{assump:extra-event-field} of Assumption~\ref{assump:2} implies
+that every identity in~$e$ is from the template; hence $\pi'(e) = e$.
 
 In each case, we also have the instantiation
 \[
@@ -178,11 +184,11 @@ component of the normal-form view
 \[
 v_n = (fixed(T_0,N_0); \Node_y(N_1,N_2), \Node_z(N_2,N_3)).
 \]
-It is worth noting that the identifiers $N_1$, $N_2$ and~$N_3$ that appear in
-both te template and~$v_n$ might represent different parameters, since each
-substate is just a representative of its equivalence class.  The fact that the
-same identifiers appear in each substate is just an artefact of the way we
-produce normal forms.
+(Note that the identifiers $N_1$, $N_2$ and~$N_3$ that appear in both the
+template and~$v_n$ might represent different parameters, since each substate
+is just a representative of its equivalence class.  The fact that the same
+identifiers appear in each substate is just an artefact of the way we produce
+normal forms.)
 
 Let $\pi$ be the remapping applied to this component, as described above.
 Then:
@@ -225,24 +231,12 @@ second one.
 
 \begin{impNote}
 |Combiner.remapToId| does the above to find the map.  Then
-|ConsistentStateFinder.getMaps| creates the renamed state.
-
-Then |ConsistentStateFinder.checkCompatible| checks that it's possible to
-extend the remapping to the rest of $v_n$ while ensuring accordance --
-\framebox{does this duplicate later work?}
-
-And |ConsistentStateFinder.consistentStates| encapsulates this, for each
+|Consistent|\-|State|\-|Finder.getMaps| creates the renamed state.
+%% Then |ConsistentStateFinder.checkCompatible| checks that it's possible to
+%% extend the remapping to the rest of $v_n$ while ensuring accordance --
+%% \framebox{does this duplicate later work?}
+And |Consistent|\-|State|\-|Finder.consistentStates| encapsulates this, for each
 component of a particular $v_n$, and also finds the relevant post-states.
-
-%% |TransitionTemplateExtender.instantiateTransitionTemplateBy| passes each such
-%% to |TransitionTemplateExtender.extendTransitionTemplateBy|
-
-%% |extendTransitionTemplate| calls |Extendable.isExtendable| which checks (1)
-%% there is a view with the new state as principal and that is accordant with the
-%% pre-state of the template; (2) if any component of the pre-state references
-%% the new state, then there is a view corresponding to that.  I.e.~compatibility.
-
-%% If that works, |extendTransitionTemplate| builds the new transitions.
 \end{impNote}
 
 %%%%%
@@ -255,33 +249,32 @@ consider the conditions of Definition~\ref{def:compatible} in turn.
 \begin{enumerate}
 \item We need to check that $\overline{V}$ contains a view $v_c$ such that
   $v_c.\princ = c$, and $v$ and~$v_c$ are accordant.  To do this, we first
-  convert the partial view $(v.\fixed; c)$ into normal form $(v.\fixed; c_1)$
-  (which might require remapping parameters of~$c$ to produce~$c_1$).  Let
-  $\pi_1$ be the remapping that is the identity on the parameters of the fixed
-  processes, and maps each parameter of~$c_1$ to the corresponding parameter
-  of~$c$, so $\pi_1(c_1) = c$.  We then iterate through all normal-form
-  views~$v_0$ in~$V$ that are extensions of $(v.\fixed; c_1)$.  For each, we
-  seek to build an extension~$\pi_2$ of~$\pi_1$ such that $v_c \defs
-  \pi_2(v_0)$ and $v$ are accordant: if $\pi_2$ maps the identity of a
-  component from~$v_0$ to match the identity of a component from~$v$, then
-  $\pi_2$ needs to unify those two components (so all parameters match).  Note
-  that it is enough to consider remappings~$\pi_2$ that, for each
-  parameter~$x$ of~$v_0$, maps~$x$ either to a parameter of~$v$ or to the next
-  fresh identity.  If such a $\pi_2$ exists, then $v_c.\princ = \pi_2(c_1) =
-  \pi_1(c_1) = c$, as required.
+  convert the partial view $(v.\fixed; c)$ into normal form $(v.\fixed; c_1)$.
+  Let $\pi_1$ be the partial remapping that is the identity on the parameters
+  of the fixed processes, and maps each parameter of~$c_1$ to the
+  corresponding parameter of~$c$, so $\pi_1(c_1) = c$.  We then iterate
+  through all normal-form views~$v_0$ in~$V$ that are extensions of
+  $(v.\fixed; c_1)$.  For each, we seek to build an extension~$\pi_2$
+  of~$\pi_1$ such that $v_c \defs \pi_2(v_0)$ and $v$ are accordant: if
+  $\pi_2$ maps the identity of a component from~$v_0$ to match the identity of
+  a component from~$v$, then $\pi_2$ needs to unify those two components, so
+  all parameters match.  Note that it is enough to consider remappings~$\pi_2$
+  that, for each parameter~$x$ of~$v_0$, maps~$x$ either to a parameter of~$v$
+  or to the next fresh identity.  If such a $\pi_2$ exists, then $v_c.\princ =
+  \pi_2(c_1) = \pi_1(c_1) = c$, as required.
 
 \item We consider each component~$c'$ of~$v$ that has a reference to~$c$.  For
   each, we need to test whether $\overline{V}$ contains a view $v'$ such that
-  (a)~$v'.\fixed = v.\fixed$, (b)~$v'.\princ = c'$, and (c)~$v'$ contains~$c$.
-  To do this, we convert the partial view $(v.\fixed; c')$ into normal form
-  $(v.\fixed; c_1')$, say using remapping~$\pi_1$.  We then iterate over all
-  normal-form views~$v_0$ in~$V$ that are extensions of this.  For each, we
-  test whether the relevant component of~$v_0$ is a remapping of~$c$ under an
-  extension~$\pi_2$ of~$\pi_1$.  Further, if $c'$ references some other
-  component~$c''$ in~$v$, we test whether the relevant component of~$v_0$ is a
-  remapping of~$c''$ under an extension $\pi_3$ of~$\pi_2$; we iterate this
-  for each such~$c''$.  If this succeeds then $v' \defs \pi_3\inverse(v_0)$
-  satisfies the required conditions.
+  (a)~$v'$ and~$v$ are accordant, (b)~$v'.\princ = c'$, and (c)~$v'$
+  contains~$c$.  To do this, we convert the partial view $(v.\fixed; c')$ into
+  normal form $(v.\fixed; c_1')$, say using remapping~$\pi_1$.  We then
+  iterate over all normal-form views~$v_0$ in~$V$ that are extensions of this.
+  For each, we test whether the relevant component of~$v_0$ is a remapping
+  of~$c$ under an extension~$\pi_2$ of~$\pi_1$.  Further, if $c'$ references
+  some other component~$c''$ in~$v$, we test whether the relevant component
+  of~$v_0$ is a remapping of~$c''$ under an extension $\pi_3$ of~$\pi_2$; we
+  iterate this for each such~$c''$.  If this succeeds then $v' \defs
+  \pi_3\inverse(v_0)$ satisfies the required conditions.
 \end{enumerate}
 
 %%%%%
@@ -371,41 +364,22 @@ required view for condition~\ref{item:compatible-2} of
 Definition~\ref{def:compatible}.  
 \end{opt}
 
+%%%%%
 
+\begin{opt}
+For a given transition template~$temp$, a particular candidate component
+state~$c$ might be produced from several different views~$v_n$.  If the
+instantiation is successful (i.e.~the check for compatibility succeeds), then
+it is clearly not necessary to consider the same combination of~$temp$ and~$c$
+again.  
 
+Similarly, if an attempt to instantiate template~$temp$ using component
+state~$c$ is unsuccessful, then any further attempt to instantiate $temp$
+using~$c$ on the same ply of the search will also be unsuccessful: recall that
+the set $V$ of views is updated only at the end of each ply.
 
-
-%% Consider a remapping $\pi$ consistent with the above constraints, and suppose
-%% $c = \pi(c_n) \trans[e] c'$.  Then we have an instantiation
-%% \[
-%% v \uplus \pi(c_n) \trans[e] v' \uplus c' .
-%% \]
-%% Let $id_1$ and $id_2$ be identities, neither of which is a parameter of~$v$
-%% or~$id$; suppose $id_1$ is a parameter of~$\pi(c_n)$, but $id_2$ isn't.  Let
-%% $\pi'$ be such that $\pi'(id_1) = id_2$,\, $\pi'(id_2) = id_1$, and is
-%% otherwise the identity.  Consider $\pi'(\pi(c_n))$.  We have that
-%% $\pi'(\pi(c_n)) \trans[\pi'(e)] \pi'(c')$.  But $\pi'(e) = e$ because ......  
-%% Hence we also have the instantiation 
-%% \[
-%% v \uplus \pi'(\pi(c_n)) \trans[e] v' \uplus \pi'(c').
-%% \]
-
-%% Let $\pi'$ be a remapping that maps some parameter~$id_1$ of~$\pi(c_n)$ that
-%% is not a 
-
-
-
-%% , that are equal except they map some parameter $id$ of~$c_n$ to two
-%% different values, say~$id_1$ and~$id_2$, neither of which is a parameter
-%% of~$v$.  Then the two instantiations
-%% \[
-%% \begin{align}
-%% v \uplus \pi(c_n) \trans[e] v' \uplus c' \\
-%% v \uplus \p
-%% \]
-
-%% What about parameters of $e$? 
-
-%% Require that if $\pi(c_n) \trans[e] c_n'$ then $\pi'(\pi(c_n)) \trans[e] c_n'$
-%% for $\pi'$ identity on parameters of $v$ and~$id$. 
-
+The implementation stores, for each template~$temp$ and component state~$c$,
+whether $c$ has been used to successfully instantiate $temp$, or the last ply
+on which it was used unsuccessfully to instantiate $temp$.  The observations
+of the previous two paragraphs are then used to avoid repeating work.
+\end{opt}

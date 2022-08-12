@@ -67,9 +67,9 @@ state space (a finite control state combined with references from a
 potentially infinite set).  We describe the setting for our work more formally
 in the next section.
 
-By varying the types of the identities, we vary the number of components in the
+By varying the sets of identities used, we vary the number of components in the
 system.  Thus we are considering a family of systems, parameterised by the
-types of identities.  The problem of showing that all such systems are
+sets of identities.  The problem of showing that all such systems are
 correct is undecidable in general~\cite{apt-kozen,tomasz-gavin-CA}; however,
 verification techniques prove effective on a number of specific instances.
 
@@ -79,33 +79,37 @@ subsequently adapted to this setting by us~\cite{gavin:view-abs}.  The idea of
 view abstraction is that we abstract each system state by its \emph{views},
 where each view records the states of some subset of the processes.
 
-For each analysis, we fix a set of views of interest.  For example, Abdulla et
-al.~\cite{AHH} took each view to contain some fixed number~$k$ of processes.
-In our earlier work~\cite{gavin:view-abs}, we took each view to comprise the
-fixed processes and some bounded number of components from each family (for
-example, two threads and one node, or one thread and two nodes).  
-We then calculate an upper bound on the set of such views of all
-reachable states of all systems of arbitrary size.  By reasoning about this
-set of views, we can show that all such systems are correct.
+A particular view abstraction approach fixes the set of views of interest.
+For example, Abdulla et al.~\cite{AHH} took each view to contain some fixed
+number~$k$ of processes.  In our earlier work~\cite{gavin:view-abs}, we took
+each view to comprise the fixed processes and some bounded number of
+components from each family (for example, two threads and one node, or one
+thread and two nodes).  The approach then calculates an upper bound on the set
+of such views of all reachable states of all systems of arbitrary size.  By
+reasoning about this set of views, one can show that all such systems are
+correct.
 
 However, the approaches of the earlier papers suffer from a state-space
-explosion.  Many views contain processes that are uncorrelated; these do not
-help to capture useful properties of the system; but they do add a lot of
-states to the analysis.
+explosion.  In particular, many views contain processes that are uncorrelated;
+these do not help to capture useful properties of the system; but they do add
+a lot of states to the analysis.
 
 In this paper we propose a variant of view abstraction that aims to overcome
 this state-space explosion, by restricting the set of views we consider.  The
 aim is to pick views that contain processes whose states are more correlated
-to one another.  More precisely, ech view is based on a particular component,
+to one another.  More precisely, each view is based on a particular component,
 which we call the \emph{principal}.  The view contains the state of the
 principal~$p$, the state of each component to which $p$ has a reference, and
-the fixed processes.  For example, a view with a thread as principal would
-record the state of that thread, the state of each node to which it has a
-reference, and the fixed processes; a view with a node as principal would
-record the state of that node, the state of the next node in the list, and the
-fixed processes.  In each case, we can expect the states of those components
-to be correlated in some way, i.e.~only certain combinations will be possible,
-reflecting invariants of the setting under consideration. 
+the fixed processes.  For instance, in a linked-list-based datatype, a view
+with a thread as principal would record the state of that thread, the state of
+each node to which it has a reference, and the fixed processes; a view with a
+node as principal would record the state of that node, the state of the next
+node in the list, and the fixed processes.  In each case, we can expect the
+states of those components to be correlated in some way, i.e.~only certain
+combinations will be possible, reflecting invariants of the setting under
+consideration.  Our hypothesis is that the invariants captured by such views
+are strong enough to verify interesting examples; our experimental results
+support this hypothesis. 
 
 
 

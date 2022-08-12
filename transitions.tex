@@ -14,7 +14,7 @@ In order to motivate our approach, we present example abstract transitions
 from the queue example, and how they can be extracted from
 corresponding concrete transitions of components.  We use these examples to
 define how we calculate (an over-approximation of) the abstract post-image of
-the current set of views.  We then prove that our approach is correct.
+a particular set of views.  We then prove that our approach is correct.
 
 \subsection{Active-process transitions}
 
@@ -37,19 +37,25 @@ v'$ such that
 \begin{itemize}
 \item Either: (1) $v$ has an active principal with~$e$ in its alphabet; (2)~$v$
   has an active fixed process with $e$ in its alphabet, and the principal
-  of~$v$ is a passive component with $e$ in its alphabet; or (3) only fixed
-  processes have $e$ in their alphabet.
+  of~$v$ is a passive component with $e$ in its alphabet; (3) only fixed
+  processes have $e$ in their alphabet; or (4) $e = \tau$.
 %% $v$ has either an active principal or an active fixed process with $e$
 %%   in its alphabet.  \framebox{OR} only fixed process.
 %, and either the
 %  principal or no component has $e$ in its alphabet.
 
-\item $v'$ is the same as~$v$ except replacing every (fixed or component)
-  process~$p$ that has $e$ in its alphabet with a process $p'$ such that \( p
-  \trans[e] p' \).  This synchronises all relevant processes on the
-  transition. (Note that $v'$ might not be a view if the principal component
+\item If $e \ne \tau$ then $v'$ is the same as~$v$ except replacing every
+  (fixed or component) process~$p$ that has $e$ in its alphabet with a process
+  $p'$ such that \( p \trans[e] p' \).  This synchronises all relevant
+  processes on the transition.
+
+  If $e = \tau$ then $v'$ is the same as~$v$ except a single process~$p$,
+  either a fixed process or the principal, is replaced  with a process
+  $p'$ such that \( p \trans[\tau] p' \). 
+
+  Note that in each case $v'$ might not be a view if the principal component
   gains or loses a reference as a result of the transition; we discuss this
-  further below.)
+  further below.
 \end{itemize}
 \end{definition}
 
@@ -61,8 +67,9 @@ v'$ such that
 \end{impNote}
 
 For example, consider a transition of the queue where a thread~$t$
-enqueueing~$x$ performs a $lock$ event.  This can be captured by view
-transitions of the form
+enqueueing~$x$ performs a $lock$ event.  This is a synchronisation between the
+thread and lock processes, and can be captured by a view transition of the
+form
 %
 \begin{equation}
 (fixed(\_, n_h, n_l); Enq^x_1(t))  \trans(3)[lock.t]
@@ -93,9 +100,9 @@ transition.
 Here the only component that synchronises on the transition is the principal.
 This view transition is again an abstract transition.
 
-In some cases, we will need to expand the view to include additional relevant
-components: either other components that synchronise on the transition, or to
-which the principal component obtains a reference.  Recall
+In some other cases, we will need to expand the view to include additional
+relevant components: either other components that synchronise on the
+transition, or to which the principal component obtains a reference.  Recall
 (clause~\ref{assump:max-one-extra-component} of Assumption~\ref{assump:2})
 that we assume that there is at most one such new component (for simplicity).
 %% When we expand a view in this way, we do so only in a way that is compatible
@@ -139,8 +146,9 @@ identity~$n$.  For example, we could fill the hole to produce a transition
 \end{align}
 \end{equation}
 %
-We call the above an \emph{extended transition}: we have extended the pre-view
-by adding the component for~$n$.  
+We call the above an \emph{extended transition}, and we call the pre- and
+post-states \emph{extended views}: we have extended the views in the
+transition template by adding the component for~$n$.
 %% (Recall that we assume that it is necessary to add at most one such node,
 %% i.e.~the principal component obtains at most one new reference in each
 %% transition.)
@@ -164,10 +172,10 @@ v \uplus c & \defs & (v.\fixed, v.\cpts \union \set{c}).
 We denote a generic transition template as $pre \uplus \hole{id} \trans[e]
 post \uplus \hole{id}$. 
 
-\begin{impNote}
-The implementation represents a transition that requires an
-  additional component by a \texttt{TransitionTemplate}.
-\end{impNote}
+%% \begin{impNote}
+%% The implementation represents a transition that requires an
+%%   additional component by a \texttt{TransitionTemplate}.
+%% \end{impNote}
 
 The following definitions describe what we mean by \emph{consistent}: that the
 extended view is included in some system state in~$\gamma(V)$.
@@ -283,7 +291,7 @@ of~$v$ and such that
 \begin{itemize}
 \item $e$ is in the alphabet of~$id$; or
 
-\item $v.princ$ acquires a reference to~$id$ in the transition
+\item $v.princ$ acquires a reference to~$id$ in the transition.
 \end{itemize}
 %
 By assumption, there is at most one such~$id$.
@@ -294,7 +302,7 @@ case, every parameter in $v'$ is also in~$v$, by Assumption~\ref{assump:2}.
 We extract from~$v'$ the view~$v'' = viewOf(v')$ of the principal component,
 to create an abstract transition $v \trans[e] v''$.
 
-If there is such an id, we build the transition template $v \uplus \hole{id}
+If there is such an $id$, we build the transition template $v \uplus \hole{id}
 \trans[e] v' \uplus \hole{id}$.  We then find each component state~$c$ from a
 view of~$V$ such that $c$ has identity~$id$ and is compatible with~$v$.  We
 form all pre-states $pre = v \uplus c$ by extending $v$ with each such
@@ -326,9 +334,10 @@ $c$ is compatible with~$v$.
 Suppose $c$ is consistent with~$v$.  Then there exists $s \in \gamma(V)$ such
 that $v \uplus c \sqle s$.  Taking $v_c = view(s, c)$ satisfies
 clause~\ref{item:compatible-1} of Definition~\ref{def:compatible}: note that
-$v_c \in \V$ and $v_c \sqle s \in \gamma(V)$ so $v_c \in V$.  For each
-component $c'$ of~$v$ that has a reference to~$c$, taking $v' = view(s,c')$
-satisfies clause~\ref{item:compatible-2}: again $v' \in V$.
+$v_c \in \V$ and $v_c \sqle s \in \gamma(V)$ so $v_c \in V$, by definition
+of~$\gamma$.  For each component $c'$ of~$v$ that has a reference to~$c$,
+taking $v' = view(s,c')$ satisfies clause~\ref{item:compatible-2}: again $v'
+\in V$.
 \end{proof}
 
 %%%%%%%%%%
@@ -350,6 +359,7 @@ s'$:
 \item The transition involves only the fixed processes.
 \end{enumerate}
 %
+(Note that the first and third cases include the possibility that $e = \tau$.)
 Then $v'$ is generated by an active-process transition.
 \end{lemma}
 

@@ -5,24 +5,28 @@ We now present our algorithm, and prove its correctness.  We start with an
 abstract algorithm, in Figure~\ref{fig:algorithm}.  We give a more
 implementation-oriented version in Section~\ref{ssec:algorithm-2}.
 
-The abstract algorithm takes as inputs a system (which defines the set~$\V$ of
+The abstract algorithm takes as inputs the definition of a collection of
+systems, as in Definition~\ref{def:system} (which defines the set~$\V$ of
 views, and the abstraction and concretisation functions, $\alpha$
 and~$\gamma$), and a set $AInit$ of initial views such that $\alpha(Init)
 \subseteq {AInit}$.  It maintains a set $V \subseteq \V$ of views encountered
 so far, and performs a breadth-first search.  On each iteration it calculates
-all abstract transitions $aPost(V)$ from the current views, and adds the
-new views to~$V$.  This continues until either a transition on $error$ is
-found, or a fixed point is reached.
+all transitions from the current views~$V$
+(Definition~\ref{def:abstract-transition}), and adds the new views to~$V$.
+This continues until either a transition on $error$ is found, or a fixed point
+is reached.
 
 \begin{figure}[t]
 \[
 \begin{align}
 V := AInit \\
 while(true)\{ \\
-\quad \mbox{if there is an extended transition $pre \trans(2)[error] post$
+\quad \mbox{if there is a transition $pre \trans(2)[error] post$
   from~${V}$ then return $failure$} \\
 % \quad \Let  X = aPost({V}) \\
-\quad \mbox{for $(v' \in aPost(V))$ if $v' \nin {V}$ then 
+% \quad \mbox{for $(v' \in aPost(V))$
+\quad \mbox{for each $v'$ produced by a transition from $V$, 
+  if $v' \nin {V}$ then 
   $V := V \union \set{v'}$} \\
 \quad \mbox{if no new view was added then return $success$} \\ 
 \}
@@ -54,11 +58,13 @@ We show that after $n$ iterations,
 \end{eqnarray*}
 %
 by induction on~$n$.  The base case is trivial.  Suppose the result holds
-for~$V$ at the start of an iteration.  Let $V'$ be the next value of~$V$, so
+for~$V$ at the start of an iteration.  Let $V'$ be the next value of~$V$.
+Proposition~\ref{lem:abstract-transitions-sound} shows that the generated
+transitions include all abstract transitions, so
 \[
 \begin{array}{rcl}
 {V'} % & = & {V} \union {X} \\ 
-& = & {V} \union aPost({V}) \\
+& \supseteq & {V} \union aPost({V}) \\
 & \supseteq & \Union_{i = 0}^n aPost^i({AInit}) \union
       aPost(\Union_{i = 0}^n aPost^i({AInit})) \\
 & \supseteq & \Union_{i = 0}^n aPost^i({AInit}) \union 
@@ -99,17 +105,16 @@ algorithm returns $failure$, giving a contradiction.
 \label{ssec:algorithm-2}
 
 We now give a more implementation-oriented algorithm.  The algorithm in
-Figure~\ref{fig:algorithm} implicitly considered \emph{all} views in
-$aPost(V)$ on each ply of the search.  Instead, on each ply we want to expand
+Figure~\ref{fig:algorithm} implicitly considered \emph{all} transitions
+from~$V$ on each ply of the search.  Instead, on each ply we want to expand
 only those views found on the previous ply, as is standard for a breadth-first
-search.  
+search.
 
 This is complicated by the fact that a new view may be the result of
-\emph{several} previous views, not just one, since $aPost$ is a
-function over a \emph{set} of views.  For example, a transition from an
-earlier ply might induce a transition on a newly found view; or a transition
-template from an earlier ply might now produce a new concrete transition based
-on a newly found view.  
+\emph{several} previous views, not just one.  For example, a transition from
+an earlier ply might induce a transition on a newly found view; or a
+transition template from an earlier ply might now produce a new concrete
+transition based on a newly found view.
 
 
 %%%%%%%%%%
@@ -145,7 +150,7 @@ while(thisPly \ne \set{})\{ \\
   \in transTemplatesOf(v) \{ \\
 \qquad  newTransTemplates := newTransTemplates \union
    \set{v \uplus \hole{id}  \trans[e] v' \uplus \hole{id}} \\
-\qquad \Foreach \mbox{compatible component states~$c, c'$ with identity~$id$} \\
+\qquad \Foreach \mbox{compatible component state~$c$ and post-state $c'$} \\
 \qquad\quad           addTransition(v \uplus c \trans[e] v' \uplus c') \\
 \quad \} \\
 % effectOfPreviousTransitions(v) 
@@ -182,8 +187,10 @@ while(thisPly \ne \set{})\{ \\
 %%%%%
 \comment{Produce transitions induced by $pre \trans[e] post$ on~$v$.} \\
 \Def makeInduced(pre \trans[e] post, v) = \{ \\
-\quad \Let v' \mbox{ be the view induced by $pre \trans[e] post$ on $v$} \\
-\quad \If (v' \nin V)\ nextPly := nextPly \union \set{v'} \\
+\quad \If(\mbox{$pre \trans[e] post$ induces a transition on $v$})\{ \\
+\qquad \Let v' \mbox{ be the view induced};\
+       \If (v' \nin V)\ nextPly := nextPly \union \set{v'} \\
+\quad \} \\
 \} 
 \end{align}
 \]
@@ -226,7 +233,7 @@ The main loop calls $process(v)$ for each view~$v$ of the current ply.  At the
 end of each ply, it updates the sets for the following ply; this includes
 extracting the principal's view of the post-state of each new transition. 
 
-The function $process(v)$ considers all abstract transitions that require~$v$,
+The function $process(v)$ considers all transitions that require~$v$,
 possibly combined with other views from~$V$.  There are several aspects of
 this. 
 
@@ -273,7 +280,7 @@ already in~$V$.
 \begin{proof}
 We consider the different forms of abstract transition from
 Definition~\ref{def:abstract-transition}, and use
-Lemma~\ref{lem:abstract-transitions-sound}. 
+Proposition~\ref{prop:abstract-transitions-sound}. 
 
 First consider a closed view transition $v \trans[e] v'$ that requires no
 additional component; and let $v'' = viewOf(v')$.  Then this transition will
