@@ -8,26 +8,27 @@ call these \emph{restricted views}, and use the term \emph{full views} for the
 earlier version where we recorded all components referenced by the principal. 
 
 We start by formalising restricted views.  Consider a system state~$s$, and a
-particular component $cpt \in s.\cpts$.
+particular component $princ \in s.\cpts$.
 \begin{itemize}
 \item 
-Suppose $cpt$ has no reference to another component.  Then we write $view(s,
-cpt)$ for the view of the system state from~$cpt$, i.e.~the fixed processes
-and $cpt$ itself.
+Suppose $princ$ has no reference to another component.  Then we write $view(s,
+princ)$ for the view of the system state from~$princ$, i.e.~the fixed processes
+and $princ$ itself.
 \begin{eqnarray*}
-view(s, cpt) & = &  (s.\fixed, \set{cpt}).
+view(s, princ) & = &  (s.\fixed; princ).
 \end{eqnarray*}
 This is the same as in the case of full views.
 
 \item
-Now suppose $cpt$ has $k > 1$ parameters (recall that its first parameter is
-its own identity).  Suppose $1 < i \le k$ and $cpt.\params(i)$ is not a
-distinguished value.  Then we write $view(s, cpt, i)$ for the view containing
-$cpt$ and the state of the component referenced by its $i$th parameter.
+Now suppose $princ$ has $k > 1$ parameters (recall that its first parameter is
+its own identity).  Suppose $1 < i \le k$, and the $i$th parameter, denoted
+$princ.\params(i)$, is not a distinguished value.  Then we write $view(s, princ,
+i)$ for the view containing $princ$ and the state of the component referenced by
+its $i$th parameter.
 \[
 \begin{align}
-view(s, cpt, i)  =  (s.\fixed, \set{cpt, c})\\ 
-\mbox{where $c \in s.\cpt$ is such that $c.\id = cpt.\params(i)$}.
+view(s, princ, i)  =  (s.\fixed; princ, c)\\ 
+\mbox{where $c \in s.\cpt$ is such that $c.\id = princ.\params(i)$}.
 \end{align}
 \]
 \end{itemize}
@@ -37,14 +38,20 @@ We then define the set of views~$\V$ to be all such values:
 \begin{eqnarray*}
 \V & = & 
   \begin{align}
-  \set{ view(s, cpt) \| s \in \S, cpt \in s.\cpts, \\
-    \qquad   \mbox{$cpt$ has no reference to another component}} \union\null
+  \set{ view(s, princ) \| s \in \S, princ \in s.\cpts, \\
+    \qquad   \mbox{$princ$ has no reference to another component}} \union\null
   \\
-  \set{ view(s, cpt, i) \| s \in \S, cpt \in s.\cpts, 
-    1 < i \le length(cpt.\params), \\
-    \qquad \mbox{$cpt.\params(i)$ is not distinguished} }.
+  \set{ view(s, princ, i) \| s \in \S, princ \in s.\cpts, 
+    1 < i \le length(princ.\params), \\
+    \qquad \mbox{$princ.\params(i)$ is not distinguished} }.
   \end{align}
 \end{eqnarray*}
+
+When the principal of a restricted view~$v$ has a reference~$id$ to a
+component, but no  component with identity~$id$ is present in~$v$, then we
+say that component is \emph{missing}.
+
+\framebox{Road map.}  What aspects stay the same?  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -68,7 +75,7 @@ of an extended transition is then as earlier.
 %
 \begin{definition}
 \label{def:active-process-transition-singleRef}
-We define a \emph{view transition} of view~$v$ to be a transition $v \trans{e}
+We define a \emph{view transition} of view~$v$ to be a transition $v \trans[e]
 v'$ such that
 %
 \begin{itemize}
@@ -80,24 +87,23 @@ v'$ such that
 
 \item $v'$ is the same as~$v$ except replacing every (fixed or component)
   process~$p$ that has $e$ in its alphabet with a process $p'$ such that \( p
-  \trans{e} p' \).
+  \trans[e] p' \).
 \end{itemize}
 
-Given a view transition $v \trans{e} v'$, we define the corresponding
-\emph{extended transitions} $pre \trans{e} post$,  as in
+Given a view transition $v \trans[e] v'$, we define the corresponding
+\emph{transition templates} and \emph{extended transitions} as in
 Definition~\ref{def:active-process-transition}.  Finally, we extract views of
-the principal component.  
+the principal component.
 \end{definition}
 
-
 For example, consider the following view transition using full
-views, as in the previous section.
+views.
 %
 \begin{equation}
 \begin{align}
 \label{trans:setNext}
 (fixed; Th(t, n, n'), Nd_x(n, null), Nd_y(n', n'')) 
-  \trans{setNext.t.n.n'} \\
+  \trans(6)[setNext.t.n.n'] \\
 \qquad (fixed'; Th'(t, n, n'), Nd_x(n, n'), Nd_y(n', n'')).
 \end{align}
 \end{equation}
@@ -109,15 +115,13 @@ which contains the node~$n$ that synchronises on the transition.
 \label{trans:setNext-singleRef}
 \begin{align}
 (fixed; Th(t, n, n'), Nd_x(n, null)) 
-  \trans{setNext.t.n.n'} \\
-\qquad (fixed'; Th'(t, n, n'), Nd_x(n, n')).
+  \trans(6)[setNext.t.n.n'] 
+ (fixed'; Th'(t, n, n'), Nd_x(n, n')).
 \end{align}
 \end{equation}
 %
 However we do not consider a view transition from
-\[\mit
-(fixed; Th(t, n, n'), Nd_y(n', n'')), 
-\]
+$(fixed; Th(t, n, n'), Nd_y(n', n''))$,
 because that view does not contain a component for~$n$, which synchronises on
 the transition.  Instead, such transitions are induced: see
 Section~\ref{sec:singleRef-induced}. 

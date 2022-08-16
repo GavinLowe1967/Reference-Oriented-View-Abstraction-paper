@@ -23,16 +23,11 @@ Below, we restrict the range of unification functions considered, while
 ensuring we produce a representative of each equivalence class of resulting
 post-views.
 
-%%  if $\pi(v)$ and $pre$ each have a component with the same identity, then
-%% those components must be equal: the remapping has unified these components.
-%% Also,
-
 Recall that in order to be accordant, the fixed processes of $\pi(v)$
 and~$pre$ must be equal.  Lemma~\ref{lem:remapping-id-on-fixed-params} then
 implies that $v.\fixed = pre.\fixed$ and $\pi$ is the identity over the
 parameters of~$v.\fixed$.  Our approach therefore starts with a partial
 remapping representing this partial identity.
-
 
 %%%%%
 
@@ -53,11 +48,6 @@ $pre$ and~$v$ have fixed processes in the same states, so there is the
 potential to produce a remapping~$\pi(v)$ accordant with~$pre$.  We start with
 the partial remapping function $\pi = \set{N_0 \mapsto N_0}$, the identity over
 the parameters of the fixed processes.
-%% It is worth noting that the identifiers $N_1$, $N_2$ and~$N_3$ that appear in
-%% both~$pre$ and~$v$ might represent different parameters, since each substate
-%% is just a representative of its equivalence class.  The fact that the same
-%% identifiers appear in each substate is just an artefact of the way we produce
-%% normal forms.
 \end{example}
 
 %%%%%
@@ -85,10 +75,10 @@ partial remapping function~$\pi$ is a \emph{partial unification function} if
 \end{itemize}
 \end{definition}
 
-
 %%%%%
 
 \begin{example}
+\label{example:effectOn-running-2}
 We continue with the running example.  Unifying the two $Nd_A$ processes
 gives the partial unification function
 %
@@ -142,90 +132,91 @@ other components.  The choice of which components were unified already tell us
 the states in case~(1).  In case~(2), each parameter in the component might or
 might not be the same as a parameter taken from $post$.  We need to find all
 ways of remapping parameters in such components to give distinct new views, up
-to equivalence.  The following definition captures the required consistent
-extensions; we verify this fact as Proposition~\ref{prop:unifying-remapping}.
+to equivalence.  It turns out that it is enough to map to only certain
+parameters of~$post$, which we call \emph{result-relevant}.
+%
+\begin{definition}
+\label{def:result-relevant}
+Consider a transition $pre \trans[e] post$ and a view~$v$, both in normal form.
+Consider a partial unification function~$\pi_u$.  We define the
+\emph{result-relevant parameters} to be:
+%
+\begin{enumerate}
+\item\label{clause:result-relevant-1} All parameters of $post.\fixed$;
+
+\item\label{clause:result-relevant-2} For each component of~$v$ that is
+  unified with a component of~$pre$, all parameters of that component
+  in~$post$;
+
+\item\label{clause:result-relevant-3} If the principal of~$v$ is unified with
+  a component of~$pre$, and acquires a reference to a component~$c'$
+  of~$post$, then all parameters of~$c'$.
+\end{enumerate}
+\end{definition}
 
 %%%%%
 
+The following lemma shows that the result of an induced transition is defined
+(up to equivalence) by the result-relevant parameters in the unifying
+function.
+We say that two remapping functions~$\pi_1$ and~$\pi_2$ \emph{range-agree}
+on~$y$ if they map the same variables to~$y$:
+\[
+\forall x \spot \pi_1(x) = y \iff \pi_2(x) = y.
+\]
+Necessarily there is at most one~$x$ that the remapping functions map to~$y$.
+%
+\begin{lemma}
+\label{lem:remappings-equivalent}
+Consider a transition $pre \trans[e] post$ and a view~$v$, both in normal form.
+Consider a partial unification function~$\pi_u$, and two consistent
+extensions~$\pi_1$ and~$\pi_2$, and suppose that $\pi_1$ and $\pi_2$
+range-agree on all result-relevant parameters.  Let $v_1 = \pi_1(v)$ and $v_2
+= \pi_2(v)$; and let $v_1'$ and~$v_2'$ be the views produced by
+Definition~\ref{def:induced-transition} considering the effect of $pre
+\trans[e] post$ on~$v_1$ and~$v_2$, respectively.  Then $v_1' \equiv v_2'$. 
+\end{lemma}
+
+%%%%%
+
+\begin{proof}
+Note that $v_1'$ and~$v_2'$ contain the same processes that are taken
+from~$post$, namely: (a) the fixed processes; (b) if the principal is unified
+with a component of~$pre$, then the corresponding component of~$post$, and all
+components of~$post$ to which it has a reference; (c) if the principal is not
+unified, then any secondary components that are unified.  In each case, all
+parameters of these processes are result-relevant.  All other processes are
+taken from~$v_1$ and~$v_2$, respectively; by assumption, these agree on
+result-relevant parameters.  Hence $v_1'$ is related to~$v_2'$ by the mapping
+$\hat\pi$ that maps $\pi_1(x)$ to~$\pi_2(x)$ for each parameter~$x$ (so is the
+identity over the result-relevant parameters).  Hence $v_1' \equiv v_2'$.
+\end{proof}
+
+%%%%%
+
+It is therefore enough to consider the remappings defined as follows.
+%
 \begin{definition}
 \label{def:representative-consistent-extension}
 Consider a transition~$pre \trans[e] post$, a view~$v$, and a
 partial unification function~$\pi$.  We define a consistent extension~$\pi'$
 of~$\pi$ to be a \emph{representative consistent extension} if for every
-parameter~$x$ in~$v$ but not in the domain of~$\pi$,\, $\pi'(x)$ is one of the
-following:
-%
-\begin{enumerate}
-\item\label{clause:remap-1} a parameter of $post.\fixed$ (necessarily distinct
-  from the parameters of $pre.\fixed$); 
+parameter~$x$ in~$v$ but not in the domain of~$\pi$,\, $\pi'(x)$ is either:
+\begin{itemize}
+\item a result-relevant parameter;
 
-\item\label{clause:remap-2} a parameter of the state in~$post$ of a unified
-  component;
-
-\item\label{clause:remap-3} if the principal of~$v$ is unified with a
-  component~$c$, and $c$~gains a reference to a component with identity~$id$,
-  then a parameter of the state in~$post$ of~$id$ (note that $pre$ and $post$
-  must contain a component with identity~$id$, by
-  clause~\ref{assump:secondary-cpts-new-refs} of Assumption~\ref{assump:2}); or
-
-\item\label{clause:remap-4} a minimal fresh parameter, i.e.~a parameter
-  different from those in~$pre$ and~$post$, and in each case choosing (in the
-  order in which those parameters~$x$ appear in~$v$) the minimal such value
-  that hasn't been used previously. 
-\end{enumerate}
-%
-%% Further, under case~\ref{clause:remap-4}, \emph{minimal} fresh parameters are
-%% chosen for each such~$x$, in the order in which those parameters~$x$ appear
-%% in~$v$ (i.e.~in each case choosing the smallest fresh parameter not already
-%% used).
-%
-Note that these are subject to the conditions~(a) and~(b) of
-Definition~\ref{def:consistent-extension}. 
-%% These are all subject to two provisos: (a)~that the remapping remains
-%% injective; and (b)~a parameter that is the identity of a component~$c$ in~$v$
-%% that is not unified with any component of~$pre$ cannot be mapped to an
-%% identity of a component in~$pre$ (since that would require unifying~$c$).
+\item a minimal fresh parameter, i.e.~a parameter different from those
+  in~$pre$ and~$post$, and in each case choosing (in the order in which those
+  parameters~$x$ appear in~$v$) the minimal such value that hasn't been used
+  previously.
+\end{itemize}
 \end{definition}
-%
-%% When a parameter is mapped to a fresh parameter, all choices of the fresh
-%% parameter give equivalent post-states.  Hence it is enough to make the choice
-%% in one way: we pick the minimal fresh parameter each time. 
-
-
-%%%%%
-
-\begin{example}
-We continue the running example, considering just the unification
-corresponding to~$\pi_1$.  Consider what values~$N_3$ can be mapped to.  By
-clause~\ref{clause:remap-1}, it can be mapped to~$N_5$.  By
-clause~\ref{clause:remap-2}, it can be mapped to~$N_2$.  By
-clause~\ref{clause:remap-3}, it can be mapped to~$N_4$ (from the post-state of
-the $Nd_B$ process).  Finally, by clause~\ref{clause:remap-4}, it can be
-mapped to the minimal fresh value, namely~$N_6$.
-%
-This then produces four remappings:
-\[
-\pi_X = \set{N_0 \mapsto N_0, N_1 \mapsto N_1, N_2 \mapsto N_3, N_3 \mapsto X},
-\quad \mbox{for $X = N_2, N_4, N_5, N_6$}.
-\]
-For each such remapping~$\pi_X$,\, $v$ gets remapped to a view of the form
-\[
-(fixed(N_0); Nd_A(N_1, N_3), Nd_B(N_3, N_0, X)).
-\]
-The $fixed$ and $Nd_A$ processes evolve under the transition \( pre
-\trans{} post \), and the latter gains a reference to~$N_2$ in
-$post$.  This produces the four views
-\[
-(fixed'(N_5); Nd_C(N_1, N_2, N_3), Nd_B(N_2, N_0, N_4), Nd_B(N_3, N_0, X)).
-\]
-Finally, these views need to be reduced to normal form.  Note that the four
-normal forms are distinct.
-\end{example}
 
 %%%%%
 
 The following proposition shows that considering representative consistent
-extensions is enough to produce all induced transitions, up to equivalence. 
+extensions is enough to produce all induced transitions, up to equivalence.
+It follows immediately from Lemma~\ref{lem:remappings-equivalent}.
 %
 \begin{prop}
 \label{prop:unifying-remapping}
@@ -243,86 +234,151 @@ Definition~\ref{def:induced-transition} considering the effect of $pre
 \trans[e] post$ on~$\pi''(v)$, we have $v'' \equiv v'$.
 \end{prop}
 
-%%%%%%
-
-\begin{proof}
-Let $pre$, $post$, $v$, $\pi$, $\pi'$ and~$v'$ be as in the statement of the
-proposition.  We describe how to construct the remapping~$\pi''$, and a
-remapping~$\hat\pi$ such that $\pi' = \hat\pi \circ \pi''$.  This will imply
-that $\hat\pi(v'') = v'$.  The following figure illustrates (and acts as an
-aide-m\'emoire).
-%
-\begin{center}
-\begin{tikzpicture}[>= angle 90]
-\draw (0,0) node (v) {$v$};
-%
-\draw (2,1) node (pi'v) {$\pi'(v)$};
-\path[draw, ->] (v) -- node[above]{\scriptsize $\pi'$} (pi'v);
-%
-\draw (2,-1) node (pi''v) {$\pi''(v)$};
-\path[draw, ->] (v) -- node[above]{\scriptsize $\pi''$} (pi''v);
-\path[draw, ->] (pi''v) -- node[right]{\scriptsize $\hat\pi$} (pi'v);
-%
-\draw (pi'v)++(1.5,0) node (induces1) {induces};
-\draw (induces1)++(1.5,0) node (v') {$v'$};
-%
-\draw (pi''v)++(1.5,0) node (induces2) {induces};
-\draw (induces2)++(1.5,0) node (v'') {$v''$};
-\path[draw, ->] (v'') -- node[right]{\scriptsize $\hat\pi$} (v');
-\end{tikzpicture}
-\end{center}
-%
-In fact, $\hat\pi$ will be the identity over all parameters except for fresh
-parameters chosen under clause~\ref{clause:remap-4} of
-Definition~\ref{def:representative-consistent-extension}.
-
-We define $\pi''$ as an extension of~$\pi$.  This implies that $\pi''$
-and~$\pi'$ agree on values in the domain of~$\pi$, and unify the same
-components.  For all values~$y$ in the range of~$\pi$, we define $\hat\pi(y) =
-y$. 
-
-Recall that $v'.\fixed = v''.\fixed = post.\fixed$; each component of~$v'$ is
-taken from~$post$ if the corresponding component of~$\pi'(v)$ is in~$pre$, and
-otherwise is taken from~$\pi'(v)$; and each component of~$v''$ is taken
-from~$post$ if the corresponding component of~$\pi''(v)$ is in~$pre$, and
-otherwise is taken from~$\pi''(v)$.  We arrange for~$v'$ and~$v''$ to take the
-same components from~$post$.
-
-%% For each parameter~$x$ of~$v.\fixed$, we define $\pi''(x) = x$.  This means
-%% $\pi''(v).\fixed = pre.fixed$.  And we define $\hat\pi(x) = x$. 
-
-For each parameter~$x$ of~$v$ such that $y = \pi'(x)$ is a parameter of
-$post.\fixed$, we define $\pi''(x) = y$, and $\hat\pi(y) = y$.  Note that each
-such value~$y$ is included under case~\ref{clause:remap-1} of
-Definition~\ref{def:representative-consistent-extension}.  This ensures
-that~$\pi''(v)$ and~$\pi'(v)$ agree on all such~$y$; and hence~$v'$ and~$v''$
-agree on all such~$y$.  Note that this is a consistent extension of~$\pi$,
-because~$\pi'$ is a consistent extension of~$\pi$.  
-
-For each parameter~$x$ such that $y = \pi'(x)$ is a parameter of a component
-of~$v'$ taken from~$post$, we again define $\pi''(x) = y$, and $\hat\pi(y) =
-y$.  Note that each such value $y$ is included under
-case~\ref{clause:remap-2} or \ref{clause:remap-3} of
-Definition~\ref{def:representative-consistent-extension}.  This ensures
-that~$\pi''(v)$ and~$\pi'(v)$ agree on all such~$y$; and hence~$v'$ and~$v''$
-agree on all such~$y$; in particular, they include the same components taken
-from~$post$.  Again note that this is a consistent extension of~$\pi$,
-because~$\pi'$ is a consistent extension of~$\pi$. 
-
-Finally, each other parameter~$y$ in~$v'$ must necessarily be in a component
-taken from~$\pi'(v)$.  Suppose the parameter is $\pi'(x)$, and $x$ is not in
-the domain of~$\pi$.  We define $\pi''(x)$ to be the minimal fresh
-parameter~$z$, chosen as in
-Definition~\ref{def:representative-consistent-extension}; and we let
-$\hat\pi(z) = y$.  This ensures that $v''$ uses~$z$ wherever $v'$ uses~$y$.
-Also note that this is a consistent extension of~$\pi$, by construction.
-\end{proof}
+%%%%%
 
 For a given transition $pre \trans[e] post$ and a view~$v$ such that
 $pre.\fixed = v.fixed$, we therefore consider all partial unification
 functions~$\pi$, all consistent extensions~$\pi'$ of~$\pi$, calculate the
 view~$v'$ produced by $pre \trans[e] post$ acting on $\pi'(v)$, and then
 calculate the representative of~$v'$.
+
+
+%% \begin{definition}
+%% \label{def:representative-consistent-extension}
+%% Consider a transition~$pre \trans[e] post$, a view~$v$, and a
+%% partial unification function~$\pi$.  We define a consistent extension~$\pi'$
+%% of~$\pi$ to be a \emph{representative consistent extension} if for every
+%% parameter~$x$ in~$v$ but not in the domain of~$\pi$,\, $\pi'(x)$ is one of the
+%% following:
+%% %
+%% \begin{enumerate}
+%% \item\label{clause:remap-1} a parameter of $post.\fixed$ (necessarily distinct
+%%   from the parameters of $pre.\fixed$); 
+
+%% \item\label{clause:remap-2} a parameter of the state in~$post$ of a unified
+%%   component;
+
+%% \item\label{clause:remap-3} if the principal of~$v$ is unified with a
+%%   component~$c$, and $c$~gains a reference to a component with identity~$id$,
+%%   then a parameter of the state in~$post$ of~$id$ (note that $pre$ and $post$
+%%   must contain a component with identity~$id$, by
+%%   clause~\ref{assump:secondary-cpts-new-refs} of Assumption~\ref{assump:2}); or
+
+%% \item\label{clause:remap-4} a minimal fresh parameter, i.e.~a parameter
+%%   different from those in~$pre$ and~$post$, and in each case choosing (in the
+%%   order in which those parameters~$x$ appear in~$v$) the minimal such value
+%%   that hasn't been used previously. 
+%% \end{enumerate}
+%% %
+%% Note that these are subject to the conditions~(a) and~(b) of
+%% Definition~\ref{def:consistent-extension}. 
+%% \end{definition}
+
+%%%%%
+
+\begin{example}
+We continue the running example, considering just the unification
+corresponding to~$\pi_1$ in Example~\ref{example:effectOn-running-2}.
+Consider what values~$N_3$ can be mapped to.  Considering
+Definition~\ref{def:result-relevant}: by
+clause~\ref{clause:result-relevant-1}, it can be mapped to~$N_5$; by
+clause~\ref{clause:result-relevant-2}, it can be mapped to~$N_2$; by
+clause~\ref{clause:result-relevant-3}, it can be mapped to~$N_4$ (from the
+post-state of the $Nd_B$ process).  Finally, it can be mapped to the minimal
+fresh value, namely~$N_6$.
+%
+This then produces four remappings:
+\[
+\pi_X = \set{N_0 \mapsto N_0, N_1 \mapsto N_1, N_2 \mapsto N_3, N_3 \mapsto X},
+\quad \mbox{for $X = N_2, N_4, N_5, N_6$}.
+\]
+For each such remapping~$\pi_X$,\, $v$ gets remapped to a view of the form
+\[
+(fixed(N_0); Nd_A(N_1, N_3), Nd_B(N_3, N_0, X)).
+\]
+The $fixed$ and $Nd_A$ processes evolve under the transition \( pre
+\trans{} post \), and the latter gains a reference to~$N_2$ in
+$post$.  This produces the four views
+\[
+(fixed'(N_5); Nd_C(N_1, N_2, N_3), Nd_B(N_2, N_0, N_4), Nd_B(N_3, N_0, X)).
+\]
+Finally, these views are reduced to normal form.  Note that the four
+normal forms are distinct.
+\end{example}
+
+%%%%%
+
+%%%%%%
+
+%% \begin{proof}
+%% Let $pre$, $post$, $v$, $\pi$, $\pi'$ and~$v'$ be as in the statement of the
+%% proposition.  We describe how to construct the remapping~$\pi''$, and a
+%% remapping~$\hat\pi$ such that $\pi' = \hat\pi \circ \pi''$.  This will imply
+%% that $\hat\pi(v'') = v'$.  The following figure illustrates (and acts as an
+%% aide-m\'emoire).
+%% %
+%% \begin{center}
+%% \begin{tikzpicture}[>= angle 90]
+%% \draw (0,0) node (v) {$v$};
+%% %
+%% \draw (2,1) node (pi'v) {$\pi'(v)$};
+%% \path[draw, ->] (v) -- node[above]{\scriptsize $\pi'$} (pi'v);
+%% %
+%% \draw (2,-1) node (pi''v) {$\pi''(v)$};
+%% \path[draw, ->] (v) -- node[above]{\scriptsize $\pi''$} (pi''v);
+%% \path[draw, ->] (pi''v) -- node[right]{\scriptsize $\hat\pi$} (pi'v);
+%% %
+%% \draw (pi'v)++(1.5,0) node (induces1) {induces};
+%% \draw (induces1)++(1.5,0) node (v') {$v'$};
+%% %
+%% \draw (pi''v)++(1.5,0) node (induces2) {induces};
+%% \draw (induces2)++(1.5,0) node (v'') {$v''$};
+%% \path[draw, ->] (v'') -- node[right]{\scriptsize $\hat\pi$} (v');
+%% \end{tikzpicture}
+%% \end{center}
+%% %
+%% In fact, $\hat\pi$ will be the identity over all parameters except for fresh
+%% parameters chosen under clause~\ref{clause:remap-4} of
+%% Definition~\ref{def:representative-consistent-extension}.
+
+%% We define $\pi''$ as an extension of~$\pi$.  This implies that $\pi''$
+%% and~$\pi'$ agree on values in the domain of~$\pi$, and unify the same
+%% components.  For all values~$y$ in the range of~$\pi$, we define $\hat\pi(y) =
+%% y$. 
+
+%% Recall that $v'.\fixed = v''.\fixed = post.\fixed$; each component of~$v'$ is
+%% taken from~$post$ if the corresponding component of~$\pi'(v)$ is in~$pre$, and
+%% otherwise is taken from~$\pi'(v)$; and each component of~$v''$ is taken
+%% from~$post$ if the corresponding component of~$\pi''(v)$ is in~$pre$, and
+%% otherwise is taken from~$\pi''(v)$.  We arrange for~$v'$ and~$v''$ to take the
+%% same components from~$post$.
+
+%% For each parameter~$x$ of~$v$ such that $y = \pi'(x)$ is a parameter of
+%% $post.\fixed$, we define $\pi''(x) = y$, and $\hat\pi(y) = y$.  Note that each
+%% such value~$y$ is included under case~\ref{clause:remap-1} of
+%% Definition~\ref{def:representative-consistent-extension}.  This ensures
+%% that~$\pi''(v)$ and~$\pi'(v)$ agree on all such~$y$; and hence~$v'$ and~$v''$
+%% agree on all such~$y$.  Note that this is a consistent extension of~$\pi$,
+%% because~$\pi'$ is a consistent extension of~$\pi$.  
+
+%% For each parameter~$x$ such that $y = \pi'(x)$ is a parameter of a component
+%% of~$v'$ taken from~$post$, we again define $\pi''(x) = y$, and $\hat\pi(y) =
+%% y$.  Note that each such value $y$ is included under
+%% case~\ref{clause:remap-2} or \ref{clause:remap-3} of
+%% Definition~\ref{def:representative-consistent-extension}.  This ensures
+%% that~$\pi''(v)$ and~$\pi'(v)$ agree on all such~$y$; and hence~$v'$ and~$v''$
+%% agree on all such~$y$; in particular, they include the same components taken
+%% from~$post$.  Again note that this is a consistent extension of~$\pi$,
+%% because~$\pi'$ is a consistent extension of~$\pi$. 
+
+%% Finally, each other parameter~$y$ in~$v'$ must necessarily be in a component
+%% taken from~$\pi'(v)$.  Suppose the parameter is $\pi'(x)$, and $x$ is not in
+%% the domain of~$\pi$.  We define $\pi''(x)$ to be the minimal fresh
+%% parameter~$z$, chosen as in
+%% Definition~\ref{def:representative-consistent-extension}; and we let
+%% $\hat\pi(z) = y$.  This ensures that $v''$ uses~$z$ wherever $v'$ uses~$y$.
+%% Also note that this is a consistent extension of~$\pi$, by construction.
+%% \end{proof}
 
 %%%%%
 
@@ -335,377 +391,4 @@ all choices of unification and corresponding remapping function~$\pi$.  Then
 \texttt{EffectOn.apply} produces the corresponding post-views.
 \end{impNote}
 
-%%%%%
-
-However, recall that, at least in principle, we need to do this (1) for each
-view~$v$ found on the previous ply, and \emph{all} transitions found on
-earlier plies; and (2) for each transition found on the current ply and
-\emph{all} views found on earlier plies.  This constitutes a lot of cases.  We
-explain how we avoid considering most cases, restricting only to those that
-might actually produce a new view.  We make use of the following lemma.
-
-%%%%%
-
-\begin{lemma}\label{lem:mightGiveSufficientUnifs}
-Consider a transition $pre \trans[e] post$ and a view~$v$ such that
-$pre.\fixed = v.\fixed$.   Suppose:
-%
-\begin{enumerate}
-\item\label{cond:mightGiveSufficientUnifs-1}
-  Every parameter of $post.\fixed$ is also a parameter of $pre.\fixed$;
-
-\item\label{cond:mightGiveSufficientUnifs-2}
-  No component of $v$ is in the same control state as a component of~$pre$
-  that changes state in the transition; and
-
-\item\label{cond:mightGiveSufficientUnifs-3}
-  Either $post.\fixed = pre.\fixed$, or we previously used a transition
-  $pre' \trans[e'] post'$ with $post'.\fixed = post.\fixed$, acting on
-  this~$v$, to induce a transition that created a new view, and such that no
-  component of~$v$ was unified with a component of~$pre'$ that changed state.
-\end{enumerate}
-%
-Then any view induced by the transition on~$v$ is a view that had already been
-found. 
-\end{lemma}
-
-%%%%%
-
-\begin{proof}
-Condition~\ref{cond:mightGiveSufficientUnifs-2}  means that no
-component of~$v$ changes state in the induced transition.  This means that if
-we use unification function~$\pi'$, then the resulting view is $v' =
-(post.\fixed, \pi'(v.\cpts))$.
-%
-However, $\pi'$ is the identity over parameters of $pre.\fixed$; so by
-condition~\ref{cond:mightGiveSufficientUnifs-1}, $\pi'$ is also the identity
-over parameters of $post.\fixed$.  Hence $v' = \pi'(post.\fixed, v.\cpts)$.
-%
-\begin{itemize}
-\item If $post.\fixed = pre.\fixed$, then $v'$ is equivalent to~$v$, so no new
-  view is produced.
-
-\item Otherwise, by condition~\ref{cond:mightGiveSufficientUnifs-3}, we
-  previously used a transition $pre' \trans[e'] post'$ with $post'.\fixed =
-  post.\fixed$, acting on this~$v$, to induce a transition that created a new
-  view, and such that no component of~$v$ was unified with a component
-  of~$pre'$ that changed state.  But this earlier case would have produced a
-  view equivalent to~$v'$, by the same argument as above.  Hence no new view
-  is created in this case.
-\end{itemize}
-\end{proof}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% PREVIOUS VERSION
-
-%% \begin{lemma}
-%% \label{lem:mightGiveSufficientUnifs}
-%% Consider a transition $pre \trans[e] post$ and a view~$v$ such that
-%% $pre.\fixed = v.\fixed$.  If the induced transition produces a
-%% \emph{new} view, not produced earlier, then either:
-%% %
-%% \begin{enumerate}
-%% \item\label{cond:mightGiveSufficientUnifs-1}
-%%   $post.\fixed$ contains a parameter not in $pre.\fixed$;
-
-%% \item\label{cond:mightGiveSufficientUnifs-2} A component of $v$ is in the same
-%%   control state as a component of~$pre$ that changes state in the transition;
-%%   or
-
-%% \item\label{cond:mightGiveSufficientUnifs-3} The fixed processes change state,
-%%   and we haven't previously used a transition $pre' \trans[e'] post'$ with
-%%   $post'.\fixed = post.\fixed$, acting on this~$v$, to induce a transition that
-%%   created a new view, and such that no component of~$v$ was unified with a
-%%   component of~$pre'$ that changed state. 
-%% \end{enumerate}
-%% \end{lemma}
-
-%% %%%%
-
-%% \begin{proof}
-%% Suppose the three conditions of the lemma are false; we show that the induced
-%% transition generates only views that have been produced previously.
-
-%% The fact that condition~\ref{cond:mightGiveSufficientUnifs-2} is false means
-%% that no component of~$v$ changes state in the transition.  This means that if
-%% we use unification function~$\pi'$, then the resulting view is $v' =
-%% (post.\fixed, \pi'(v.\cpts))$.
-
-%% However, $\pi'$ is the identity over parameters of $pre.\fixed$; so by the
-%% fact that condition~\ref{cond:mightGiveSufficientUnifs-1} is false, $\pi'$ is
-%% the identity over parameters of $post.\fixed$.  Hence $v' = \pi'(post.\fixed,
-%% v.\cpts)$.
-
-%% If $pre.\fixed = post.\fixed$, then $v'$ is equivalent to~$v$, so no new view is
-%% produced.  
-
-%% Otherwise, the fact that condition~\ref{cond:mightGiveSufficientUnifs-3} is
-%% false implies that we previously induced a transition from this~$v$ and a
-%% transition $pre' \trans[e'] post'$ with $post'.\fixed = post.\fixed$, and such
-%% that conditions~\ref{cond:mightGiveSufficientUnifs-1}
-%% and~\ref{cond:mightGiveSufficientUnifs-2} don't hold.  But this earlier case
-%% would have produced a view equivalent to~$v'$, so no new view is created in
-%% this case. 
-
-%% %%%%%
-
-%% %% This means that the partial unification function~$\pi$
-%% %% is the identity on $pre.\fixed$.
-
-%% Consider the four clauses of
-%% Definition~\ref{def:representative-consistent-extension}.  The fact that
-%% condition~\ref{cond:mightGiveSufficientUnifs-1} of this lemma is false means
-%% that no parameter can be produced by clause~\ref{clause:remap-1} of
-%% Definition~\ref{def:representative-consistent-extension}.
-%% %%   The fact that no components can be unified means that no parameter can be
-%% %% produced by clause~\ref{clause:remap-3} of
-%% %% Definition~\ref{def:representative-consistent-extension}.
-%% The fact that if any component is unified, it does not change state in the
-%% transition, and that the remapping must be injective, means that no parameter
-%% can be produced by clauses~\ref{clause:remap-2} or~\ref{clause:remap-3} of
-%% Definition~\ref{def:representative-consistent-extension}.
-
-%% Hence the representative unification function~$\pi'$ extends the partial
-%% unification function by mapping all other parameters to fresh parameters.
-
-%% This means that the induced transition produces the view $(post.\fixed,
-%% \pi'(v.\cpts))$ (since no component of~$v$ changes state).  ****  
-
-%% If $pre.\fixed = post.\fixed$, this is equivalent to~$v$, so
-%% no new view is produced.  Otherwise, the fact that
-%% condition~\ref{cond:mightGiveSufficientUnifs-3} is false implies that we
-%% previously considered the case of this~$v$ and a transition $pre' \trans[e']
-%% post'$ with $post'.\fixed = post.\fixed$ and such that the other two
-%% conditions don't apply.  But the new view produced in that case would have
-%% been the same as the new view produced in this case.
-%% \end{proof}
-
-In order to use this result, we record information so that
-condition~\ref{cond:mightGiveSufficientUnifs-3} can be decided: whenever we
-induce a transition where the fixed processes change state and no unified
-component changes state, we record this fact (specifically, the relevant~$v$
-and $post.\fixed$).
-%%% IMPLEMENTATION: ComponentView0.{addDoneInduced,containsDoneInduced}
-
-For a given view~$v$ being processed on the current ply, we want to iterate
-over all transitions $pre \trans[e] post$ from previous plies that might
-induce a transition to a new view~$v'$.  We store the previous transitions in
-a way that makes this iteration efficient.  The  transitions are
-partitioned according to the states of the fixed processes of the pre-state;
-this allows just those transitions with $pre.\fixed = v.\fixed$ to be
-selected.
-%%% IMPLEMENTATION: ServersTransitionSet
-Further, each such subset of the transitions is indexed in various ways:
-%
-\begin{enumerate}
-\item\label{item:mightGiveSufficientUnifs-1} Those transitions such that
-  $post.\fixed$ contains a parameter not in $pre.\fixed$ are stored
-  separately;
-  %% Following condition~\ref{cond:mightGiveSufficientUnifs-1} of
-  %% Lemma~\ref{lem:mightGiveSufficientUnifs}, we consider the effect of these
-  %% transitions on \emph{each}~$v$.
-%%% IMPLEMENTATION: ServersTransitionSet.acquiringTrans
-
-\item\label{item:mightGiveSufficientUnifs-2} Those transitions not included
-  under the previous item are stored indexed against the states of the
-  fixed processes of the post-state;
-%%% IMPLEMENTATION: ServersServersTransitionSet
-  %% Following condition~\ref{cond:mightGiveSufficientUnifs-3} of
-  %% Lemma~\ref{lem:mightGiveSufficientUnifs}, for each possible $post.\fixed$ if
-  %% we have not previously induced a new transition from such a combination, we
-  %% consider the effect of all such transitions on~$v$.
-
-\item\label{item:mightGiveSufficientUnifs-3} Those transitions not included
-  under the first item are also stored indexed against each control
-  states~$cs$ such that the transition has a component that changes state from
-  control state~$cs$.
-\end{enumerate}
-
-For a given view~$v$, we consider induced transitions caused by previous
-transitions (with matching initial states for the fixed processes) as follows:
-%
-\begin{itemize}
-\item \emph{all} transitions under item~\ref{item:mightGiveSufficientUnifs-1}
-  (cf.~condition \ref{cond:mightGiveSufficientUnifs-1} of
-  Lemma~\ref{lem:mightGiveSufficientUnifs}); 
-
-\item for each possible $post.\fixed$ not under
-  item~\ref{item:mightGiveSufficientUnifs-1}: 
-  %
-  \begin{itemize}
-  \item if we have not previously induced a new transition from such a
-    combination, all the corresponding transitions under
-    item~\ref{item:mightGiveSufficientUnifs-2}
-    (cf.~condition~\ref{cond:mightGiveSufficientUnifs-3} of
-    Lemma~\ref{lem:mightGiveSufficientUnifs}); and
-
-  \item otherwise, for each component control state~$cs$ in~$v$, the
-    transitions stored against~$cs$ under
-    item~\ref{item:mightGiveSufficientUnifs-3}
-    (cf.~condition~\ref{cond:mightGiveSufficientUnifs-2} of
-    Lemma~\ref{lem:mightGiveSufficientUnifs}).
-  \end{itemize}
-\end{itemize}
-%
-Lemma~\ref{lem:mightGiveSufficientUnifs} then shows that these transitions are
-sufficient. 
-
-Similarly, for a given transition of the current ply, we want to iterate over
-all views~$v$ from previous plies that might induce a transition to a new
-view~$v'$.  We likewise store the previous views in a way that makes this
-iteration efficient.  We partition the views based on the states of the fixed
-processes, to allow the selection of just those that match a particular
-transition.
-%%% IMPLEMENTATION: ServerBasedViewSet
-Each such subset is indexed in various ways.
-%
-\begin{enumerate}
-\item\label{item:mightGiveSufficientUnifs-views1} For each possible state
-  $fixed$ of the fixed processes, an over-approximation of the views~$v$ such
-  that we have not previously induced a transition using~$v$, where the fixed
-  processes change state to~$fixed$, and no unified component changes state.
-  (This over-approximation is updated during the iteration below).
-%%% IMPLEMENTATION: IndexSet within PrincTypesViewSet 
-
-\item\label{item:mightGiveSufficientUnifs-views2} For each control state~$cs$,
-  those views with a component in control state~$cs$.
-\end{enumerate}
-
-For a given transition $pre \trans[a] post$, we consider induced transitions
-on previous views (with fixed processes matching $pre.\fixed$) as follows:
-%
-\begin{itemize}
-\item If $post.\fixed$ contains a parameter not in $pre.\fixed$, then all such
-  views (cf.~condition~\ref{cond:mightGiveSufficientUnifs-1} of
-  Lemma~\ref{lem:mightGiveSufficientUnifs});
-
-\item Otherwise:
-  %
-  \begin{itemize}
-  \item If $post.\fixed \ne pre.\fixed$, then those views~$v$ such that we
-    have not previously induced a transition using~$v$ where the fixed
-    processes change state to~$post.\fixed$ and no unified component changes
-    state (cf.~condition~\ref{cond:mightGiveSufficientUnifs-3} of
-    Lemma~\ref{lem:mightGiveSufficientUnifs}).  These views are obtained from
-    the over-approximation from
-    item~\ref{item:mightGiveSufficientUnifs-views1}, and the
-    over-approximation is updated at this point.
-
-  \item For each control state~$cs$ of a component of~$pre$, those views
-    stored against~$cs$ under item~\ref{item:mightGiveSufficientUnifs-views2}
-    (cf.~condition~\ref{cond:mightGiveSufficientUnifs-2} of
-    Lemma~\ref{lem:mightGiveSufficientUnifs}).
-  \end{itemize}
-\end{itemize}
-
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\begin{opt}
-Recall Optimisation~\ref{opt:avoid-induced}.  
-\begin{itemize}
-\item For case~\ref{case:avoid-induced-1}, we avoid unifying the principal
-  of~$v$ with the principal of~$pre$.
-
-\item For case~\ref{case:avoid-induced-2}, if $pre.\fixed = post.\fixed$ we
-  require that at least one component of~$v$ unifies with a component that
-  changes state.
-
-\item For case~\ref{case:avoid-induced-3}, we store a record of pairs
-  $(v, post.\fixed)$ for which we have considered the effect of a transition
-  $pre \trans[e] post$ on~$v$ for which $pre.\fixed \ne post.\fixed$,\,
-  %% $unifs$ describes which components of~$v$ unify with which components
-  %% of~$pre$ (
-  and $v$
-  unifies with no component.
-%
-  If subsequently we consider a similar case ---that is, the same
-  $post.\fixed$ and~$v$, and no unifications--- we identify that it will not
-  produce any new views, and so avoid the construction.
-\end{itemize}
-\end{opt}
-
-
-
-\begin{impNote}
-Done in isSufficientUnif. 
-
-\framebox{Not any more}
-\end{impNote}
-
-\begin{improve}
-The third case is not quite the same as in
-Optimisation~\ref{opt:avoid-induced}.  There we included cases where $pre$
-and~$v$ shared a component that did not change state.  An obvious attempt to
-implement this goes wrong: if there are two cases with the same $post.\fixed$
-and~$v$, that include unifications of \emph{different} components that do not
-change state, they might give different new views (with the unified components
-having different parameters in $post.\fixed$).
-%
-For example
-\begin{eqnarray*}
-pre & = & (fixed; Th_1(T_0,N_0), Nd_A(N_0,N_1)) \\
-post & = & (fixed'(N_1); Th_1'(T_0), Nd_A(N_0,N_1)) \\
-v & = & (fixed; Th_v(T_0,N_0), Nd_A(N_0,N_1))
-\end{eqnarray*}
-unifying the two $Nd_A$ processes, with remapping $\set{T_0 \mapsto T_1, N_0
-  \mapsto N_0,\linebreak[1] {N_1 \mapsto N_1}}$, induces
-\[
-(fixed'(N_1); Th_v(T_1,N_0), Nd_A(N_0,N_1) \equiv
-(fixed'(N_0); Th_v(T_0,N_1), Nd_A(N_1,N_0)).
-\]
-But with 
-\begin{eqnarray*}
-pre' & = & (fixed; Th_2(T_0,N_0,N_1), Nd_A(N_0,N_2), Nd_N(N_1,Null)) \\
-post' & = & (fixed'(N_1); Th_2'(T_0), Nd_A(N_0,N_2), Nd_N(N_1,Null))
-\end{eqnarray*}
-unifying the two $Nd_A$ processes, with remapping $\set{T_0 \mapsto T_1, N_0
-  \mapsto N_0,\linebreak[1] {N_1 \mapsto N_2}}$, induces a transition to
-\[\mit
-(fixed'(N_1); Th_v(T_1,N_0), Nd_A(N_0,N_2)) \equiv
-  (fixed'(N_0); Th_v(T_0,N_1), Nd_A(N_1, N_2)).
-\]
-
-
-If we have two cases concerning the same $post.\fixed$, $v$, and component~$c$
-of~$v$ that unifies and doesn't change state, and $c$ unifies respectively
-with~$c_1$ and~$c_2$ which differ only on parameters not in $post.\fixed$,
-then it is enough to consider just one such case.  In the above example, we
-had $c_1 = Nd_A(N_0,N_1)$,\, $c_2 = Nd_A(N_0,N_2)$ which differ on~$N_1$. 
-
-\framebox{Do this.}  For the components, it's enough to store the list of
-parameters shared with $post.\fixed$ and their indices. 
-\end{improve}
-
- 
-%%%%%%%%%%%%%%%%%%%%
-
-\begin{opt}
-If the principal of~$v$ is unified with a component of~$pre$, and loses a
-reference to a component~$c$, then all remappings of~$c$ produce the same final
-view.  Thus it is enough to consider a single remapping, say the remapping that
-agrees with the remapping within other components, but otherwise maps to fresh
-parameters.  There is no need to explicitly construct the remapping of~$c$.  
-%
-\framebox{Consider this.}
-
-This won't work with singleRef, however, because of cross references or
-missing references. 
-\end{opt}
-
-%%%%%
-
-\begin{improve} 
-If the principal and another component~$c$ of~$v$ are both unified with
-components of $pre$, and the principal of~$v$ loses the reference to~$c$ in
-the transition, then for case~\ref{clause:remap-2} of
-Definition~\ref{def:representative-consistent-extension}, we can ignore
-parameters of~$c$.  This is only relevant for remapping of some third
-component.
-%
-This might be useful when a node has a reference to the thread, but loses
-that reference.
-\end{improve}

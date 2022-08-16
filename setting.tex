@@ -187,7 +187,7 @@ for values from the type of a family of components.
 \draw (enq3)++(0,1.7) node (enq4) {$Enq_4^x(me,l,n)$};
 \path[draw, ->] (enq3) -- node[right]{\scriptsize $initNode.me?n.x$} (enq4);
 %% Enq_5
-\draw (thread)++(0,-3.4) node (enq5) {$Enq_5^x(me,n)$};
+\draw (thread)++(0,-3.4) node (enq5) {$Enq_5^x(me,l,n)$};
 \path[draw, ->] (enq4) -- node[above]{\scriptsize $setNext.me.l.n$} (enq5);
 %% Unlock
 \draw (thread)++(0,-1.7) node (unlock) {$Unlock(me)$};

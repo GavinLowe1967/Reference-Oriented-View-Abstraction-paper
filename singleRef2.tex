@@ -1,10 +1,13 @@
 \subsection{Induced transitions}
 \label{sec:singleRef-induced}
 
-We now consider how to adapt the definition of induced transitions.  This
+We now consider how to adapt the definition of induced transitions.  For the
+moment, we do not consider the effects of symmetry reduction.  The definition
 subsumes a fairly obvious adaptation of
-Definition~\ref{def:induced-transition}.  For example, the
-transition~(\ref{trans:setNext-singleRef}) induces a transition on
+Definition~\ref{def:induced-transition}.  But, in addition, the definition
+induces transitions from a view that is missing a component that is referenced
+by the principal.  For example, the transition~(\ref{trans:setNext-singleRef})
+induces a transition on
 \[\mit
 v = (fixed; Th(t, n, n'), Nd_y(n', n''))
 \]
@@ -12,10 +15,9 @@ to produce
 \[\mit
 v' = (fixed'; Th'(t, n, n'), Nd_y(n', n'')). 
 \]
-Thus omitting view transitions from~$v$ (as discussed above) does not prevent
-us producing~$v'$. 
 
-However, it turns out that we need to:
+However, it turns out that also we need to:
+%
 \begin{enumerate}
 \item consider another form of induced transitions, concerning secondary
   components from the extended transition; and
@@ -59,13 +61,13 @@ We identify that the secondary component in the  transition gains a
 reference to the principal node of~$v$, and use that to deduce the induced
 transition. 
 
-More generally, consider an extended transition $pre \trans{e} post$ and a
+More generally, consider an extended transition $pre \trans[e] post$ and a
 view $v$ such that $v$ and $pre$ are accordant, and such that a secondary
 component~$sc$ of~$post$ has a reference to $v.\princ$.  Then (subject to some
 extra conditions that we describe below) the transition induces a new
 transition producing
 \[\mit
-v' = (post.\fixed, \set{sc, v.\princ}).
+v' = (post.\fixed; sc, v.\princ).
 \]
 We call this a \emph{secondary induced transition}. 
 
@@ -90,16 +92,20 @@ secondary component, then we create an appropriate record.
 \subsubsection{Definition of induced transitions}
 
 We now adapt Definition~\ref{def:induced-transition} to describe how
-transitions are induced for restricted views.  We justify conditions~(b)
-and~(c) of the following definition in Sections~\ref{ssec:cross-refs}
-and~\ref{ssec:missing-common}, respectively.  The first form of induced
+transitions are induced for restricted views.  The first form of induced
 transition is analogous to Definition~\ref{def:induced-transition} (the only
 change is in clause~\ref{induce-clause-3}).  The second form is as discussed
-in Section~\ref{ssec:c2Refs}.
+in Section~\ref{ssec:c2Refs}.  We justify conditions~(b) and~(c) in
+Sections~\ref{ssec:cross-refs} and~\ref{ssec:missing-common}, respectively:
+the former says that if there is a missing reference from $pre$ to a component
+of~$v$, or vice versa, then that cross reference must be consistent with the
+set of views; the latter says that if both $pre$ and~$v$ have a missing
+reference to the same component, then there must be a way of instantiating
+that missing component consistent with the set of views.
 %
 \begin{definition}
 \label{def:induced-transition-singleRef}
-Consider an extended transition~$pre \trans{e} post$, and a view $v \in V$
+Consider an extended transition~$pre \trans[e] post$, and a view $v \in V$
 such that:
 %
 \begin{enumerate}
@@ -109,18 +115,19 @@ such that:
 \item[(b)] If a component $c$ of $pre$ has a reference to a component~$c'$
   of~$v$, or vice versa, then $V$ also contains the view
 \begin{eqnarray*}
-v_\cross & = & (pre.\fixed, \set{c, c'});
+v_\cross & = & (pre.\fixed, \set{c, c'})
 \end{eqnarray*}
+(i.e.~either $(pre.\fixed; c, c')$ or  $(pre.\fixed; c', c)$, respectively, in
+the notation we have been using for views);
 
 \item[(c)] If the principals of~$pre$ and~$v$ both have a reference to the
   same missing component, say with identity $id$, then there is some
   component~$c$ with identity~$id$ such that $V$ contains each of
 \[
-(pre.\fixed, \set{pre.\princ, c}) \quad\mbox{and}\quad 
-(pre.\fixed, \set{v.\princ, c}) .
+(pre.\fixed; pre.\princ, c) \quad\mbox{and}\quad (pre.\fixed; v.\princ, c) .
 \]
 In addition, if $c$ has a reference to a a secondary component $c_2$ of
-$pre.\cpts$ or $v.\cpts$, then $V$ contains $(pre.\fixed, \set{c, c_2})$.
+$pre.\cpts$ or $v.\cpts$, then $V$ contains $(pre.\fixed; c, c_2)$.
 \end{enumerate}
 %
 Then
@@ -141,15 +148,14 @@ the transition induces a \emph{primary induced transition} $v \trans{} v'$ where
 %%   either $post$ or $v$, then no new transition is induced.
 
  % (Alternative version) 
-\item\label{induce-clause-3}
-  If $v'.\princ$ has no reference to another component, then $v'$ has no
-  secondary component.  Otherwise the secondary component of~$v'$ is a
-  component~$cId$ referenced by $v'.princ$, and such that if $v.princ$ also
-  referenced~$cId$, then a component for~$cId$ was included in~$v$.  The
-  component for~$cId$ in~$v'$ is either from $post$ if the component is part
-  of the transition, or otherwise from~$v$, if such a component exists.  If
-  there was no component for~$cId$ in either $post$ or~$v$, then no new
-  transition is induced.
+\item\label{induce-clause-3} If $v'.\princ$ has no reference to another
+  component, then $v'$ has no secondary component.  Otherwise the secondary
+  component of~$v'$ is a component referenced by $v'.princ$, say with
+  identity~$cId$, such that if $v.princ$ also referenced~$cId$, then a
+  component for~$cId$ was included in~$v$.  The component for~$cId$ in~$v'$ is
+  either from $post$ if the component is part of the transition, or otherwise
+  from~$v$, if such a component exists.  If there was no component for~$cId$
+  in either $post$ or~$v$, then no new transition is induced.
 \end{enumerate}
 %
 %We call such a transition a \emph{primary induced transition}.
@@ -161,7 +167,7 @@ before the transition, but does afterwards).  Let $sc$ be the state of that
 secondary component in $post$.  Then the transition induces a \emph{secondary
   induced transition} producing
 \[\mit
-v' = (post.\fixed, \set{sc, v.\princ}).
+v' = (post.\fixed; sc, v.\princ).
 \]
 %We call such a transition a \emph{secondary induced transition}.
 %\end{description}
@@ -185,6 +191,8 @@ induce a transition to produce~$v'$ from
 v & = & (fixed; Th''(t', n, n''),Nd_x(n, null) ).
 \end{eqnarray*}
 
+\framebox{Consider following}
+%
 \begin{opt}
 \label{opt:induced-trans-singleRef}
 We can reduce the number of cases to consider.
@@ -256,9 +264,9 @@ references can lead to the discovery of false errors.
 Consider the following transition for the lock-based queue.
 \[
 \begin{align}
-(fixed(t, n_1, n_1); Enq_5(t, n_1, n_2), Nd_B(n_2, null)) 
-  \trans{setLast.t.n_2} \\
-\qquad (fixed(t, n_1, n_2); Enq_6(t), Nd_B(n_2, null)).
+(fixed(t, n_1, n_1); Enq_5^B(t, n_1, n_2), Nd_B(n_2, null)) 
+  \trans(6)[setLast.t.n_2] \\
+\qquad (fixed(t, n_1, n_2); Unlock(t), Nd_B(n_2, null)).
 \end{align}
 \]
 The thread is enqueueing~$B$ in node~$n_2$.  It has previously set $n_1$ (the
@@ -275,17 +283,17 @@ condition~(b), a transition to
 \begin{eqnarray*}
 v' & = & (fixed(t, n_1, n_2) ; Nd_A(n_1, null))
 \end{eqnarray*}
-would be induced.  But now a subsequent pop would find the stack empty (since
-$n_1$ is the dummy header node and has a null next reference), despite the
-previous push.  (In section~\ref{sec:???}, we will consider this example
-together with a watchdog that expects a single~$B$ to be pushed, and signals
-an error if a thread finds the stack empty when it should contain~$B$; thus
-the watchdog would falsely signal an error here.)
+would be induced.  But now a subsequent dequeue would find the queue empty
+(since $n_1$ is the dummy header node and has a null next reference), despite
+the previous enqueue.  (In section~\ref{sec:???}, we will consider this
+example together with a watchdog that expects a single~$B$ to be enqueued, and
+signals an error if a thread finds the queue empty when it should contain~$B$;
+thus the watchdog would falsely signal an error here.)
 
 Condition~(b) of Definition~\ref{def:induced-transition-singleRef} would
 require the existence of a view
 \begin{eqnarray*}
-v_\cross & = & (fixed(t, n_1, n_1); Enq_5(t, n_1, n_2), Nd_A(n_1, null)),
+v_\cross & = & (fixed(t, n_1, n_1); Enq_5^B(t, n_1, n_2), Nd_A(n_1, null)),
 \end{eqnarray*}
 in order to induce the transition that produces~$v'$, because the enqueueing
 thread has a (missing) reference to~$n_1$.  However, no such view exists in
@@ -308,7 +316,7 @@ Section~\ref{sec:lock-based-stack}.)
 Consider the transition
 \[
 \begin{align}
-(Top(n_1), WD_B ; Pop(t, n_1, n_2), Nd_C(n_1, n_2)) \trans{setTop.t.n_2} \\
+(Top(n_1), WD_B ; Pop(t, n_1, n_2), Nd_C(n_1, n_2)) \trans(6)[setTop.t.n_2] \\
 \qquad  (Top(n_2), WD_B ; Pop'(t), Nd_C(n_1, n_2)) .
 \end{align}
 \]
@@ -364,11 +372,10 @@ of~$pre$ and~$v$ both have a reference to the same missing component, say with
 identity~$id$, then there must be some component~$c$ with identity~$id$ such
 that $V$ contains each of
 \[
-(pre.\fixed, \set{pre.\princ, c}) \quad\mbox{and}\quad 
-(v.\fixed, \set{v.\princ, c});
+(pre.\fixed; pre.\princ, c) \quad\mbox{and}\quad (pre.\fixed; v.\princ, c);
 \]
 and, in addition, if $c$ has a reference to a a secondary component $c_2$ of
-$pre.\cpts$ or $v.\cpts$, then $V$ contains $(pre.\fixed, \set{c, c_2})$.
+$pre.\cpts$ or $v.\cpts$, then $V$ contains $(pre.\fixed; c, c_2)$.
 %
 In other words, there is some way of instantiating the missing component~$c$
 that is common to both views, in a way that is consistent with other views.
@@ -428,19 +435,23 @@ v & = & (Top(n_0), WD_B; Th_{pop,B}(t_1, n_1, n_2), Nd_A(n_2, null)).
 %
 These are depicted in Figure~\ref{fig:missingCommon}.  Both principals are
 threads that are attempting to perform a pop, of nodes~$n_0$ and~$n_1$,
-respectively, each having read~$B$ from that node.  Both views have an omitted
+respectively, each having read~$B$ from that node.  The fixed process $Top$
+references the top node in the stack, here $n_0$.  
+Both views have an omitted
 reference to node~$n_1$, depicted as dotted in the figure.  Both are possible
-views of the system, but they are not consistent (since no system state has
-two $B$-nodes in the stack).
+views of the system, but they are not consistent, since no system state has
+two $B$-nodes in the stack.
 
-From the state $pre$, thread~$t_0$ can advance \SCALA{top} to~$n_1$,
+From the state $pre$, thread~$t_0$ can advance $Top$ to~$n_1$,
 popping~$B$, in a transition that produces
 \[\mit
-(Top(n_1); Th(t_0), Nd_B(n_0, n_1)).
+(Top(n_1), WD_X; Th(t_0), Nd_B(n_0, n_1)).
 \]
+The watchdog has observed the pop of~$B$; it evolves to a state $WD_X$ where a
+second pop of~$B$ should not happen.  
 Without condition~(c), this transition  induces a transition from~$v$ to
 \[\mit
-(Top(n_1); Th_{pop,B}(t_1, n_1, n_2), Nd_A(n_2, null)).
+(Top(n_1), WD_X; Th_{pop,B}(t_1, n_1, n_2), Nd_A(n_2, null)).
 \]
 But now $t_1$ can pop~$B$ (from~$n_1$).  The watchdog will then falsely signal
 an error, since it has seen~$B$ popped twice. 
@@ -467,12 +478,5 @@ and $t_1$ is in a state that is consistent only with~$n_1$ holding~$B$.
 
 \framebox{FIXME} Add explanation of final clause: ``If $c$ has a reference to
 a a secondary component $c_2$ of $pre.\cpts$ or $v.\cpts$, then $V$ contains
-$(pre.\fixed, \set{c, c_2})$''.  The implementation checks this.  It is
+$(pre.\fixed; c, c_2)$''.  The implementation checks this.  It is
 necessary to avoid a false positive with the lock-free queue.
-
-\begin{impNote}
-This is done in \texttt{EffectOn.\linebreak[1]check\-Compatible\-Missing}.  To
-fit with breadth-first search, if there is no way to instantiate the common
-missing component, we store relevant information in \texttt{EffectOnStore} in
-case relevant views are found subsequently.
-\end{impNote}

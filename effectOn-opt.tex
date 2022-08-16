@@ -1,0 +1,297 @@
+
+\subsubsection{Optimisations}
+
+Recall that, at least in principle, we need to consider transitions induced by
+a transition on a view: (1) for each view~$v$ found on the previous ply, and
+\emph{all} transitions found on earlier plies; and (2) for each transition
+found on the current ply and \emph{all} views found on earlier plies.  This
+constitutes a lot of cases.  We explain how we avoid considering most cases,
+restricting only to those that might actually produce a new view.  We make use
+of the following lemma.
+
+%%%%%
+
+\begin{lemma}\label{lem:mightGiveSufficientUnifs}
+Consider a transition $pre \trans[e] post$ and a view~$v$ such that
+$pre.\fixed = v.\fixed$.   Suppose:
+%
+\begin{enumerate}
+\item\label{cond:mightGiveSufficientUnifs-1}
+  Every parameter of $post.\fixed$ is also a parameter of $pre.\fixed$;
+
+\item\label{cond:mightGiveSufficientUnifs-2}
+  No component of $v$ is unified with 
+%% % is in the same control state as
+  a component of~$pre$ that changes state in the transition; and
+
+\item\label{cond:mightGiveSufficientUnifs-3}
+  Either $post.\fixed = pre.\fixed$, or we previously used a transition
+  $pre' \trans[e'] post'$ with $post'.\fixed = post.\fixed$, acting on
+  this~$v$, to induce a transition that created a new view, and such that no
+  component of~$v$ was unified with a component of~$pre'$ that changed state.
+\end{enumerate}
+%
+Then any view induced by the transition on~$v$ is a view that had already been
+found. 
+\end{lemma}
+
+%%%%%
+
+\begin{proof}
+Condition~\ref{cond:mightGiveSufficientUnifs-2}  means that
+%%  no component of~$v$ changes state in the induced transition.  This means
+%% that
+if we use unification function~$\pi'$, then the resulting view is $v' =
+(post.\fixed, \pi'(v.\cpts))$.
+%
+However, $\pi'$ is the identity over parameters of $pre.\fixed$; so by
+condition~\ref{cond:mightGiveSufficientUnifs-1}, $\pi'$ is also the identity
+over parameters of $post.\fixed$.  Hence $v' = \pi'(post.\fixed, v.\cpts)$.
+%
+\begin{itemize}
+\item If $post.\fixed = pre.\fixed$, then $v'$ is equivalent to~$v$, so no new
+  view is produced.
+
+\item Otherwise, by condition~\ref{cond:mightGiveSufficientUnifs-3}, we
+  previously used a transition $pre' \trans[e'] post'$ with $post'.\fixed =
+  post.\fixed$, acting on this~$v$, to induce a transition that created a new
+  view, and such that no component of~$v$ was unified with a component
+  of~$pre'$ that changed state.  But this earlier case would have produced a
+  view equivalent to~$v'$, by the same argument as above.  Hence no new view
+  is created in this case.
+\end{itemize}
+\end{proof}
+
+In order to use this result, we record information so that
+condition~\ref{cond:mightGiveSufficientUnifs-3} can be decided: whenever we
+induce a transition where the fixed processes change state and no unified
+component changes state, we record this fact (specifically, the relevant~$v$
+and $post.\fixed$).
+%%% IMPLEMENTATION: ComponentView0.{addDoneInduced,containsDoneInduced}
+
+For a given view~$v$ being processed on the current ply, we want to iterate
+over all transitions $pre \trans[e] post$ from previous plies that might
+induce a transition to a new view~$v'$.  We store the previous transitions in
+a way that makes this iteration efficient.  For
+condition~\ref{cond:mightGiveSufficientUnifs-2}, we use the fact that if two
+states are in different control states, they cannot be unified: this allows us
+to avoid building the unification function in most cases.  The transitions are
+partitioned according to the states of the fixed processes of the pre-state;
+this allows just those transitions with $pre.\fixed = v.\fixed$ to be
+selected.
+%%% IMPLEMENTATION: ServersTransitionSet
+Further, each such subset of the transitions is indexed in various ways:
+%
+\begin{enumerate}
+\item\label{item:mightGiveSufficientUnifs-1} Those transitions such that
+  $post.\fixed$ contains a parameter not in $pre.\fixed$ are stored
+  separately;
+%%% IMPLEMENTATION: ServersTransitionSet.acquiringTrans
+
+\item\label{item:mightGiveSufficientUnifs-2} Those transitions not included
+  under the previous item are stored indexed against the states of the
+  fixed processes of the post-state;
+%%% IMPLEMENTATION: ServersServersTransitionSet
+
+\item\label{item:mightGiveSufficientUnifs-3} Those transitions not included
+  under the first item are also stored indexed against each control
+  states~$cs$ such that the transition has a component that changes state from
+  control state~$cs$.
+\end{enumerate}
+
+For a given view~$v$, we consider induced transitions caused by previous
+transitions (with matching initial states for the fixed processes) as follows:
+%
+\begin{itemize}
+\item \emph{all} transitions under item~\ref{item:mightGiveSufficientUnifs-1}
+  (cf.~condition \ref{cond:mightGiveSufficientUnifs-1} of
+  Lemma~\ref{lem:mightGiveSufficientUnifs}); 
+
+\item for each possible $post.\fixed$ not under
+  item~\ref{item:mightGiveSufficientUnifs-1}: 
+  %
+  \begin{itemize}
+  \item if we have not previously induced a new transition from such a
+    combination, all the corresponding transitions under
+    item~\ref{item:mightGiveSufficientUnifs-2}
+    (cf.~condition~\ref{cond:mightGiveSufficientUnifs-3} of
+    Lemma~\ref{lem:mightGiveSufficientUnifs}); and
+
+  \item otherwise, for each component control state~$cs$ in~$v$, the
+    transitions stored against~$cs$ under
+    item~\ref{item:mightGiveSufficientUnifs-3}
+    (cf.~condition~\ref{cond:mightGiveSufficientUnifs-2} of
+    Lemma~\ref{lem:mightGiveSufficientUnifs}).
+  \end{itemize}
+\end{itemize}
+%
+Lemma~\ref{lem:mightGiveSufficientUnifs} then shows that these transitions are
+sufficient. 
+
+Similarly, for a given transition of the current ply, we want to iterate over
+all views~$v$ from previous plies that might induce a transition to a new
+view~$v'$.  We likewise store the previous views in a way that makes this
+iteration efficient.  We partition the views based on the states of the fixed
+processes, to allow the selection of just those that match a particular
+transition.
+%%% IMPLEMENTATION: ServerBasedViewSet
+Each such subset is indexed in various ways.
+%
+\begin{enumerate}
+\item\label{item:mightGiveSufficientUnifs-views1} For each possible state
+  $fixed$ of the fixed processes, an over-approximation of the views~$v$ such
+  that we have not previously induced a transition using~$v$, where the fixed
+  processes change state to~$fixed$, and no unified component changes state.
+  (This over-approximation is updated during the iteration below).
+%%% IMPLEMENTATION: IndexSet within PrincTypesViewSet 
+
+\item\label{item:mightGiveSufficientUnifs-views2} For each control state~$cs$,
+  those views with a component in control state~$cs$.
+\end{enumerate}
+
+For a given transition $pre \trans[a] post$, we consider induced transitions
+on previous views (with fixed processes matching $pre.\fixed$) as follows:
+%
+\begin{itemize}
+\item If $post.\fixed$ contains a parameter not in $pre.\fixed$, then all such
+  views (cf.~condition~\ref{cond:mightGiveSufficientUnifs-1} of
+  Lemma~\ref{lem:mightGiveSufficientUnifs});
+
+\item Otherwise:
+  %
+  \begin{itemize}
+  \item If $post.\fixed \ne pre.\fixed$, then those views~$v$ such that we
+    have not previously induced a transition using~$v$ where the fixed
+    processes change state to~$post.\fixed$ and no unified component changes
+    state (cf.~condition~\ref{cond:mightGiveSufficientUnifs-3} of
+    Lemma~\ref{lem:mightGiveSufficientUnifs}).  These views are obtained from
+    the over-approximation from
+    item~\ref{item:mightGiveSufficientUnifs-views1}, and the
+    over-approximation is updated at this point.
+
+  \item For each control state~$cs$ of a component of~$pre$, those views
+    stored against~$cs$ under item~\ref{item:mightGiveSufficientUnifs-views2}
+    (cf.~condition~\ref{cond:mightGiveSufficientUnifs-2} of
+    Lemma~\ref{lem:mightGiveSufficientUnifs}).
+  \end{itemize}
+\end{itemize}
+%
+Lemma~\ref{lem:mightGiveSufficientUnifs} then shows that these views are
+sufficient.
+
+In addition, when either of the above iterations produces a view and
+transition that might be unified, we form the unification(s), and subsequently
+check whether the conditions of Lemma~\ref{lem:mightGiveSufficientUnifs} are
+satisfied for that unification function.  This further reduces the number of
+cases that needs to be reduced; however, the above efficient iterations are
+the more effective optimisation. 
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% \begin{opt}
+%% Recall Optimisation~\ref{opt:avoid-induced}.  
+%% \begin{itemize}
+%% \item For case~\ref{case:avoid-induced-1}, we avoid unifying the principal
+%%   of~$v$ with the principal of~$pre$.
+
+%% \item For case~\ref{case:avoid-induced-2}, if $pre.\fixed = post.\fixed$ we
+%%   require that at least one component of~$v$ unifies with a component that
+%%   changes state.
+
+%% \item For case~\ref{case:avoid-induced-3}, we store a record of pairs
+%%   $(v, post.\fixed)$ for which we have considered the effect of a transition
+%%   $pre \trans[e] post$ on~$v$ for which $pre.\fixed \ne post.\fixed$,\,
+%%   %% $unifs$ describes which components of~$v$ unify with which components
+%%   %% of~$pre$ (
+%%   and $v$
+%%   unifies with no component.
+%% %
+%%   If subsequently we consider a similar case ---that is, the same
+%%   $post.\fixed$ and~$v$, and no unifications--- we identify that it will not
+%%   produce any new views, and so avoid the construction.
+%% \end{itemize}
+%% \end{opt}
+
+
+
+%% \begin{impNote}
+%% Done in isSufficientUnif. 
+
+%% \framebox{Not any more}
+%% \end{impNote}
+
+%% \begin{improve}
+%% The third case is not quite the same as in
+%% Optimisation~\ref{opt:avoid-induced}.  There we included cases where $pre$
+%% and~$v$ shared a component that did not change state.  An obvious attempt to
+%% implement this goes wrong: if there are two cases with the same $post.\fixed$
+%% and~$v$, that include unifications of \emph{different} components that do not
+%% change state, they might give different new views (with the unified components
+%% having different parameters in $post.\fixed$).
+%% %
+%% For example
+%% \begin{eqnarray*}
+%% pre & = & (fixed; Th_1(T_0,N_0), Nd_A(N_0,N_1)) \\
+%% post & = & (fixed'(N_1); Th_1'(T_0), Nd_A(N_0,N_1)) \\
+%% v & = & (fixed; Th_v(T_0,N_0), Nd_A(N_0,N_1))
+%% \end{eqnarray*}
+%% unifying the two $Nd_A$ processes, with remapping $\set{T_0 \mapsto T_1, N_0
+%%   \mapsto N_0,\linebreak[1] {N_1 \mapsto N_1}}$, induces
+%% \[
+%% (fixed'(N_1); Th_v(T_1,N_0), Nd_A(N_0,N_1) \equiv
+%% (fixed'(N_0); Th_v(T_0,N_1), Nd_A(N_1,N_0)).
+%% \]
+%% But with 
+%% \begin{eqnarray*}
+%% pre' & = & (fixed; Th_2(T_0,N_0,N_1), Nd_A(N_0,N_2), Nd_N(N_1,Null)) \\
+%% post' & = & (fixed'(N_1); Th_2'(T_0), Nd_A(N_0,N_2), Nd_N(N_1,Null))
+%% \end{eqnarray*}
+%% unifying the two $Nd_A$ processes, with remapping $\set{T_0 \mapsto T_1, N_0
+%%   \mapsto N_0,\linebreak[1] {N_1 \mapsto N_2}}$, induces a transition to
+%% \[\mit
+%% (fixed'(N_1); Th_v(T_1,N_0), Nd_A(N_0,N_2)) \equiv
+%%   (fixed'(N_0); Th_v(T_0,N_1), Nd_A(N_1, N_2)).
+%% \]
+
+
+%% If we have two cases concerning the same $post.\fixed$, $v$, and component~$c$
+%% of~$v$ that unifies and doesn't change state, and $c$ unifies respectively
+%% with~$c_1$ and~$c_2$ which differ only on parameters not in $post.\fixed$,
+%% then it is enough to consider just one such case.  In the above example, we
+%% had $c_1 = Nd_A(N_0,N_1)$,\, $c_2 = Nd_A(N_0,N_2)$ which differ on~$N_1$. 
+
+%% \framebox{Do this.}  For the components, it's enough to store the list of
+%% parameters shared with $post.\fixed$ and their indices. 
+%% \end{improve}
+
+ 
+%%%%%%%%%%%%%%%%%%%%
+
+\begin{improve}
+If the principal of~$v$ is unified with a component of~$pre$, and loses a
+reference to a component~$c$, then all remappings of~$c$ produce the same final
+view.  Thus it is enough to consider a single remapping, say the remapping that
+agrees with the remapping within other components, but otherwise maps to fresh
+parameters.  There is no need to explicitly construct the remapping of~$c$.  
+%
+\framebox{Consider this.}
+
+This won't work with singleRef, however, because of cross references or
+missing references. 
+\end{improve}
+
+%%%%%
+
+\begin{improve} 
+If the principal and another component~$c$ of~$v$ are both unified with
+components of $pre$, and the principal of~$v$ loses the reference to~$c$ in
+the transition, then for case~\ref{clause:remap-2} of
+Definition~\ref{def:representative-consistent-extension}, we can ignore
+parameters of~$c$.  This is only relevant for remapping of some third
+component.
+%
+This might be useful when a node has a reference to the thread, but loses
+that reference.
+\end{improve}

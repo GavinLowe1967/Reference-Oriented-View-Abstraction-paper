@@ -5,12 +5,11 @@ when using restricted views.
 %
 \begin{definition}
 \label{def:transitions-singleRef}
-Given a set $V$ of views, we build each active-process extended transition
-$pre \trans{e} post$, and the corresponding abstract transitions $v \trans{e}
-v'$, as in Definition~\ref{def:active-process-transition-singleRef}.
+Given a set $V$ of views, we build each  transitions $pre \trans[e]
+post$, as in Definition~\ref{def:active-process-transition-singleRef}.
 %
-We then also create every transition that $pre \trans{e} post$ induces on a
-view in~$V$, as in Definition~\ref{def:induced-transition-singleRef}.
+We then also create every transition that $pre \trans[e] post$ induces on a
+view $v \in V$, as in Definition~\ref{def:induced-transition-singleRef}.
 \end{definition}
 
 The following lemma will prove useful.
@@ -40,18 +39,18 @@ the procedure in Definition~\ref{def:transitions-singleRef}.
 \begin{proof}
 Consider an abstract transition
 \[
-\gamma(V) \ni s \trans{e} s' \sqge_{\V} v'.
+\gamma(V) \ni s \trans[e] s' \sqge_{\V} v'.
 \]
 We need to show that we generate $v'$ as part of the process described above.
 
 Let $pId = v'.\princ.id$ be the identity of the principal of~$v'$.  If $v'$
 has a secondary component, let $cId$ be its identity (so $pId$ has a
-reference~$cId$ in~$s'$); if $v'$ has no secondary component, then $cId$ is
+reference to~$cId$ in~$s'$); if $v'$ has no secondary component, then $cId$ is
 undefined.  Given an identity~$id$, we write $s(id)$ and~$s'(id)$ for the
 states of the corresponding components in~$s$ and~$s'$.
 
 We perform a case analysis.  At various points we will induce a transition
-from an extended transition $pre \trans{e} post$ and some view~$v$.  In each
+from a transition $pre \trans[e] post$ and some view~$v$.  In each
 case, $v$ will be a view of~$s$, and so a member of~$V$; and $v$ and~$pre$
 will both be substates of~$s$, so conditions~a--c of
 Definition~\ref{def:induced-transition-singleRef} will be satisfied, by
@@ -60,7 +59,7 @@ Lemma~\ref{lem:induced-conditions}.
 \begin{enumerate}
 \item
 First suppose $pId$ is the active component in the concrete transition \( {s
-  \trans{e} s'} \), and suppose that either: 
+  \trans[e] s'} \), and suppose that either: 
 \begin{enumerate}
 \item[(a)] $v'$ has no secondary component; 
 
@@ -80,73 +79,68 @@ We build a view~$v$ of~$s$ for $pId$ in each of the four cases as follows:
 \begin{enumerate}
 \item[(a)] Let $v$ be an arbitrary view of~$s$ for $pId$;
 
-\item[(b)] Let $v = (s.\fixed, \set{s(pId), s(cId)})$;
+\item[(b)] Let $v = (s.\fixed; s(pId), s(cId))$;
 
 \item[(c)] Let $v$ be an arbitrary view of~$s$ for $pId$;
 
-\item[(d)] Let $v = (s.\fixed, \set{s(pId), s(cId')})$
+\item[(d)] Let $v = (s.\fixed; s(pId), s(cId'))$
 %%  where $c_1$ is the state of~$cId'$ in~$s$
   (note that $s(pId)$ must hold a reference to~$cId'$, by
   clause~\ref{assump:max-one-extra-component} of Assumption~\ref{assump:2},
   since $pId$ gains a reference to~$cId$ in the transition).
 \end{enumerate}
 
-As in the proof of Lemma~\ref{lem:abstract-transitions-sound}, let $pre$ be
-the extension of~$v$ to include any other component that is necessary for the
-transition (this will be $s(cId)$ in cases~c and~d); or let $pre = v$ if no
-other component is necessary.  Let $post$ be the corresponding states in~$s'$.
-Then in each case the technique of
+As in the proof of Proposition~\ref{prop:abstract-transitions-sound}, let
+$pre$ be the extension of~$v$ to include any other component that is necessary
+for the transition (this will be $s(cId)$ in cases~c and~d); or let $pre = v$
+if no other component is necessary.  Let $post$ be the corresponding states
+in~$s'$.  Then in each case the technique of
 Definition~\ref{def:active-process-transition-singleRef} builds the transition
-\( pre \trans{e} post \), and extracts the view $v'$ from~$post$.
+\( pre \trans[e] post \), and extracts the view $v'$ from~$post$.
 
 
 \item %%% 2
-Now suppose $pId$ is the active component in the concrete transition \( {s
-  \trans{e} s'} \), but the previous case does not apply; i.e.~$v'$ has a
+Now suppose $pId$ is the active component in the concrete transition $s
+  \trans[e] s'$, but the previous case does not apply; i.e.~$v'$ has a
 secondary component with identity~$cId$,\, $s(pId)$ has a reference to~$cId$,
 and $pId$ synchronises with some component~$cId'$ other than~$cId$.
 
 Then, as in the previous case, the technique of
 Definition~\ref{def:active-process-transition-singleRef} builds a transition
-\( pre \trans{e} post \) that includes the other component~$cId'$, but
+\( pre \trans[e] post \) that includes the other component~$cId'$, but
 not~$cId$.
 %
-Let $v = (s.\fixed, \set{s(pId), s(cId)})$.
-%; this is a view of~$s$, so $v \in V$.
-Then the transition \( pre \trans{e} post \) induces a transition $v \trans{}
-v'$.
-%% : in particular, $v$ and~$pre$ are both substates of~$s$, so
-%% conditions~a--c of Definition~\ref{def:induced-transition-singleRef} are
-%% satisfied, by Lemma~\ref{lem:induced-conditions}.
+Let $v = (s.\fixed; s(pId), s(cId))$.  Then the transition $pre \trans[e]
+post$ induces a transition $v \trans v'$.
 
 
 \item %%% 3
 \label{case:singleRef-correct-3}
-Now suppose the transition $s \trans{e} s'$ has an active component other
+Now suppose the transition $s \trans[e] s'$ has an active component other
 than~$pId$.  The component for~$pId$ might be a secondary component in the
 transition, or it might not be involved in the transition.  Then as in
 previous cases, the technique of
-Definition~\ref{def:active-process-transition-singleRef} builds an extended
-transition \( pre \trans{e} post \) that involves all the relevant
-components.  We perform a case analysis.
+Definition~\ref{def:active-process-transition-singleRef} builds a view
+transition \( pre \trans[e] post \) that involves all the relevant components.
+We perform a case analysis.
 %
 \begin{enumerate}
 \item First, suppose that $v'$ has a secondary component~$cId$ which
   is included in the extended transition, and $s(pId)$ has a reference
   to~$cId$; $pId$ might or might not be in the extended transition.
 %  
-  Let $v = (s.\fixed, \set{s(pId), s(cId)})$.  This produces a primary induced
-  transition $v \trans{} v'$.  Note that the state for~$cId$ in~$v'$ is taken
+  Let $v = (s.\fixed; s(pId), s(cId))$.  This produces a primary induced
+  transition $v \trans v'$.  Note that the state for~$cId$ in~$v'$ is taken
   from~$s'$ in this case.
 
-\item Next suppose that either $v'$ has no secondary component (so $s'(pId)$
-  has no reference to another component), or $v'$ has a secondary
-  component~$cId$ which is included in the extended transition, but $s(pId)$
-  does \emph{not} have a reference to~$cId$.  In the former case, $pId$ might
-  or might not be in the extended transition; but in the latter case, $pId$
+\item Next suppose that either (i)~$v'$ has no secondary component (so
+  $s'(pId)$ has no reference to another component), or (ii)~$v'$ has a
+  secondary component~$cId$ which is included in the extended transition, but
+  $s(pId)$ does \emph{not} have a reference to~$cId$.  In case~(i), $pId$
+  might or might not be in the extended transition; but in case~(ii), $pId$
   changes state so must be in the transition.  Let $v$ be an arbitrary view
   of~$s$ for~$pId$.  This produces a primary induced transition $v \trans{}
-  v'$.  The state for~$cId$ in~$v'$ is again taken from~$s'$. 
+  v'$.  The state for~$cId$ in~$v'$ is again taken from~$s'$.
 
 %% \item First suppose that either $v'$ has no secondary component (so $s'(pId)$
 %%   has no reference to another component), or the secondary component~$cId$
@@ -161,34 +155,33 @@ components.  We perform a case analysis.
 \item Next suppose that $v'$ has a secondary component with identity~$cId$,
   and neither $pId$ nor~$cId$ is included in the extended transition; so
   neither changes state, and $pId$ has a reference to~$cId$ in both~$s$
-  and~$v'$.  Let $v = (pre.\fixed, \set{s(pId), s(cId)})$, which is a view
-  of~$s$.  This again produces a primary induced transition $v \trans{} v'$ (at
-  most the fixed processes change state).
+  and~$v'$.  Let $v = (pre.\fixed; s(pId), s(cId))$, which is a view of~$s$.
+  This again produces a primary induced transition $v \trans{} v'$ (at most
+  the fixed processes change state).
 
 \item Finally suppose that again $v'$ has a secondary component with
   identity~$cId$ that is not in the extended transition (so $s'(cId) =
   s(cId)$), but that $pId$ \emph{is} in this transition.
   \begin{itemize}
   \item Suppose $s(pId)$ has a reference to~$cId$.  Let $v =
-    (pre.\fixed,\linebreak[1] \set{s(pId), s(cId)})$.  Then, as in earlier
-    cases, this gives a primary induced transition $v \trans{} v'$.
+    (pre.\fixed;\linebreak[1] s(pId), s(cId))$.  Then, as in earlier cases,
+    this gives a primary induced transition $v \trans v'$.
 
   \item Suppose $s(pId)$ does not have a reference to~$cId$ (so $pId$ acquires
     the reference in the transition).  Let $v$ be an arbitrary view of~$s$
     for~$cId$.  Then this gives a secondary induced transition producing~$v' =
-    (post.\fixed, \set{s'(pId), s'(cId)})$ (so $sc = s'(pId)$ in the notation
-    of Definition~\ref{def:induced-transition-singleRef}).
+    (post.\fixed; s'(pId), s'(cId))$ (so $sc = s'(pId)$ in the notation of
+    Definition~\ref{def:induced-transition-singleRef}).
   \end{itemize}
 \end{enumerate}
 
 \item
-Finally suppose the transition $s \trans{e} s'$ has an active fixed process.
+Finally suppose the transition $s \trans[e] s'$ has an active fixed process.
 Consider an arbitrary corresponding view transition (i.e.~with an arbitrary
-principal), and consider the corresponding extended transition $pre \trans{e}
-post$.  Then this extended transition induces a transition that produces~$v'$,
-exactly as in case~\ref{case:singleRef-correct-3}.
+principal) $pre \trans[e] post$.  Then this view transition induces a
+transition that produces~$v'$, exactly as in
+case~\ref{case:singleRef-correct-3}.
 \end{enumerate}
-
 \end{proof}
 
 %%%%%
@@ -199,6 +192,13 @@ $pId$ acquires the reference in the transition.
 \end{improve}
 
 %%%%%
+
+\begin{impNote}
+This is done in \texttt{EffectOn.\linebreak[1]check\-Compatible\-Missing}.  To
+fit with breadth-first search, if there is no way to instantiate the common
+missing component, we store relevant information in \texttt{EffectOnStore} in
+case relevant views are found subsequently.
+\end{impNote}
 
 \begin{impNote}
 When considering transitions induced by a transition $pre \trans{e} post$ upon

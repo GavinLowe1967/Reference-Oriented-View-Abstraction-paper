@@ -302,17 +302,17 @@ case, every parameter in $v'$ is also in~$v$, by Assumption~\ref{assump:2}.
 We extract from~$v'$ the view~$v'' = viewOf(v')$ of the principal component,
 to create an abstract transition $v \trans[e] v''$.
 
-If there is such an $id$, we build the transition template $v \uplus \hole{id}
-\trans[e] v' \uplus \hole{id}$.  We then find each component state~$c$ from a
-view of~$V$ such that $c$ has identity~$id$ and is compatible with~$v$.  We
-form all pre-states $pre = v \uplus c$ by extending $v$ with each such
-component state~$c$.  We form corresponding post-states $post$ by extending
-$v'$ with the corresponding post-states: if $e$ is in the alphabet of~$id$
-then we build $post = v' \uplus c'$ for each state~$c'$ such that $c \trans[e]
-c'$; or otherwise $post = v' \uplus c$.  Thus we form extended transitions
-$pre \trans[e] post$ including all the relevant component states.  Finally, we
-extract from $post$ the view~$v'' = viewOf(post)$ of the principal component,
-to create an abstract transition $v \trans[e] v''$.
+If there is such an $id$, we build the \emph{transition template} $v \uplus
+\hole{id} \trans[e] v' \uplus \hole{id}$.  We then find each component
+state~$c$ from a view of~$V$ such that $c$ has identity~$id$ and is compatible
+with~$v$.  We form all pre-states $pre = v \uplus c$ by extending $v$ with
+each such component state~$c$.  We form corresponding post-states $post$ by
+extending $v'$ with the corresponding post-states: if $e$ is in the alphabet
+of~$id$ then we build $post = v' \uplus c'$ for each state~$c'$ such that $c
+\trans[e] c'$; or otherwise $post = v' \uplus c$.  Thus we form \emph{extended
+  transitions} $pre \trans[e] post$ including all the relevant component
+states.  Finally, we extract from $post$ the view~$v'' = viewOf(post)$ of the
+principal component, to create an abstract transition $v \trans[e] v''$.
 
 We define an \emph{active-process transition} to be an abstract transition
 built in either of these two ways.

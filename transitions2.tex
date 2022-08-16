@@ -55,7 +55,7 @@ thread sets the next reference of the last node:
 \begin{align}
 (fixed(t, n_h, n_l);  Enq_4(t, n_l, n), \Node_y(n_l, Null), \Node_x(n, Null)) 
  \trans(6)[setNext.t.n_l.n] \\
-\qquad (fixed(t, n_h, n_l);  Enq_5(t, n), \Node_y(n_l, n), \Node_x(n, Null)).
+\qquad (fixed(t, n_h, n_l);  Enq_5(t, l, n), \Node_y(n_l, n), \Node_x(n, Null)).
 \end{align}
 \]
 This induces the following transition on the view of~$n_l$:
@@ -71,46 +71,51 @@ This induces the following transition on the view of~$n_l$:
 We note some optimisations concerning the use of
 Definition~\ref{def:induced-transition}.  
 
-\framebox{Improve following and integrate with later text.}
-
-%
 \begin{opt}
-\label{opt:avoid-induced}
-A straightforward use of Definition~\ref{def:induced-transition} would
-consider many different extended transitions $pre \trans[e] post$ and
-views~$v$ to create new post-views.  However, it turns out that many of these
-induced transitions create identical post-views.
-%
-\begin{enumerate}
-\item\label{case:avoid-induced-1} If $pre.\princ = v.\princ$ then the induced
-  transition is identical to the original transition. 
-
-\item\label{case:avoid-induced-2} Suppose $pre.\fixed = post.\fixed$ and $v$
-  contains no component that changes state in the transition.  Then the new
-  view~$v'$ is identical to~$v$.
-
-\item\label{case:avoid-induced-3} Now suppose $pre.\fixed \ne post.\fixed$,
-  but $v$ again contains no component that changes state in the transition.
-  Then the new view~$v'$ will be different from~$v$.  However, suppose we
-  subsequently consider another extended transition $pre' \trans{} post'$ with
-  $post'.\fixed = post.\fixed$, and consider its effect on the same~$v$
-  (necessarily $pre'.\fixed = pre.\fixed = v.\fixed$), and $v$ again contains
-  no component that changes state in the transition.  Then this will induce a
-  transition to the same post-view~$v'$.
-\end{enumerate}
-%
-We identify such cases early, and avoid producing the duplicate post-views.
-We discuss this further in Section~\ref{ssec:induced-symmetry}. 
+If $pre.\princ = v.\princ$ then the induced transition is identical to the
+original transition.  We therefore avoid unifying the principal of~$v$ with
+the principal of~$pre$.
 \end{opt}
 
-\begin{impNote}
-The above optimisation is implemented in
-\texttt{Unification.isSufficientUnif}.  Not any more...
-\end{impNote}
+
+%% \framebox{Improve following and integrate with later text.}
+
+%% %
+%% \begin{opt}
+%% \label{opt:avoid-induced}
+%% A straightforward use of Definition~\ref{def:induced-transition} would
+%% consider many different extended transitions $pre \trans[e] post$ and
+%% views~$v$ to create new post-views.  However, it turns out that many of these
+%% induced transitions create identical post-views.
+%% %
+%% \begin{enumerate}
+%% \item\label{case:avoid-induced-1} If $pre.\princ = v.\princ$ then the induced
+%%   transition is identical to the original transition. 
+
+%% \item\label{case:avoid-induced-2} Suppose $pre.\fixed = post.\fixed$ and $v$
+%%   contains no component that changes state in the transition.  Then the new
+%%   view~$v'$ is identical to~$v$.
+
+%% \item\label{case:avoid-induced-3} Now suppose $pre.\fixed \ne post.\fixed$,
+%%   but $v$ again contains no component that changes state in the transition.
+%%   Then the new view~$v'$ will be different from~$v$.  However, suppose we
+%%   subsequently consider another extended transition $pre' \trans{} post'$ with
+%%   $post'.\fixed = post.\fixed$, and consider its effect on the same~$v$
+%%   (necessarily $pre'.\fixed = pre.\fixed = v.\fixed$), and $v$ again contains
+%%   no component that changes state in the transition.  Then this will induce a
+%%   transition to the same post-view~$v'$.
+%% \end{enumerate}
+%% %
+%% We identify such cases early, and avoid producing the duplicate post-views.
+%% We discuss this further in Section~\ref{ssec:induced-symmetry}. 
+%% \end{opt}
+
+%% \begin{impNote}
+%% The above optimisation is implemented in
+%% \texttt{Unification.isSufficientUnif}.  Not any more...
+%% \end{impNote}
 
 \begin{improve}
-Can it be done earlier?  
-
 Also, suppose a single component~$c$ of~$v$ changes state and either (1) is
 the principal of~$V$, but doesn't gain any reference; or (2) is a secondary
 component.  Then it is enough to consider one such case for each view~$v$ and

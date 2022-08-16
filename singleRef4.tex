@@ -1,9 +1,7 @@
 \subsection{Identifying sufficient remappings}
 
-\framebox{Introduce} term \emph{linkage} earlier.
-
-\framebox{*** combine this with the next subsection}  Arguably some of this
-should be covered when considering full views. 
+\framebox{Arguably some of this should be covered when considering full
+  views.}
 
 In this section we consider the problem of calculating all induced transitions
 produced by a transition $pre \trans{} post$ acting on view~$v$, given that
@@ -11,8 +9,10 @@ both are represented in normal form.  We want to produce all resulting views
 corresponding to the transition acting on a remapping of~$v$, up to
 equivalence.  Our aim, then, is to identify sufficient remappings to guarantee
 this.  But, in the interests of efficiency, we want to avoid considering too
-many remappings.  The necessity of considering linkages complicates the
-process over that for full views.
+many remappings.  Clauses~(b) and~(c) of
+Definition~\ref{def:induced-transition-singleRef} complicates the process over
+that for full views; we use the term \emph{linkage} for a view necessary for
+one of thses conditions.
 
 %% Having to deal with linkages when considering induced transitions adds
 %% considerable cost to the checking procedure.  In this section we show that it
@@ -54,7 +54,7 @@ extended to give values for all parameters of the view~$v$.
 \item We then consider conditions~(b) and~(c) of
   Definition~\ref{def:induced-transition-singleRef}.  For each result-defining
   remapping, we consider different extensions that will correspond to
-  different required views, but omitting a remappings that requires a
+  different required views, but omitting remappings that requires a
   proper superset of those for another (cf.~item~2 above).  
   We consider conditions~(b) and~(c) in Sections~\ref{sec:necessary-b}
   and~\ref{sec:necessary-c}, respectively, proving appropriate results.  We
@@ -63,8 +63,8 @@ extended to give values for all parameters of the view~$v$.
 
 \end{itemize}
 
-We fix a transition $pre \trans{} post$ and a view~$v$ for the remainder of
-this section. 
+We fix a transition $pre \trans post$ and a view~$v$, both in normal form,
+for the remainder of this section.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -162,16 +162,9 @@ require a unification of components.
 We now give sufficient conditions for two induced transitions to produce
 equivalent views, on the assumption that conditions~(b) and~(c) of
 Definition~\ref{def:induced-transition-singleRef} are satisfied. 
-We say that two remapping functions~$\pi_1$ and~$\pi_2$ \emph{range-agree}
-on~$y$ if they map the same variables to~$y$:
-\[
-\forall x \spot \pi_1(x) = y \iff \pi_2(x) = y.
-\]
-Necessarily there is at most one~$x$ that the remapping functions map
-to~$y$.
 
 \begin{definition}
-Consider a transition $pre \trans{} post$ and a view~$v$, both in normal form.
+Consider a transition $pre \trans post$ and a view~$v$, both in normal form.
 Consider a partial unification function~$\pi_u$.  We define the
 \emph{result-relevant parameters} to be:
 %
@@ -187,6 +180,13 @@ Consider a partial unification function~$\pi_u$.  We define the
   of~$c'$. 
 \end{enumerate}
 \end{definition}
+
+We say that two remapping functions~$\pi_1$ and~$\pi_2$ \emph{range-agree}
+on~$y$ if they map the same variables to~$y$:
+\[
+\forall x \spot \pi_1(x) = y \iff \pi_2(x) = y.
+\]
+Necessarily there is at most one~$x$ that the remapping functions map to~$y$.
 
 \begin{lemma}
 \label{lem:singleRef:remappings-equivalent-primary}
